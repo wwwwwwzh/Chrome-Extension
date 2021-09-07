@@ -27,6 +27,9 @@
                 "http://*/*",
                 "https://*/*"
             ],
+            "css": [
+                "assets/css/popup.css"
+            ],
             "js": [
                 "./packages/jquery-3.6.0.min.js",
                 "./packages/firebase.js",
@@ -35,6 +38,7 @@
         }
     ],
     "background": {
-        "service_worker": "background.js"
+        "service_worker": "background.js",
+        "type": "module"
     }
 }

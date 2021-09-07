@@ -1,17 +1,34 @@
 // Initialize Firebase
-//alert("firebaseConfig")
-//const app = initializeApp(firebaseConfig);
+firebaseConfig = {
+    apiKey: "AIzaSyD2iKakYgBqJ2T6CVQpzHZIjzJW8k0JQTo",
+    authDomain: "test-e7bb0.firebaseapp.com",
+    projectId: "test-e7bb0",
+    storageBucket: "test-e7bb0.appspot.com",
+    messagingSenderId: "84428320764",
+    appId: "1:84428320764:web:26669d7f6e21cae5650c79",
+    measurementId: "G-LM6FVJF8S6"
+}
+
+CSS = {
+    HIGHLIGHT_BOX: {
+        'box-shadow': '0 0 20px rgba(255, 203, 42, 1)',
+        'padding': '5px',
+        'margin': '3px',
+        'border': '3px solid rgba(246, 131, 11, 0.5)',
+        'border-radius': '5px'
+    }
+}
+const app = initializeApp(firebaseConfig);
 // const analytics = getAnalytics(app);
-// const db = getFirestore(app);
+const firestoreRef = getFirestore(app);
 
 document.body.addEventListener('click', (event) => {
     universalClickHandler(event.target)
-
 });
 
 function universalClickHandler(data) {
     const domPath = getDomPathStack(data)
-    //postToFirebase(domPath)
+    postToFirebase(Array.from(domPath))
     highlightAndScollTo(domPath)
 }
 
@@ -85,14 +102,14 @@ function hightlight(element) {
 
 function highlightAndScollTo(pathStack) {
     element = $(jqueryElementStringFromDomPath(pathStack))
-    scrollTo(element)
+    //scrollTo(element)
     hightlight(element)
 }
 
 async function postToFirebase(data) {
     try {
-        const docRef = await addDoc(collection(db, "users"), {
-            name: data
+        const docRef = await addDoc(collection(firestoreRef, "users"), {
+            path: data
         });
     } catch (e) {
         console.error("Error adding document: ", e);

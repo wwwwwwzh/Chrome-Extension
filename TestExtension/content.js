@@ -17,7 +17,6 @@ const CSS = {
         'border-radius': '5px'
     }
 }
-alert("assasa")
 document.body.addEventListener('click', (event) => {
     universalClickHandler(event.target)
 
@@ -25,7 +24,6 @@ document.body.addEventListener('click', (event) => {
 
 function universalClickHandler(data) {
     const domPath = getDomPathStack(data)
-    alert(data)
     //postToFirebase(domPath)
     highlightAndScollTo(domPath)
 }

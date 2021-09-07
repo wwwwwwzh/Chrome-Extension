@@ -1,5 +1,4 @@
 chrome.action.onClicked.addListener((tab) => {
-    alert("a")
     chrome.scripting.executeScript({
         target: { tabId: tab.id },
         files: [
