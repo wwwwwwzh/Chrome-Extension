@@ -33,6 +33,7 @@
             "js": [
                 "./packages/jquery-3.6.0.min.js",
                 "./packages/firebase.js",
+                "constants.js",
                 "content.js"
             ]
         }
