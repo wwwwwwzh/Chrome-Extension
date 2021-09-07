@@ -1,0 +1,12 @@
+{
+    "City": "Chapel Hill",
+    "Colleges": {
+        "UNC": {
+            "Dorms": [
+                "1",
+                "2"
+            ]
+        },
+        "Duke": {}
+    }
+}

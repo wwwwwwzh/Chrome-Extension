@@ -1,0 +1,45 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JS Interval</title>
+    <script>
+        var count = 0
+        var isCounting = true
+        var counter
+        function startCounter() {
+            counter = setInterval(() => {
+                count++
+                document.querySelector('#counter').innerHTML = count
+            }, 1000);
+        }
+
+        function toogleCounter() {
+            isCounting = !isCounting
+            if (isCounting) {
+                startCounter()
+            } else {
+                clearInterval(counter)
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            startCounter()
+            document.querySelector('#counter-switch').onclick = () => {
+                toogleCounter();
+                document.querySelector('#counter-switch').innerHTML = isCounting ? 'Stop' : 'Resume'
+            }
+
+
+        })
+    </script>
+</head>
+
+<body>
+    <p id="counter">0</p>
+    <button id="counter-switch">Stop</button>
+</body>
+
+</html>

@@ -1,0 +1,40 @@
+{
+    "name": "Tester For Vega",
+    "version": "1.0",
+    "manifest_version": 3,
+    "action": {
+        "default_title": "Click to show an alert",
+        "default_popup": "popup.html",
+        "default_icon": {
+            "16": "assets/imgs/robot-16.png",
+            "64": "assets/imgs/robot-64.png",
+            "256": "assets/imgs/robot-256.png"
+        }
+    },
+    "icons": {
+        "16": "assets/imgs/robot-16.png",
+        "64": "assets/imgs/robot-64.png",
+        "256": "assets/imgs/robot-256.png"
+    },
+    "options_page": "options.html",
+    "permissions": [
+        "activeTab",
+        "scripting"
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "http://*/*",
+                "https://*/*"
+            ],
+            "js": [
+                "./packages/jquery-3.6.0.min.js",
+                "./packages/firebase.js",
+                "content.js"
+            ]
+        }
+    ],
+    "background": {
+        "service_worker": "background.js"
+    }
+}

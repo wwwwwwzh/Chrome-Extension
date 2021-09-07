@@ -1,0 +1,110 @@
+<!-- inline > id > class > type > parent -->
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS</title>
+    <style>
+        @media (min-width: 700px) {
+            body {
+                background-color: antiquewhite;
+            }
+        }
+
+        @media (max-width: 699px) {
+            body {
+                background-color: aqua;
+            }
+
+            h5 {
+                color: brown;
+            }
+        }
+
+        h1,
+        table {
+            color: seagreen;
+            font-family: sans-serif;
+        }
+
+        p,
+        h4 {
+            text-align: center;
+            color: blue;
+        }
+
+        #www {
+            color: aquamarine;
+        }
+
+        .www {
+            color: peru;
+        }
+
+        #container {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        #container>div {
+            padding: 20px;
+        }
+
+        #grid {
+            display: grid;
+            grid-template-columns: 100px auto;
+            grid-row-gap: 10px;
+            grid-column-gap: 10px;
+            background-color: red;
+        }
+
+        .grid {
+            background-color: green;
+            margin: 10px;
+        }
+    </style>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <h1 style="color: brown; text-align: center;">HELLO</h1>
+    <div style="color: chocolate;">
+        <h4>test</h4>
+        <h3>DSSSS</h3>
+        <p>heloowosnddifssfdo sdfsd</p>
+        <input type="text">
+        <input type="submit" name="" id="">
+        <p id="www" class="www">style with id</p>
+        <p class="www">style with class</p>
+    </div>
+    <h1>?????</h1>
+    <h2>working?</h2>
+    <p id="www">style with id</p>
+    <p class="www">style with class</p>
+    <h5>responsive design</h5>
+    <div id="container">
+        <div class="flexdata">askdandak</div>
+        <div class="flexdata">askdandak</div>
+        <div class="flexdata">askdandak</div>
+        <div class="flexdata">askdandak</div>
+        <div class="flexdata">askdandak</div>
+        <div class="flexdata">askdandak</div>
+        <div class="flexdata">askdandak</div>
+        <div class="flexdata">askdandak</div>
+    </div>
+    <div id="grid">
+        <div class="grid">askdandak</div>
+        <div class="grid">askdandak</div>
+        <div class="grid">askdandak</div>
+        <div class="grid">askdandak</div>
+        <div class="grid">askdandak</div>
+        <div class="grid">askdandak</div>
+        <div class="grid">askdandak</div>
+        <div class="grid">askdandak</div>
+    </div>
+</body>
+
+</html>
