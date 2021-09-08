@@ -4,8 +4,9 @@ const app = initializeApp(firebaseConfig);
 const firestoreRef = getFirestore(app);
 
 document.body.addEventListener('click', (event) => {
-    chrome.storage.sync.get("isRecordinigTutorial", ({ isRecordinigTutorial }) => {
-        if (isRecordinigTutorial === true) {
+
+    chrome.storage.sync.get(VALUES.STORAGE.IS_RECORDING_ACTIONS, (result) => {
+        if (result[VALUES.STORAGE.IS_RECORDING_ACTIONS] === true) {
             universalClickHandler(event.target)
         }
     });
@@ -96,8 +97,10 @@ function highlightAndScollTo(pathStack) {
 
 async function postToFirebase(data) {
     try {
-        const docRef = await addDoc(collection(firestoreRef, "users"), {
-            path: data
+        const currentUrl = $(location).attr('href');
+        const docRef = await addDoc(collection(firestoreRef, "Simple Tutorials", "1", "Steps"), {
+            path: data,
+            url: currentUrl
         });
     } catch (e) {
         console.error("Error adding document: ", e);

@@ -17,4 +17,10 @@ const CSS = {
     }
 }
 
-//alert("ASSAS")
+const VALUES = {
+    STORAGE: {
+        IS_RECORDING_TUTORIAL: 'IS_RECORDING_TUTORIAL',
+        IS_RECORDING_ACTIONS: 'IS_RECORDING_ACTIONS'
+    }
+}
+

@@ -1,6 +1,6 @@
 $(() => {
-    chrome.storage.sync.get("isRecordinigTutorial", ({ isRecordinigTutorial }) => {
-        recordTutorialSwitch.prop('checked', isRecordinigTutorial);
+    chrome.storage.sync.get(VALUES.STORAGE.IS_RECORDING_ACTIONS, (result) => {
+        recordTutorialSwitch.prop('checked', result[VALUES.STORAGE.IS_RECORDING_ACTIONS]);
     });
     // Initialize button with user's preferred color
     let recordTutorialSwitch = $('#record-tutorial-switch')
@@ -21,7 +21,7 @@ $(() => {
 })
 
 function onRecordTutorialSwitchChanged(checked) {
-    chrome.storage.sync.set({
-        isRecordinigTutorial: checked
-    });
+    const data = {}
+    data[VALUES.STORAGE.IS_RECORDING_ACTIONS] = checked
+    chrome.storage.sync.set(data);
 }
