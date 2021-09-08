@@ -3,15 +3,16 @@ const app = initializeApp(firebaseConfig);
 // const analytics = getAnalytics(app);
 const firestoreRef = getFirestore(app);
 
-document.body.addEventListener('click', (event) => {
+//MARK: Start of giving suggestions
 
+
+//MARK: Start of recording events
+document.body.addEventListener('click', (event) => {
     chrome.storage.sync.get(VALUES.STORAGE.IS_RECORDING_ACTIONS, (result) => {
         if (result[VALUES.STORAGE.IS_RECORDING_ACTIONS] === true) {
             universalClickHandler(event.target)
         }
     });
-
-
 });
 
 
@@ -138,9 +139,15 @@ async function postDocToFirebase(data, type, status) {
 
     async function addTutorialStep(docId) {
         if (!isEmpty(docId)) {
+            const addr = $(location).attr('href')
             await addDoc(collection(firestoreRef, type, docId, "Steps"), {
                 path: data,
-                url: $(location).attr('href')
+                url: addr
+            });
+            const tutorialRef = doc(firestoreRef, type, docId);
+
+            await updateDoc(tutorialRef, {
+                all_urls: arrayUnion(addr)
             });
         }
     }
