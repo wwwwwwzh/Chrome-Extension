@@ -97,7 +97,7 @@ function highlightAndScollTo(pathStack) {
     hightlight(element)
 }
 
-async function postToFirebase(data) {
+async function postNewTutorialToFirebase(data) {
     try {
         const docRef = await addDoc(collection(db, "users"), {
             name: data

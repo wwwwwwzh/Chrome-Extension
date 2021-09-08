@@ -21,6 +21,25 @@ const VALUES = {
     STORAGE: {
         IS_RECORDING_TUTORIAL: 'IS_RECORDING_TUTORIAL',
         IS_RECORDING_ACTIONS: 'IS_RECORDING_ACTIONS'
+    },
+    RECORDING_STATUS: {
+        STATUS: "RECORDING_STATUS",
+        NOT_RECORDING: "NOT_RECORDING",
+        BEGAN_RECORDING: "BEGAN_RECORDING",
+        RECORDING: "RECORDING",
+        FINISHED_RECORDING: "FINISHED_RECORDING"
+    },
+    RECORDING_ID: {
+        CURRENT_TUTORIAL_ID: "CURRENT_TUTORIAL_ID"
     }
 }
 
+function syncStorageSet(key, value) {
+    const data = {}
+    data[key] = value
+    chrome.storage.sync.set(data);
+}
+
+function isEmpty(str) {
+    return (!str || str.length === 0);
+}
