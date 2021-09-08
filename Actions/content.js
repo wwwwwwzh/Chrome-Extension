@@ -4,8 +4,15 @@ const app = initializeApp(firebaseConfig);
 const firestoreRef = getFirestore(app);
 
 document.body.addEventListener('click', (event) => {
-    universalClickHandler(event.target)
+    chrome.storage.sync.get("isRecordinigTutorial", ({ isRecordinigTutorial }) => {
+        if (isRecordinigTutorial === true) {
+            universalClickHandler(event.target)
+        }
+    });
+
+
 });
+
 
 function universalClickHandler(data) {
     const domPath = getDomPathStack(data)

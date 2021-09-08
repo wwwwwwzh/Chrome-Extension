@@ -11,9 +11,8 @@ const firebaseConfig = {
 const CSS = {
     HIGHLIGHT_BOX: {
         'box-shadow': '0 0 20px rgba(255, 203, 42, 1)',
-        'padding': '5px',
-        'margin': '3px',
-        'border': '3px solid rgba(246, 131, 11, 0.5)',
+        'padding': '3px',
+        'border': '2px solid rgba(246, 131, 11, 0.5)',
         'border-radius': '5px'
     }
 }
