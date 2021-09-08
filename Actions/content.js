@@ -3,7 +3,23 @@ const app = initializeApp(firebaseConfig);
 // const analytics = getAnalytics(app);
 const firestoreRef = getFirestore(app);
 
+//CONST
+const currentUrl = $(location).attr('href')
+
 //MARK: Start of giving suggestions
+async function fetchSimpleTutorials() {
+    const simpleTutorialQuery = query(collection(firestoreRef,
+        VALUES.COLLECTION_NAMES.SIMPLE_TUTORIAL),
+        where("all_urls", VALUES.FIRESTORE_QUERY_TYPES.ARRAY_CONTAINS, currentUrl)
+    );
+
+    const simpleTutorialQuerySnapshot = await getDocs(simpleTutorialQuery);
+    simpleTutorialQuerySnapshot.forEach((tutorial) => {
+
+    });
+}
+
+fetchSimpleTutorials()
 
 
 //MARK: Start of recording events
@@ -100,11 +116,11 @@ async function postNewTutorialToFirebase(data) {
     chrome.storage.sync.get(VALUES.RECORDING_STATUS.STATUS, (result) => {
         switch (result[VALUES.RECORDING_STATUS.STATUS]) {
             case VALUES.RECORDING_STATUS.BEGAN_RECORDING:
-                postDocToFirebase(data, "Simple Tutorials", VALUES.RECORDING_STATUS.BEGAN_RECORDING);
+                postDocToFirebase(data, VALUES.COLLECTION_NAMES.SIMPLE_TUTORIAL, VALUES.RECORDING_STATUS.BEGAN_RECORDING);
                 syncStorageSet(VALUES.RECORDING_STATUS.STATUS, VALUES.RECORDING_STATUS.RECORDING);
                 break;
             case VALUES.RECORDING_STATUS.RECORDING:
-                postDocToFirebase(data, "Simple Tutorials", VALUES.RECORDING_STATUS.RECORDING);
+                postDocToFirebase(data, VALUES.COLLECTION_NAMES.SIMPLE_TUTORIAL, VALUES.RECORDING_STATUS.RECORDING);
                 break;
             default:
                 break;
@@ -139,15 +155,15 @@ async function postDocToFirebase(data, type, status) {
 
     async function addTutorialStep(docId) {
         if (!isEmpty(docId)) {
-            const addr = $(location).attr('href')
+
             await addDoc(collection(firestoreRef, type, docId, "Steps"), {
                 path: data,
-                url: addr
+                url: currentUrl
             });
             const tutorialRef = doc(firestoreRef, type, docId);
 
             await updateDoc(tutorialRef, {
-                all_urls: arrayUnion(addr)
+                all_urls: arrayUnion(currentUrl)
             });
         }
     }

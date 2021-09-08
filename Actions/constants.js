@@ -31,8 +31,25 @@ const VALUES = {
     },
     RECORDING_ID: {
         CURRENT_TUTORIAL_ID: "CURRENT_TUTORIAL_ID"
+    },
+    COLLECTION_NAMES: {
+        SIMPLE_TUTORIAL: "Simple Tutorials",
+        SIMPLE_TUTORIAL_STEPS: "Steps"
+    },
+    FIRESTORE_QUERY_TYPES: {
+        ARRAY_CONTAINS: "array-contains",
+        ARRAY_CONTAINS_ANY: "array-contains-any",
+        IN: "in",
+        NOT_IN: "not-in",
+        NOT_EQUAL: "!=",
+        GREATER_THAN_OR_EQUAL_TO: ">=",
+        GREATER_THAN: ">",
+        LESS_THAN: "<",
+        LESS_THAN_OR_EQUAL_TO: "<=",
+        EQUAL_TO: "=="
     }
 }
+
 
 function syncStorageSet(key, value) {
     const data = {}

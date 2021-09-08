@@ -16999,12 +16999,12 @@ async function ea(t, e) {
         /* usePreviousResults= */ !1).then((({ documents: t }) => e.view.Io(t, i))));
         const r = s && s.targetChanges.get(e.targetId), o = e.view.applyChanges(i,
         /* updateLimboDocuments= */ t.isPrimaryClient, r);
-        return _a(t, e.targetId, o.vo), o.snapshot;
+        return changedFrom_a(t, e.targetId, o.vo), o.snapshot;
     }(t, e, n, s);
     const i = await gr(t.localStore, e,
     /* usePreviousResults= */ !0), r = new Yo(e, i.Gn), o = r.Io(i.documents), a = Sn.createSynthesizedTargetChangeForCurrentChange(n, s && "Offline" /* Offline */ !== t.onlineState), c = r.applyChanges(o,
     /* updateLimboDocuments= */ t.isPrimaryClient, a);
-    _a(t, n, c.vo);
+    changedFrom_a(t, n, c.vo);
     const u = new Xo(e, n, r);
     return t.xo.set(e, u), t.ko.has(n) ? t.ko.get(n).push(e) : t.ko.set(n, [e]), c.snapshot;
 }
@@ -17272,7 +17272,7 @@ function wa(t, e) {
     null !== n && (ao(t.remoteStore, n), t.Oo = t.Oo.remove(e), t.Fo.delete(n), ga(t));
 }
 
-function _a(t, e, n) {
+function changedFrom_a(t, e, n) {
     for (const s of n) if (s instanceof Ho) t.Mo.addReference(s.key, e), ma(t, s); else if (s instanceof Jo) {
         k("SyncEngine", "Document no longer in limbo: " + s.key), t.Mo.removeReference(s.key, e);
         t.Mo.containsKey(s.key) ||
@@ -17377,7 +17377,7 @@ function Ea(t, e) {
  */ async function Ta(t, e) {
     const n = U(t), s = await gr(n.localStore, e.query,
     /* usePreviousResults= */ !0), i = e.view.So(s);
-    return n.isPrimaryClient && _a(n, e.targetId, i.vo), i;
+    return n.isPrimaryClient && changedFrom_a(n, e.targetId, i.vo), i;
 }
 
 /**
