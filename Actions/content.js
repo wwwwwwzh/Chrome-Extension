@@ -4,9 +4,32 @@ const app = initializeApp(firebaseConfig);
 const firestoreRef = getFirestore(app);
 
 //CONST
-const currentUrl = $(location).attr('href')
+const currentUrl = $(location).attr('href');
+
+//tutorial menu
+$('body').append("<div id=\"main-popup-container\" hidden></div>");
+const mainPopUpContainer = $('#main-popup-container');
+
+//stop tutorial options
+$('body').append("<div id=\"main-stop-options-container\" hidden></div>");
+const mainStopOptionsContainer = $('#main-stop-options-container');
 
 //MARK: Start of giving suggestions
+class SimpleTutorial {
+    constructor(steps) {
+        this.steps = steps;
+        this.currentStep = 0;
+    }
+};
+
+class Step {
+    constructor(path, inputs, index) {
+        this.path = path;
+        this.inputs = inputs;
+        this.index = index
+    }
+};
+
 async function fetchSimpleTutorials() {
     const simpleTutorialQuery = query(collection(firestoreRef,
         VALUES.COLLECTION_NAMES.SIMPLE_TUTORIAL),
@@ -14,28 +37,126 @@ async function fetchSimpleTutorials() {
     );
 
     const simpleTutorialQuerySnapshot = await getDocs(simpleTutorialQuery);
-    simpleTutorialQuerySnapshot.forEach((tutorial) => {
-
-    });
+    if (!simpleTutorialQuerySnapshot.empty) {
+        //create popup window
+        mainPopUpContainer.css(CSS.MAIN_OPTIONS_POPUP);
+        mainPopUpContainer.show();
+        //iterate query to add tutorial buttons
+        simpleTutorialQuerySnapshot.forEach((tutorial) => {
+            mainPopUpContainer.append("<a href=\"#\" class=\"tutorial-button\">Tutorial</a>");
+            const button = $('.tutorial-button');
+            button.css(CSS.MAIN_OPTIONS_POPUP_TUTORIAL_BUTTON);
+            //button click function. store tutorial's steps to storage
+            button.on('click', () => {
+                onFollowTutorialButtonClicked(tutorial);
+            });
+        });
+    }
 }
 
-fetchSimpleTutorials()
+async function onFollowTutorialButtonClicked(tutorial) {
+    syncStorageSet(VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.FOLLOWING_TUTORIAL_STATUS.FOLLOWING_TUTORIAL);
+    syncStorageSet(VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_ID, tutorial.id);
+    //get all information about the tutorial from firebase
+    const stepsQuery = query(collection(firestoreRef,
+        VALUES.COLLECTION_NAMES.SIMPLE_TUTORIAL,
+        tutorial.id,
+        VALUES.COLLECTION_NAMES.SIMPLE_TUTORIAL_STEPS
+    ), orderBy("index"));
+    const stepsQuerySnapshot = await getDocs(stepsQuery);
+    var steps = [];
+    stepsQuerySnapshot.forEach((step) => {
+        const data = step.data();
+        const stepObj = new Step(data.path, [], data.index);
+        steps.push(stepObj);
+    })
+    //construct tutorial object
+    const tutorialObj = new SimpleTutorial(steps)
+    //object structure: tutorialObj.steps[i].path[i]. store object to storage
+    syncStorageSet(VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, tutorialObj);
+    //toogle html elements
+    mainPopUpContainer.hide();
+    mainStopOptionsContainer.show();
+    //start showing step
+    const currentStep = tutorialObj.steps[0]
+    highlightAndScollTo(currentStep.path)
+}
+
+async function onStopTutorialButtonClicked() {
+    mainStopOptionsContainer.hide();
+    syncStorageSet(VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.FOLLOWING_TUTORIAL_STATUS.NOT_FOLLOWING_TUTORIAL);
+    fetchSimpleTutorials();
+}
+
+async function checkFollowingTutorialStatus() {
+    chrome.storage.sync.get(VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, (result) => {
+        switch (result[VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS]) {
+            case VALUES.FOLLOWING_TUTORIAL_STATUS.FOLLOWING_TUTORIAL:
+                showTutorialStep();
+                mainStopOptionsContainer.show();
+                mainStopOptionsContainer.css(CSS.MAIN_STOP_OPTIONS_CONTAINER);
+                mainStopOptionsContainer.on('click', () => {
+                    onStopTutorialButtonClicked();
+                })
+                break;
+            case VALUES.FOLLOWING_TUTORIAL_STATUS.NOT_FOLLOWING_TUTORIAL:
+                fetchSimpleTutorials();
+
+                break;
+            default:
+                break;
+        }
+    })
+}
+
+checkFollowingTutorialStatus()
+
+async function showTutorialStep() {
+    chrome.storage.sync.get(VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, result => {
+        const tutorialObj = result[VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID];
+        const currentStep = tutorialObj.steps[tutorialObj.currentStep]
+        highlightAndScollTo(currentStep.path)
+    })
+}
 
 
 //MARK: Start of recording events
 document.body.addEventListener('click', (event) => {
     chrome.storage.sync.get(VALUES.STORAGE.IS_RECORDING_ACTIONS, (result) => {
         if (result[VALUES.STORAGE.IS_RECORDING_ACTIONS] === true) {
-            universalClickHandler(event.target)
+            onClickWhenRecording(event.target)
+        }
+    });
+    chrome.storage.sync.get(VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, (result) => {
+        if (result[VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS] === VALUES.FOLLOWING_TUTORIAL_STATUS.FOLLOWING_TUTORIAL) {
+            onClickWhenFollowingTutorial(event.target)
         }
     });
 });
 
 
-function universalClickHandler(data) {
-    const domPath = getDomPathStack(data)
-    postNewTutorialToFirebase(Array.from(domPath))
+function onClickWhenRecording(target) {
+    const domPath = getDomPathStack(target)
+    addStepToFirebase(Array.from(domPath))
     highlightAndScollTo(domPath)
+}
+
+function onClickWhenFollowingTutorial(target) {
+    const domPath = getDomPathStack(target);
+    chrome.storage.sync.get(VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, result => {
+        var tutorialObj = result[VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID];
+        const currentStep = tutorialObj.steps[tutorialObj.currentStep]
+        if (arraysEqual(currentStep.path, domPath)) {
+            //user clicked on highlighted element, go to next step if it exists
+            if (tutorialObj.currentStep + 1 < tutorialObj.steps.length) {
+                tutorialObj.currentStep = tutorialObj.currentStep + 1;
+
+                syncStorageSet(VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, tutorialObj);
+
+                highlightAndScollTo(tutorialObj.steps[tutorialObj.currentStep].path)
+            }
+        }
+    })
 }
 
 /**
@@ -112,7 +233,7 @@ function highlightAndScollTo(pathStack) {
     hightlight(element)
 }
 
-async function postNewTutorialToFirebase(data) {
+async function addStepToFirebase(data) {
     chrome.storage.sync.get(VALUES.RECORDING_STATUS.STATUS, (result) => {
         switch (result[VALUES.RECORDING_STATUS.STATUS]) {
             case VALUES.RECORDING_STATUS.BEGAN_RECORDING:
@@ -130,20 +251,23 @@ async function postNewTutorialToFirebase(data) {
 
 async function postDocToFirebase(data, type, status) {
     var docId;
+    var stepIndex = 0;
     try {
         switch (status) {
             case VALUES.RECORDING_STATUS.BEGAN_RECORDING:
                 const docRef = await addDoc(collection(firestoreRef, type), {});
-                docId = docRef.id
-                syncStorageSet(VALUES.RECORDING_ID.CURRENT_TUTORIAL_ID, docId)
-                addTutorialStep(docId)
+                docId = docRef.id;
+                syncStorageSet(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID, docId);
+                addTutorialStep(docId);
                 break;
             case VALUES.RECORDING_STATUS.RECORDING:
-                chrome.storage.sync.get(VALUES.RECORDING_ID.CURRENT_TUTORIAL_ID, (result) => {
-                    docId = result[VALUES.RECORDING_ID.CURRENT_TUTORIAL_ID];
-                    addTutorialStep(docId)
+                chrome.storage.sync.get(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID, (tutorial_id_result) => {
+                    chrome.storage.sync.get(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX, (index_result) => {
+                        stepIndex = index_result[VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX] + 1;
+                        docId = tutorial_id_result[VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID];
+                        addTutorialStep(docId)
+                    })
                 });
-
                 break;
             default:
                 break;
@@ -155,10 +279,11 @@ async function postDocToFirebase(data, type, status) {
 
     async function addTutorialStep(docId) {
         if (!isEmpty(docId)) {
-
+            syncStorageSet(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX, stepIndex)
             await addDoc(collection(firestoreRef, type, docId, "Steps"), {
                 path: data,
-                url: currentUrl
+                url: currentUrl,
+                index: stepIndex
             });
             const tutorialRef = doc(firestoreRef, type, docId);
 
