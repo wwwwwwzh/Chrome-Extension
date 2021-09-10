@@ -26,7 +26,22 @@ const CSS = {
         'border-radius': '12px',
         'z-index': 2147483647
     },
-    MAIN_OPTIONS_POPUP_TUTORIAL_BUTTON: {
+    MAIN_OPTIONS_POPUP_SIMPLE_TUTORIAL_BUTTON: {
+        "box-shadow": "inset 0px 0px 0px 0px #cf866c",
+        "background": "linear-gradient(to bottom, #d0451b 5%, #bc3315 100%)",
+        "background-color": "#d0451b",
+        "border-radius": "6px",
+        "border": "1px solid #942911",
+        "display": "inline-block",
+        "cursor": "pointer",
+        "color": "#ffffff",
+        "font-family": "Arial",
+        "font-size": "13px",
+        "padding": "14px 24px",
+        "text-decoration": "none",
+        "text-shadow": "0px 1px 0px #854629",
+    },
+    MAIN_OPTIONS_POPUP_SIMPLE_AUTOMATION_BUTTON: {
         "box-shadow": "inset 0px 0px 0px 0px #cf866c",
         "background": "linear-gradient(to bottom, #d0451b 5%, #bc3315 100%)",
         "background-color": "#d0451b",
@@ -72,7 +87,13 @@ const VALUES = {
     },
     COLLECTION_NAMES: {
         SIMPLE_TUTORIAL: "Simple Tutorials",
-        SIMPLE_TUTORIAL_STEPS: "Steps"
+        SIMPLE_TUTORIAL_STEPS: "Steps",
+        SIMPLE_TUTORIAL_ALL_URLS: "all_urls",
+        SIMPLE_AUTOMATION: "Simple Automations",
+        SIMPLE_AUTOMATION_STEPS: "Steps",
+        SIMPLE_AUTOMATION_ALL_URLS: "all_urls",
+        STEP_ACTION_TYPE: "action_type",
+        STEP_ACTION_REDIRECT_TO: "redirect_to"
     },
     FIRESTORE_QUERY_TYPES: {
         ARRAY_CONTAINS: "array-contains",
@@ -96,7 +117,23 @@ const VALUES = {
     TUTORIAL_ID: {
         CURRENT_FOLLOWING_TUTORIAL_ID: "CURRENT_FOLLOWING_TUTORIAL_ID",
         CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID: "CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID",
+    },
+    FOLLOWING_SIMPLE_AUTOMATION_STATUS: {
+        STATUS: "FOLLOWING_SIMPLE_AUTOMATION_STATUS",
+        BEGAN_FOLLOWING_SIMPLE_AUTOMATIONL: "BEGAN_FOLLOWING_SIMPLE_AUTOMATIONL",
+        FOLLOWING_SIMPLE_AUTOMATION: "FOLLOWING_SIMPLE_AUTOMATION",
+        NOT_FOLLOWING_SIMPLE_AUTOMATION: "NOT_FOLLOWING_SIMPLE_AUTOMATION",
+    },
+    SIMPLE_AUTOMATION_ID: {
+        CURRENT_FOLLOWING_SIMPLE_AUTOMATION_ID: "CURRENT_FOLLOWING_SIMPLE_AUTOMATION_ID",
+        CURRENT_FOLLOWING_SIMPLE_AUTOMATION_OBJECT_ID: "CURRENT_FOLLOWING_SIMPLE_AUTOMATION_OBJECT_ID",
+    },
+    STEP_ACTION_TYPE: {
 
+        STEP_ACTION_TYPE_NULL: "STEP_ACTION_TYPE_NULL",
+        STEP_ACTION_TYPE_REDIRECT: "STEP_ACTION_TYPE_REDIRECT",
+        STEP_ACTION_TYPE_CLICK_REDIRECT: "STEP_ACTION_TYPE_CLICK_REDIRECT",
+        STEP_ACTION_TYPE_CLICK: "STEP_ACTION_TYPE_CLICK",
     }
 }
 

@@ -5,6 +5,7 @@ const firestoreRef = getFirestore(app);
 
 //CONST
 const currentUrl = $(location).attr('href');
+const currentUrlObj = new URL(currentUrl);
 
 //tutorial menu
 $('body').append("<div id=\"main-popup-container\" hidden></div>");
@@ -23,36 +24,83 @@ class SimpleTutorial {
 };
 
 class Step {
-    constructor(path, inputs, index) {
+    constructor(path, index, action_type, description = "", redirect_to = "", inputs = "") {
         this.path = path;
+        this.index = index;
+        this.action_type = action_type;
+        this.description = description;
+        this.redirect_to = redirect_to;
         this.inputs = inputs;
-        this.index = index
     }
 };
+
+class SimpleAutomation {
+    constructor(steps) {
+        this.steps = steps;
+        this.currentStep = 0;
+    }
+};
+
 
 async function fetchSimpleTutorials() {
     const simpleTutorialQuery = query(collection(firestoreRef,
         VALUES.COLLECTION_NAMES.SIMPLE_TUTORIAL),
-        where("all_urls", VALUES.FIRESTORE_QUERY_TYPES.ARRAY_CONTAINS, currentUrl)
-    );
+        where(
+            VALUES.COLLECTION_NAMES.SIMPLE_AUTOMATION_ALL_URLS,
+            VALUES.FIRESTORE_QUERY_TYPES.ARRAY_CONTAINS,
+            currentUrl
+        ));
 
     const simpleTutorialQuerySnapshot = await getDocs(simpleTutorialQuery);
     if (!simpleTutorialQuerySnapshot.empty) {
         //create popup window
-        mainPopUpContainer.css(CSS.MAIN_OPTIONS_POPUP);
-        mainPopUpContainer.show();
+        if (mainPopUpContainer.is(":hidden")) {
+            mainPopUpContainer.css(CSS.MAIN_OPTIONS_POPUP);
+            mainPopUpContainer.show();
+        }
         //iterate query to add tutorial buttons
         simpleTutorialQuerySnapshot.forEach((tutorial) => {
-            mainPopUpContainer.append("<a href=\"#\" class=\"tutorial-button\">Tutorial</a>");
-            const button = $('.tutorial-button');
-            button.css(CSS.MAIN_OPTIONS_POPUP_TUTORIAL_BUTTON);
+            mainPopUpContainer.append("<a href=\"#\" class=\"simple-tutorial-button\">Tutorial</a>");
+            const button = $('.simple-tutorial-button');
+            button.css(CSS.MAIN_OPTIONS_POPUP_SIMPLE_TUTORIAL_BUTTON);
             //button click function. store tutorial's steps to storage
             button.on('click', () => {
                 onFollowTutorialButtonClicked(tutorial);
             });
         });
     }
-}
+};
+
+async function fetchSimpleAutomations() {
+    const domainName = "https://" + currentUrlObj.hostname + "/";
+    const simpleAutomationQuery = query(collection(firestoreRef,
+        VALUES.COLLECTION_NAMES.SIMPLE_AUTOMATION),
+        where(
+            VALUES.COLLECTION_NAMES.SIMPLE_AUTOMATION_ALL_URLS,
+            VALUES.FIRESTORE_QUERY_TYPES.ARRAY_CONTAINS,
+            domainName,
+        ));
+    alert(domainName)
+    const simpleAutomationQuerySnapshot = await getDocs(simpleAutomationQuery);
+
+    if (!simpleAutomationQuerySnapshot.empty) {
+        //create popup window
+        if (mainPopUpContainer.is(":hidden")) {
+            mainPopUpContainer.css(CSS.MAIN_OPTIONS_POPUP);
+            mainPopUpContainer.show();
+        }
+        //iterate query to add tutorial buttons
+        simpleAutomationQuerySnapshot.forEach((automation) => {
+            mainPopUpContainer.append("<a href=\"#\" class=\"simple-automation-button\">Automation</a>");
+            const button = $('.simple-automation-button');
+            button.css(CSS.MAIN_OPTIONS_POPUP_SIMPLE_AUTOMATION_BUTTON);
+            //button click function. store tutorial's steps to storage
+            button.on('click', () => {
+                onFollowSimpleAutomationButtonClicked(automation);
+            });
+        });
+    }
+};
 
 async function onFollowTutorialButtonClicked(tutorial) {
     syncStorageSet(VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.FOLLOWING_TUTORIAL_STATUS.FOLLOWING_TUTORIAL);
@@ -67,7 +115,7 @@ async function onFollowTutorialButtonClicked(tutorial) {
     var steps = [];
     stepsQuerySnapshot.forEach((step) => {
         const data = step.data();
-        const stepObj = new Step(data.path, [], data.index);
+        const stepObj = new Step(data.path, data.index, VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL);
         steps.push(stepObj);
     })
     //construct tutorial object
@@ -88,6 +136,50 @@ async function onStopTutorialButtonClicked() {
     fetchSimpleTutorials();
 }
 
+async function onFollowSimpleAutomationButtonClicked(automation) {
+    syncStorageSet(
+        VALUES.FOLLOWING_SIMPLE_AUTOMATION_STATUS.STATUS,
+        VALUES.FOLLOWING_SIMPLE_AUTOMATION_STATUS.FOLLOWING_SIMPLE_AUTOMATION
+    );
+    syncStorageSet(
+        VALUES.SIMPLE_AUTOMATION_ID.CURRENT_FOLLOWING_SIMPLE_AUTOMATION_ID,
+        automation.id
+    );
+    //get all information about the automation from firebase
+    const stepsQuery = query(collection(firestoreRef,
+        VALUES.COLLECTION_NAMES.SIMPLE_AUTOMATION,
+        automation.id,
+        VALUES.COLLECTION_NAMES.SIMPLE_AUTOMATION_STEPS
+    ), orderBy("index"));
+    const stepsQuerySnapshot = await getDocs(stepsQuery);
+    var steps = [];
+    stepsQuerySnapshot.forEach((step) => {
+        const data = step.data();
+        const stepObj = new Step(
+            data.path,
+            data.index,
+            data[VALUES.COLLECTION_NAMES.STEP_ACTION_TYPE],
+            "",
+            data[VALUES.COLLECTION_NAMES.STEP_ACTION_REDIRECT_TO]);
+        steps.push(stepObj);
+    })
+    //construct tutorial object
+    const automationObj = new SimpleAutomation(steps)
+    //object structure: tutorialObj.steps[i].path[i]. store object to storage
+    syncStorageSet(VALUES.SIMPLE_AUTOMATION_ID.CURRENT_FOLLOWING_SIMPLE_AUTOMATION_ID, automationObj);
+    //toogle html elements
+    if (mainPopUpContainer.is(':visible')) {
+        mainPopUpContainer.hide();
+        mainStopOptionsContainer.show();
+    }
+
+    //start showing step
+    const currentStep = automationObj.steps[0]
+
+    location.replace(currentStep.redirect_to)
+    //highlightAndScollTo(currentStep.path)
+}
+
 async function checkFollowingTutorialStatus() {
     chrome.storage.sync.get(VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, (result) => {
         switch (result[VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS]) {
@@ -101,7 +193,7 @@ async function checkFollowingTutorialStatus() {
                 break;
             case VALUES.FOLLOWING_TUTORIAL_STATUS.NOT_FOLLOWING_TUTORIAL:
                 fetchSimpleTutorials();
-
+                fetchSimpleAutomations();
                 break;
             default:
                 break;

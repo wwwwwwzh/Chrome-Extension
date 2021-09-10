@@ -3,10 +3,14 @@ $(() => {
     let recordTutorialSwitchContainer = $('#record-tutorial-switch-container');
     let newTutorialButton = $('#new-tutorial-button');
     let stopNewTutorialButton = $('#stop-new-tutorial-button');
+    let newTutorialButtonContainer = $('#new-tutorial-button-container');
+    let stopNewTutorialButtonContainer = $('#stop-new-tutorial-button-container');
 
     newTutorialButton.on('click', async () => {
         let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         recordTutorialSwitchContainer.show()
+        newTutorialButtonContainer.hide()
+        stopNewTutorialButtonContainer.show()
         chrome.scripting.executeScript({
             target: { tabId: tab.id },
             function: onStartNewTutorialRecording,
@@ -17,8 +21,8 @@ $(() => {
         let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         recordTutorialSwitchContainer.hide()
         recordTutorialSwitch.prop('checked', false);
-        newTutorialButton.show()
-        stopNewTutorialButton.hide()
+        newTutorialButtonContainer.show()
+        stopNewTutorialButtonContainer.hide()
         chrome.scripting.executeScript({
             target: { tabId: tab.id },
             function: onStopNewTutorialRecording,
@@ -29,28 +33,28 @@ $(() => {
         switch (result[VALUES.RECORDING_STATUS.STATUS]) {
             case VALUES.RECORDING_STATUS.RECORDING:
                 recordTutorialSwitchContainer.show()
-                newTutorialButton.hide()
-                stopNewTutorialButton.show()
+                newTutorialButtonContainer.hide()
+                stopNewTutorialButtonContainer.show()
                 chrome.storage.sync.get(VALUES.STORAGE.IS_RECORDING_ACTIONS, (result) => {
                     recordTutorialSwitch.prop('checked', result[VALUES.STORAGE.IS_RECORDING_ACTIONS]);
                 });
                 break;
             case VALUES.RECORDING_STATUS.NOT_RECORDING:
                 recordTutorialSwitchContainer.hide()
-                newTutorialButton.show()
-                stopNewTutorialButton.hide()
+                newTutorialButtonContainer.show()
+                stopNewTutorialButtonContainer.hide()
                 break;
             case VALUES.RECORDING_STATUS.BEGAN_RECORDING: {
                 recordTutorialSwitchContainer.show()
-                newTutorialButton.hide()
-                stopNewTutorialButton.show()
+                newTutorialButtonContainer.hide()
+                stopNewTutorialButtonContainer.show()
                 break;
             }
             default:
 
                 recordTutorialSwitchContainer.hide()
-                newTutorialButton.show()
-                stopNewTutorialButton.hide()
+                newTutorialButtonContainer.show()
+                stopNewTutorialButtonContainer.hide()
                 const data = {}
                 data[VALUES.RECORDING_STATUS.STATUS] = VALUES.RECORDING_STATUS.NOT_RECORDING
                 chrome.storage.sync.set(data);
