@@ -11,9 +11,8 @@ document.body.addEventListener('click', (event) => {
 
 function universalClickHandler(data) {
     const domPath = getDomPathStack(data)
-    alert(data)
-    //postToFirebase(domPath)
-    highlightAndScollTo(domPath)
+    postToFirebase(domPath)
+    //highlightAndScollTo(domPath)
 }
 
 /**

@@ -26,22 +26,19 @@ const CSS = {
         'border-radius': '12px',
         'z-index': 2147483647
     },
-    MAIN_OPTIONS_POPUP_SIMPLE_TUTORIAL_BUTTON: {
-        "box-shadow": "inset 0px 0px 0px 0px #cf866c",
-        "background": "linear-gradient(to bottom, #d0451b 5%, #bc3315 100%)",
-        "background-color": "#d0451b",
-        "border-radius": "6px",
-        "border": "1px solid #942911",
-        "display": "inline-block",
-        "cursor": "pointer",
-        "color": "#ffffff",
-        "font-family": "Arial",
-        "font-size": "13px",
-        "padding": "14px 24px",
-        "text-decoration": "none",
-        "text-shadow": "0px 1px 0px #854629",
+    MAIN_MIDDLE_POPUP: {
+        'position': 'fixed',
+        'top': '50%',
+        'left': '50%',
+        'transform': 'translate(-50%, -50%)',
+        'width': '200px',
+        'height': '200px',
+        'padding': '12px',
+        'background-color': 'orange',
+        'border-radius': '12px',
+        'z-index': 2147483647
     },
-    MAIN_OPTIONS_POPUP_SIMPLE_AUTOMATION_BUTTON: {
+    MAIN_OPTIONS_POPUP_SIMPLE_TUTORIAL_BUTTON: {
         "box-shadow": "inset 0px 0px 0px 0px #cf866c",
         "background": "linear-gradient(to bottom, #d0451b 5%, #bc3315 100%)",
         "background-color": "#d0451b",
@@ -72,7 +69,11 @@ const CSS = {
 const VALUES = {
     STORAGE: {
         IS_RECORDING_TUTORIAL: 'IS_RECORDING_TUTORIAL',
-        IS_RECORDING_ACTIONS: 'IS_RECORDING_ACTIONS'
+        IS_RECORDING_ACTIONS: 'IS_RECORDING_ACTIONS',
+        CURRENT_URL: "CURRENT_URL",
+        UNSENT_DOM_PATH: "UNSENT_DOM_PATH",
+        UNSENT_DOM_PATH_URL: "UNSENT_DOM_PATH_URL",
+        DESCRIPTION_FOR_NEXT_STEP: "DESCRIPTION_FOR_NEXT_STEP",
     },
     RECORDING_STATUS: {
         STATUS: "RECORDING_STATUS",
@@ -85,15 +86,16 @@ const VALUES = {
         CURRENT_RECORDING_TUTORIAL_ID: "CURRENT_RECORDING_TUTORIAL_ID",
         CURRENT_RECORDING_TUTORIAL_STEP_INDEX: "CURRENT_RECORDING_TUTORIAL_STEP_INDEX",
     },
-    COLLECTION_NAMES: {
+    FIRESTORE_CONSTANTS: {
         SIMPLE_TUTORIAL: "Simple Tutorials",
         SIMPLE_TUTORIAL_STEPS: "Steps",
         SIMPLE_TUTORIAL_ALL_URLS: "all_urls",
-        SIMPLE_AUTOMATION: "Simple Automations",
-        SIMPLE_AUTOMATION_STEPS: "Steps",
-        SIMPLE_AUTOMATION_ALL_URLS: "all_urls",
         STEP_ACTION_TYPE: "action_type",
-        STEP_ACTION_REDIRECT_TO: "redirect_to"
+        STEP_ACTION_REDIRECT_TO: "redirect_to",
+        STEP_ACTION_INPUT: "input",
+        STEP_DESCRIPTION: "description",
+        STEP_INDEX: "index",
+
     },
     FIRESTORE_QUERY_TYPES: {
         ARRAY_CONTAINS: "array-contains",
@@ -111,25 +113,15 @@ const VALUES = {
     FOLLOWING_TUTORIAL_STATUS: {
         STATUS: "FOLLOWING_TUTORIAL_STATUS",
         BEGAN_FOLLOWING_TUTORIAL: "BEGAN_FOLLOWING_TUTORIAL",
-        FOLLOWING_TUTORIAL: "FOLLOWING_TUTORIAL",
+        PAUSE_FOLLOWING_TUTORIAL: "PAUSE_FOLLOWING_TUTORIAL",
+        AUTO_FOLLOWING_TUTORIAL: "AUTO_FOLLOWING_TUTORIAL",
         NOT_FOLLOWING_TUTORIAL: "NOT_FOLLOWING_TUTORIAL",
     },
     TUTORIAL_ID: {
         CURRENT_FOLLOWING_TUTORIAL_ID: "CURRENT_FOLLOWING_TUTORIAL_ID",
         CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID: "CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID",
     },
-    FOLLOWING_SIMPLE_AUTOMATION_STATUS: {
-        STATUS: "FOLLOWING_SIMPLE_AUTOMATION_STATUS",
-        BEGAN_FOLLOWING_SIMPLE_AUTOMATIONL: "BEGAN_FOLLOWING_SIMPLE_AUTOMATIONL",
-        FOLLOWING_SIMPLE_AUTOMATION: "FOLLOWING_SIMPLE_AUTOMATION",
-        NOT_FOLLOWING_SIMPLE_AUTOMATION: "NOT_FOLLOWING_SIMPLE_AUTOMATION",
-    },
-    SIMPLE_AUTOMATION_ID: {
-        CURRENT_FOLLOWING_SIMPLE_AUTOMATION_ID: "CURRENT_FOLLOWING_SIMPLE_AUTOMATION_ID",
-        CURRENT_FOLLOWING_SIMPLE_AUTOMATION_OBJECT_ID: "CURRENT_FOLLOWING_SIMPLE_AUTOMATION_OBJECT_ID",
-    },
     STEP_ACTION_TYPE: {
-
         STEP_ACTION_TYPE_NULL: "STEP_ACTION_TYPE_NULL",
         STEP_ACTION_TYPE_REDIRECT: "STEP_ACTION_TYPE_REDIRECT",
         STEP_ACTION_TYPE_CLICK_REDIRECT: "STEP_ACTION_TYPE_CLICK_REDIRECT",
@@ -160,4 +152,11 @@ function arraysEqual(a, b) {
         if (a[i] !== b[i]) return false;
     }
     return true;
+}
+
+function checkAndInitializeStorageIfUndefined(result, key, value) {
+    if (!result) {
+        alert(key)
+        syncStorageSet(key, value)
+    }
 }
