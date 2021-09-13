@@ -16,7 +16,7 @@
                 Auto-recording
             </h3>
             <label class="switch">
-                <input type="checkbox" id="record-tutorial-switch">
+                <input type="checkbox" id="record-tutorial-switch" disabled="disabled">
                 <span class="slider round"></span>
             </label>
         </div>
@@ -25,12 +25,36 @@
                 New Tutorial
             </button>
         </div>
-        <div id="add-description-container">
-            <textarea type="text" placeholder="Description for your NEXT step" id="add-description-input"></textarea>
+
+        <div id="new-tutorial-name-input-container" hidden>
+            <input type="text" placeholder="Tutorial Name" id="new-tutorial-name-input">
         </div>
-        <div id="add-description-submit-container">
-            <button id="add-description-submit-button">Done</button>
+        <div id="new-tutorial-name-button-container" hidden>
+            <button id="new-tutorial-name-button">
+                Ok
+            </button>
         </div>
+        <div id="step-details-container">
+            <div id="add-description-container">
+                <textarea type="text" placeholder="Description for your NEXT step"
+                    id="add-description-input"></textarea>
+            </div>
+            <div id="add-description-submit-container">
+                <button id="add-description-submit-button">Done</button>
+            </div>
+            <div id="select-action-type-container">
+                <label for="cars">Choose a car:</label>
+                <select name="cars" id="cars">
+                    <option value="volvo">Volvo</option>
+                    <option value="saab">Saab</option>
+                    <option value="opel">Opel</option>
+                    <option value="audi">Audi</option>
+                </select>
+            </div>
+
+        </div>
+
+
         <div id="stop-new-tutorial-button-container" hidden>
             <button id="stop-new-tutorial-button">
                 Stop

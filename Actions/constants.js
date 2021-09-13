@@ -26,6 +26,16 @@ const CSS = {
         'border-radius': '12px',
         'z-index': 2147483647
     },
+    AUTOMATION_SPEED_SLIDER: {
+        "-webkit-appearance": "none",
+        "width": "100%",
+        "height": "25px",
+        "background": "#d3d3d3",
+        "outline": "none",
+        "opacity": "0.7",
+        "-webkit-transition": ".2s",
+        "transition": "opacity .2s",
+    },
     MAIN_MIDDLE_POPUP: {
         'position': 'fixed',
         'top': '50%',
@@ -57,8 +67,8 @@ const CSS = {
         "position": "fixed",
         "top": '12px',
         "left": '12px',
-        'width': '100px',
-        'height': '100px',
+        'width': '200px',
+        'height': '300px',
         'padding': '12px',
         'background-color': 'orange',
         'border-radius': '12px',
@@ -68,12 +78,16 @@ const CSS = {
 
 const VALUES = {
     STORAGE: {
+        CURRENT_RECORDING_TUTORIAL_NAME: 'CURRENT_RECORDING_TUTORIAL_NAME',
         IS_RECORDING_TUTORIAL: 'IS_RECORDING_TUTORIAL',
         IS_RECORDING_ACTIONS: 'IS_RECORDING_ACTIONS',
         CURRENT_URL: "CURRENT_URL",
         UNSENT_DOM_PATH: "UNSENT_DOM_PATH",
         UNSENT_DOM_PATH_URL: "UNSENT_DOM_PATH_URL",
         DESCRIPTION_FOR_NEXT_STEP: "DESCRIPTION_FOR_NEXT_STEP",
+        STEP_ACTION_TYPE: "STEP_ACTION_TYPE",
+        STEP_ACTION_INPUT_VALUE: "STEP_ACTION_INPUT_VALUE",
+        AUTOMATION_SPEED: "AUTOMATION_SPEED"
     },
     RECORDING_STATUS: {
         STATUS: "RECORDING_STATUS",
@@ -112,9 +126,11 @@ const VALUES = {
 
     FOLLOWING_TUTORIAL_STATUS: {
         STATUS: "FOLLOWING_TUTORIAL_STATUS",
-        BEGAN_FOLLOWING_TUTORIAL: "BEGAN_FOLLOWING_TUTORIAL",
+        IS_MANUALLY_FOLLOWING_TUTORIAL: "IS_MANUALLY_FOLLOWING_TUTORIAL",
         PAUSE_FOLLOWING_TUTORIAL: "PAUSE_FOLLOWING_TUTORIAL",
-        AUTO_FOLLOWING_TUTORIAL: "AUTO_FOLLOWING_TUTORIAL",
+        IS_REQUIRING_OPTIONAL_INFO: "IS_REQUIRING_OPTIONAL_INFO",
+        IS_REQUIRING_MANDATORY_INFO: "IS_REQUIRING_MANDATORY_INFO",
+        IS_AUTO_FOLLOWING_TUTORIAL: "IS_AUTO_FOLLOWING_TUTORIAL",
         NOT_FOLLOWING_TUTORIAL: "NOT_FOLLOWING_TUTORIAL",
     },
     TUTORIAL_ID: {
@@ -126,6 +142,7 @@ const VALUES = {
         STEP_ACTION_TYPE_REDIRECT: "STEP_ACTION_TYPE_REDIRECT",
         STEP_ACTION_TYPE_CLICK_REDIRECT: "STEP_ACTION_TYPE_CLICK_REDIRECT",
         STEP_ACTION_TYPE_CLICK: "STEP_ACTION_TYPE_CLICK",
+        STEP_ACTION_TYPE_INPUT: "STEP_ACTION_TYPE_INPUT",
     }
 }
 
@@ -154,9 +171,29 @@ function arraysEqual(a, b) {
     return true;
 }
 
+function isSubArray(a, b) {
+    if (a === b) return true;
+    if (a == null || b == null) return false;
+
+    const shorterLength = a.length > b.length ? b.length : a.length;
+    for (var i = 0; i < shorterLength; i++) {
+        if (a[i] !== b[i]) return false;
+    }
+    return true;
+}
+
 function checkAndInitializeStorageIfUndefined(result, key, value) {
     if (!result) {
         alert(key)
         syncStorageSet(key, value)
     }
+}
+
+function intervalFromSpeed(speed) {
+    if (speed < 50) {
+        return 5000 - speed * 70;
+    } else {
+        return 1500 - (speed - 50) * 30;
+    }
+
 }

@@ -1,28 +1,41 @@
 $(() => {
     //UI elements
-    let recordTutorialSwitch = $('#record-tutorial-switch');
     let recordTutorialSwitchContainer = $('#record-tutorial-switch-container');
-    let newTutorialButton = $('#new-tutorial-button');
-    let stopNewTutorialButton = $('#stop-new-tutorial-button');
+    let recordTutorialSwitch = $('#record-tutorial-switch');
+
     let newTutorialButtonContainer = $('#new-tutorial-button-container');
+    let newTutorialButton = $('#new-tutorial-button');
+
     let stopNewTutorialButtonContainer = $('#stop-new-tutorial-button-container');
+    let stopNewTutorialButton = $('#stop-new-tutorial-button');
+
     let addDescriptionContainer = $("#add-description-container");
     let addDescriptionInput = $("#add-description-input");
+
     let addDescriptionSubmitContainer = $("#add-description-submit-container");
     let addDescriptionSubmitButton = $('#add-description-submit-button');
+
+    let newTutorialNameInputContainer = $('#new-tutorial-name-input-container');
+    let newTutorialNameInput = $('#new-tutorial-name-input');
+
+    let newTutorialNameButtonContainer = $('#new-tutorial-name-button-container');
+    let newTutorialNameButton = $('#new-tutorial-name-button');
+
 
     function toogleRecording(recording) {
         if (recording) {
             recordTutorialSwitchContainer.show();
-            newTutorialButtonContainer.hide();
             stopNewTutorialButtonContainer.show();
             addDescriptionContainer.show();
             addDescriptionInput.show();
             addDescriptionSubmitButton.show();
+            newTutorialButtonContainer.hide();
             addDescriptionSubmitContainer.show();
+            newTutorialNameInputContainer.hide();
+            newTutorialNameButtonContainer.hide();
         } else {
-            recordTutorialSwitchContainer.hide();
             newTutorialButtonContainer.show();
+            recordTutorialSwitchContainer.hide();
             stopNewTutorialButtonContainer.hide();
             addDescriptionContainer.hide();
             addDescriptionInput.hide();
@@ -31,13 +44,30 @@ $(() => {
         }
     }
 
-    newTutorialButton.on('click', async () => {
-        let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        toogleRecording(true);
-        chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            function: onStartNewTutorialRecording,
+    function onNewTutorialButtonClicked() {
+        newTutorialNameInputContainer.show();
+        newTutorialNameButtonContainer.show();
+        newTutorialButtonContainer.hide();
+        newTutorialNameButton.on('click', async () => {
+            onNewTutorialNameButtonClicked();
         })
+    }
+
+    async function onNewTutorialNameButtonClicked() {
+        if (newTutorialNameInput.val().length > 4) {
+            syncStorageSet(VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME, newTutorialNameInput.val());
+            newTutorialNameInput.val('');
+            let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            toogleRecording(true);
+            chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                function: onStartNewTutorialRecording,
+            });
+        }
+    }
+
+    newTutorialButton.on('click', async () => {
+        onNewTutorialButtonClicked();
     })
 
     stopNewTutorialButton.on('click', async () => {
@@ -86,6 +116,7 @@ $(() => {
 
     addDescriptionSubmitButton.on('click', async () => {
         const message = addDescriptionInput.val();
+        addDescriptionInput.val('');
         syncStorageSet(VALUES.STORAGE.DESCRIPTION_FOR_NEXT_STEP, message);
     })
 })

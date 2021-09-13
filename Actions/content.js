@@ -15,27 +15,44 @@ async function setUp() {
 
 setUp();
 
-
 //tutorial menu
 $('body').append("<div id=\"main-popup-container\"></div>");
 const mainPopUpContainer = $('#main-popup-container');
 mainPopUpContainer.css(CSS.MAIN_OPTIONS_POPUP);
 mainPopUpContainer.hide();
 
+//automation speed slider
+mainPopUpContainer.append("<input type=\"range\" min=\"1\" max=\"100\" value=\"50\" id=\"automation-speed-slider\">");
+const automationSpeedSlider = $('#automation-speed-slider');
+//automationSpeedSlider.css(CSS.AUTOMATION_SPEED_SLIDER);
+//automationSpeedSlider.hide();
+
 //stop tutorial options
 $('body').append("<div id=\"main-stop-options-container\"></div>");
 const mainStopOptionsContainer = $('#main-stop-options-container');
 mainStopOptionsContainer.css(CSS.MAIN_STOP_OPTIONS_CONTAINER);
-mainStopOptionsContainer.on('click', () => {
-    onStopTutorialButtonClicked();
-})
 mainStopOptionsContainer.hide();
 
-//bread
+mainStopOptionsContainer.append("<button id=\"stop-options-stop-button\">Stop</button>");
+const stopOptionsStopButton = $('#stop-options-stop-button');
+stopOptionsStopButton.on('click', () => {
+    onStopTutorialButtonClicked();
+});
+
+
+//middle popup
 $('body').append("<div id=\"main-middle-popup-container\"></div>");
 const mainMiddlePopupContainer = $('#main-middle-popup-container');
 mainMiddlePopupContainer.css(CSS.MAIN_MIDDLE_POPUP);
 mainMiddlePopupContainer.hide();
+
+mainMiddlePopupContainer.append("<button id=\"pop-up-automate-button\">Automate</button>")
+mainMiddlePopupContainer.append("<button id=\"pop-up-manual-button\">Walk Me Through</button>")
+
+const popUpAutomateButton = $("#pop-up-automate-button");
+const popUpManualButton = $("#pop-up-manual-button");
+
+
 
 //MARK: Start of giving suggestions
 class SimpleTutorial {
@@ -56,8 +73,19 @@ class Step {
     }
 };
 
+function automationSpeedSliderHelper(parent = mainPopUpContainer) {
+    parent.append(automationSpeedSlider);
+    automationSpeedSlider.on('change', () => {
+        onAutomationSpeedSliderChanged();
+    })
+    chrome.storage.sync.get(VALUES.STORAGE.AUTOMATION_SPEED, result => {
+        automationSpeedSlider.val(result[VALUES.STORAGE.AUTOMATION_SPEED]);
+    })
+}
+
 async function fetchSimpleTutorials() {
     mainPopUpContainer.empty();
+    automationSpeedSliderHelper();
     const domainName = "https://" + currentUrlObj.hostname + "/";
     const simpleTutorialQuery = query(collection(firestoreRef,
         VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL),
@@ -76,8 +104,9 @@ async function fetchSimpleTutorials() {
         }
         //iterate query to add tutorial buttons
         simpleTutorialQuerySnapshot.forEach((tutorial) => {
-            mainPopUpContainer.append(`<a href=\"#\" class=\"simple-tutorial-button\">${tutorial.data().name}</a>`);
-            const button = $('.simple-tutorial-button');
+
+            mainPopUpContainer.append(`<a class=\"simple-tutorial-button\" id=\"${tutorial.id}\">${tutorial.data().name}</a>`);
+            const button = $(`#${tutorial.id}`);
             button.css(CSS.MAIN_OPTIONS_POPUP_SIMPLE_TUTORIAL_BUTTON);
             //button click function. store tutorial's steps to storage
             button.on('click', () => {
@@ -89,7 +118,39 @@ async function fetchSimpleTutorials() {
 
 
 async function onFollowTutorialButtonClicked(tutorial) {
-    syncStorageSet(VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.FOLLOWING_TUTORIAL_STATUS.BEGAN_FOLLOWING_TUTORIAL);
+    //toogle html elements
+    mainPopUpContainer.hide();
+    mainStopOptionsContainer.show();
+    automationSpeedSliderHelper(mainStopOptionsContainer, true);
+    mainMiddlePopupContainer.show();
+
+    popUpAutomateButton.on('click', () => {
+        onPopUpAutomateButtonClicked(tutorial);
+    })
+
+    popUpManualButton.on('click', () => {
+        onPopUpManualButtonClicked(tutorial);
+    })
+}
+
+async function onPopUpAutomateButtonClicked(tutorial) {
+    loadTutorialToStorage(tutorial).then(() => {
+        syncStorageSet(VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.FOLLOWING_TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL);
+        mainMiddlePopupContainer.hide();
+        showTutorialStepAuto();
+    })
+}
+
+async function onPopUpManualButtonClicked(tutorial) {
+    loadTutorialToStorage(tutorial).then(() => {
+        syncStorageSet(VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL);
+        mainMiddlePopupContainer.hide();
+        showTutorialStepManual();
+    })
+}
+
+async function loadTutorialToStorage(tutorial) {
+
     syncStorageSet(VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_ID, tutorial.id);
     //get all information about the tutorial from firebase
     const stepsQuery = query(collection(firestoreRef,
@@ -102,20 +163,15 @@ async function onFollowTutorialButtonClicked(tutorial) {
     var steps = [];
     stepsQuerySnapshot.forEach((step) => {
         const data = step.data();
-        const stepObj = new Step(data.path, data.index, data.action_type, "", data.redirect_to, "");
+        const stepObj = new Step(data.path, data.index, data.action_type, data.description, data.redirect_to, data.input);
         steps.push(stepObj);
     })
+
     //construct tutorial object
     const tutorialObj = new SimpleTutorial(steps)
     //object structure: tutorialObj.steps[i].path[i]. store object to storage
     syncStorageSet(VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, tutorialObj);
-    //toogle html elements
-    mainPopUpContainer.hide();
-    mainStopOptionsContainer.show();
-    mainMiddlePopupContainer.show();
-    //start showing step
-    const currentStep = tutorialObj.steps[0]
-    showTutorialStep();
+
 }
 
 async function onStopTutorialButtonClicked() {
@@ -128,11 +184,15 @@ async function onStopTutorialButtonClicked() {
 
 async function checkFollowingTutorialStatus() {
     chrome.storage.sync.get(VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, (result) => {
-        checkAndInitializeStorageIfUndefined(result, VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.FOLLOWING_TUTORIAL_STATUS.NOT_FOLLOWING_TUTORIAL)
+        checkAndInitializeStorageIfUndefined(result, VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.FOLLOWING_TUTORIAL_STATUS.NOT_FOLLOWING_TUTORIAL);
         switch (result[VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS]) {
-            case VALUES.FOLLOWING_TUTORIAL_STATUS.BEGAN_FOLLOWING_TUTORIAL:
+            case VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
                 mainStopOptionsContainer.show();
-                showTutorialStep();
+                showTutorialStepManual();
+                break;
+            case VALUES.FOLLOWING_TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL:
+                mainStopOptionsContainer.show();
+                showTutorialStepAuto();
                 break;
             case VALUES.FOLLOWING_TUTORIAL_STATUS.NOT_FOLLOWING_TUTORIAL:
                 fetchSimpleTutorials();
@@ -145,10 +205,11 @@ async function checkFollowingTutorialStatus() {
 }
 
 
-async function showTutorialStep() {
-    chrome.storage.sync.get(VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, result => {
+async function showTutorialStepManual() {
+    chrome.storage.sync.get([VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID], result => {
         const tutorialObj = result[VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID];
         const currentStep = tutorialObj.steps[tutorialObj.currentStep];
+
         switch (currentStep.action_type) {
             case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK:
                 highlightAndScollTo(currentStep.path);
@@ -158,23 +219,57 @@ async function showTutorialStep() {
                 break;
             case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_REDIRECT:
                 location.replace(currentStep.redirect_to);
-                if (tutorialObj.currentStep + 1 < tutorialObj.steps.length) {
-                    tutorialObj.currentStep = tutorialObj.currentStep + 1;
-
-                    syncStorageSet(VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, tutorialObj);
-
-
-                } else {
-                    onStopTutorialButtonClicked();
-                }
-
                 break;
             default:
                 highlightAndScollTo(currentStep.path);
                 break;
         }
 
+
     })
+}
+
+async function showTutorialStepAuto() {
+    chrome.storage.sync.get([VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, VALUES.STORAGE.AUTOMATION_SPEED], result => {
+        const tutorialObj = result[VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID];
+        const currentStep = tutorialObj.steps[tutorialObj.currentStep];
+        const interval = intervalFromSpeed(result[VALUES.STORAGE.AUTOMATION_SPEED]);
+        if (tutorialObj.currentStep >= tutorialObj.steps.length) {
+            onStopTutorialButtonClicked();
+        } else {
+            switch (currentStep.action_type) {
+                case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK:
+                    autoPerformStep(currentStep, tutorialObj, interval);
+                    break;
+                case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK_REDIRECT:
+                    autoPerformStep(currentStep, tutorialObj, interval);
+                    break;
+                case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_REDIRECT:
+                    location.replace(currentStep.redirect_to);
+                    break;
+                default:
+                    autoPerformStep(currentStep, tutorialObj, interval);
+                    break;
+            }
+        }
+    })
+}
+
+function autoPerformStep(step, tutorialObj, interval) {
+    const element = $(jqueryElementStringFromDomPath(step.path));
+    highlightAndScollTo(step.path);
+    element.trigger("click");
+    //this step completed, go to next step
+    tutorialObj.currentStep = tutorialObj.currentStep + 1;
+    syncStorageSet(VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, tutorialObj, () => {
+        setTimeout(() => {
+            showTutorialStepAuto();
+        }, interval);
+    });
+}
+
+function onAutomationSpeedSliderChanged() {
+    syncStorageSet(VALUES.STORAGE.AUTOMATION_SPEED, automationSpeedSlider.val());
 }
 
 
@@ -182,8 +277,12 @@ async function showTutorialStep() {
 document.body.addEventListener('click', (event) => {
     chrome.storage.sync.get([VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.STORAGE.IS_RECORDING_ACTIONS], (result) => {
         checkAndInitializeStorageIfUndefined(result, VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.FOLLOWING_TUTORIAL_STATUS.NOT_FOLLOWING_TUTORIAL)
-        if (result[VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS] === VALUES.FOLLOWING_TUTORIAL_STATUS.FOLLOWING_TUTORIAL) {
-            onClickWhenFollowingTutorial(event);
+        switch (result[VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS]) {
+            case VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
+                onClickWhenFollowingTutorial(event);
+                break;
+            default:
+                break;
         }
         checkAndInitializeStorageIfUndefined(result, VALUES.STORAGE.IS_RECORDING_ACTIONS, false)
         if (result[VALUES.STORAGE.IS_RECORDING_ACTIONS] === true) {
@@ -197,11 +296,19 @@ document.body.addEventListener('click', (event) => {
 async function onClickWhenRecording(event) {
     const domPath = getDomPathStack(event.target);
     const element = $(jqueryElementStringFromDomPath(domPath));
+    //handle redirect
     if (element.closest('a').attr('href') !== undefined) {
         //store this step to local storage first
         syncStorageSet(VALUES.STORAGE.UNSENT_DOM_PATH, domPath);
-        syncStorageSet(VALUES.STORAGE.UNSENT_DOM_PATH_URL, currentUrl)
-    } else {
+        syncStorageSet(VALUES.STORAGE.UNSENT_DOM_PATH_URL, currentUrl);
+        syncStorageSet(VALUES.STORAGE.STEP_ACTION_TYPE, VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK_REDIRECT);
+    } else if (element.is('input')) {
+        alert("input")
+        // syncStorageSet(VALUES.STORAGE.STEP_ACTION_TYPE, VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_INPUT);
+        // syncStorageSet(VALUES.STORAGE.STEP_ACTION_INPUT_VALUE, element.val());
+    }
+    else {
+        syncStorageSet(VALUES.STORAGE.STEP_ACTION_TYPE, VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK);
         addStepToFirebase(domPath);
     }
 
@@ -221,20 +328,22 @@ async function sendUnsentDomPath() {
 
 
 
-function onClickWhenFollowingTutorial(target) {
-    const domPath = getDomPathStack(target);
+function onClickWhenFollowingTutorial(event) {
+    const domPath = getDomPathStack(event.target);
     chrome.storage.sync.get(VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, result => {
         var tutorialObj = result[VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID];
-        const currentStep = tutorialObj.steps[tutorialObj.currentStep]
-        if (arraysEqual(currentStep.path, domPath)) {
+        const currentStep = tutorialObj.steps[tutorialObj.currentStep];
+        if (isSubArray(domPath, currentStep.path)) {
             //user clicked on highlighted element, go to next step if it exists
             if (tutorialObj.currentStep + 1 < tutorialObj.steps.length) {
+                //not last step
                 tutorialObj.currentStep = tutorialObj.currentStep + 1;
-
                 syncStorageSet(VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, tutorialObj);
-
-                highlightAndScollTo(tutorialObj.steps[tutorialObj.currentStep].path)
+            } else {
+                //last step
+                onStopTutorialButtonClicked();
             }
+            showTutorialStepManual();
         }
     })
 }
@@ -261,6 +370,7 @@ function getDomPathStack(element) {
         }
         if (element.hasAttribute('id') && element.id != '') {
             stack.unshift('#' + element.id);
+            return stack;
         } else if (sibCount > 1) {
             stack.unshift(element.nodeName.toLowerCase() + ':eq(' + sibIndex + ')');
         } else {
@@ -268,7 +378,6 @@ function getDomPathStack(element) {
         }
         element = element.parentNode;
     }
-
     return stack.slice(1); // removes the html element
 }
 
@@ -342,10 +451,15 @@ async function postDocToFirebase(data, type, status) {
     try {
         switch (status) {
             case VALUES.RECORDING_STATUS.BEGAN_RECORDING:
-                const docRef = await addDoc(collection(firestoreRef, type), {});
-                docId = docRef.id;
-                syncStorageSet(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID, docId);
-                addTutorialStep(docId);
+                chrome.storage.sync.get(VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME, async result => {
+                    const docRef = await addDoc(collection(firestoreRef, type), {
+                        name: result[VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME],
+                    });
+                    docId = docRef.id;
+                    syncStorageSet(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID, docId);
+                    addTutorialStep(docId);
+                })
+
                 break;
             case VALUES.RECORDING_STATUS.RECORDING:
                 chrome.storage.sync.get([VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID, VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX], (result) => {
@@ -364,13 +478,15 @@ async function postDocToFirebase(data, type, status) {
 
     async function addTutorialStep(docId) {
         if (!isEmpty(docId)) {
-            syncStorageSet(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX, stepIndex)
+            syncStorageSet(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX, stepIndex);
             var urlToSend = currentUrl;
             var description = null;
+            var actionType = VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK;
             const urlKey = VALUES.STORAGE.UNSENT_DOM_PATH_URL;
             const descriptionKey = VALUES.STORAGE.DESCRIPTION_FOR_NEXT_STEP;
+            const stepActionTypeKey = VALUES.STORAGE.STEP_ACTION_TYPE;
             //check if redirect results in unsent data and use previous url
-            chrome.storage.sync.get([urlKey, descriptionKey], async result => {
+            chrome.storage.sync.get([urlKey, descriptionKey, stepActionTypeKey], async result => {
                 if (result[urlKey]) {
                     urlToSend = result[urlKey];
                     syncStorageSet(urlKey, null);
@@ -379,16 +495,22 @@ async function postDocToFirebase(data, type, status) {
                     description = result[descriptionKey];
                     syncStorageSet(descriptionKey, null);
                 }
-                await addDoc(collection(firestoreRef, type, docId, "Steps"), {
+                actionType = result[stepActionTypeKey];
+                syncStorageSet(stepActionTypeKey, VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK);
+                //doc object
+                var docToAdd = {
                     path: data,
                     url: urlToSend,
-                    index: stepIndex,
-                    description: description,
-                });
+                };
+                docToAdd[VALUES.FIRESTORE_CONSTANTS.STEP_ACTION_TYPE] = actionType;
+                docToAdd[VALUES.FIRESTORE_CONSTANTS.STEP_DESCRIPTION] = description;
+                docToAdd[VALUES.FIRESTORE_CONSTANTS.STEP_INDEX] = stepIndex;
+
+                await addDoc(collection(firestoreRef, type, docId, "Steps"), docToAdd);
                 const tutorialRef = doc(firestoreRef, type, docId);
 
                 await updateDoc(tutorialRef, {
-                    all_urls: arrayUnion(urlToSend)
+                    all_urls: arrayUnion(urlToSend),
                 });
             })
         }
