@@ -11,67 +11,27 @@ const currentUrlObj = new URL(currentUrl);
 async function setUp() {
     sendUnsentDomPath();
     checkFollowingTutorialStatus();
+    document.body.addEventListener('click', event => {
+        toogleAllEventListner(event)
+    }, true);
+}
+
+function toogleAllEventListner(event) {
+    if (true) {
+        event.stopImmediatePropagation();
+        event.stopPropagation();
+        event.preventDefault();
+    }
+
+    return false
 }
 
 setUp();
 
-//tutorial menu
-$('body').append("<div id=\"main-popup-container\"></div>");
-const mainPopUpContainer = $('#main-popup-container');
-mainPopUpContainer.css(CSS.MAIN_OPTIONS_POPUP);
-mainPopUpContainer.hide();
-
-//automation speed slider
-mainPopUpContainer.append("<input type=\"range\" min=\"1\" max=\"100\" value=\"50\" id=\"automation-speed-slider\">");
-const automationSpeedSlider = $('#automation-speed-slider');
-//automationSpeedSlider.css(CSS.AUTOMATION_SPEED_SLIDER);
-//automationSpeedSlider.hide();
-
-//stop tutorial options
-$('body').append("<div id=\"main-stop-options-container\"></div>");
-const mainStopOptionsContainer = $('#main-stop-options-container');
-mainStopOptionsContainer.css(CSS.MAIN_STOP_OPTIONS_CONTAINER);
-mainStopOptionsContainer.hide();
-
-mainStopOptionsContainer.append("<button id=\"stop-options-stop-button\">Stop</button>");
-const stopOptionsStopButton = $('#stop-options-stop-button');
-stopOptionsStopButton.on('click', () => {
-    onStopTutorialButtonClicked();
-});
-
-
-//middle popup
-$('body').append("<div id=\"main-middle-popup-container\"></div>");
-const mainMiddlePopupContainer = $('#main-middle-popup-container');
-mainMiddlePopupContainer.css(CSS.MAIN_MIDDLE_POPUP);
-mainMiddlePopupContainer.hide();
-
-mainMiddlePopupContainer.append("<button id=\"pop-up-automate-button\">Automate</button>")
-mainMiddlePopupContainer.append("<button id=\"pop-up-manual-button\">Walk Me Through</button>")
-
-const popUpAutomateButton = $("#pop-up-automate-button");
-const popUpManualButton = $("#pop-up-manual-button");
 
 
 
 //MARK: Start of giving suggestions
-class SimpleTutorial {
-    constructor(steps) {
-        this.steps = steps;
-        this.currentStep = 0;
-    }
-};
-
-class Step {
-    constructor(path, index, action_type, description = "", redirect_to = "", input = "") {
-        this.path = path;
-        this.index = index;
-        this.action_type = action_type;
-        this.description = description;
-        this.redirect_to = redirect_to;
-        this.input = input;
-    }
-};
 
 function automationSpeedSliderHelper(parent = mainPopUpContainer) {
     parent.append(automationSpeedSlider);
@@ -275,6 +235,7 @@ function onAutomationSpeedSliderChanged() {
 
 //MARK: Start of recording events
 document.body.addEventListener('click', (event) => {
+
     chrome.storage.sync.get([VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.STORAGE.IS_RECORDING_ACTIONS], (result) => {
         checkAndInitializeStorageIfUndefined(result, VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.FOLLOWING_TUTORIAL_STATUS.NOT_FOLLOWING_TUTORIAL)
         switch (result[VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS]) {
@@ -289,6 +250,7 @@ document.body.addEventListener('click', (event) => {
             onClickWhenRecording(event);
         }
     });
+
 });
 
 
@@ -516,7 +478,6 @@ async function postDocToFirebase(data, type, status) {
         }
     }
 }
-
 
 //MARK: message handler
 // chrome.runtime.onMessage.addListener(

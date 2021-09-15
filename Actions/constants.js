@@ -143,6 +143,7 @@ const VALUES = {
         STEP_ACTION_TYPE_CLICK_REDIRECT: "STEP_ACTION_TYPE_CLICK_REDIRECT",
         STEP_ACTION_TYPE_CLICK: "STEP_ACTION_TYPE_CLICK",
         STEP_ACTION_TYPE_INPUT: "STEP_ACTION_TYPE_INPUT",
+        STEP_ACTION_TYPE_SELECT: "STEP_ACTION_TYPE_SELECT",
     }
 }
 
@@ -191,9 +192,15 @@ function checkAndInitializeStorageIfUndefined(result, key, value) {
 
 function intervalFromSpeed(speed) {
     if (speed < 50) {
-        return 5000 - speed * 70;
+        return 5100 - speed * 70;
     } else {
-        return 1500 - (speed - 50) * 30;
+        return 1600 - (speed - 50) * 30;
     }
+}
 
+function tooglePointerEvent() {
+    chrome.storage.sync.get([VALUES.STORAGE.STEP_ACTION_TYPE], result => {
+
+    })
+    $('body').css('pointer-events', 'none')
 }

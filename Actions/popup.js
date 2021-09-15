@@ -21,7 +21,7 @@ $(() => {
     let newTutorialNameButtonContainer = $('#new-tutorial-name-button-container');
     let newTutorialNameButton = $('#new-tutorial-name-button');
 
-
+    //helper function for starting or ending a tutorial (not for each step)
     function toogleRecording(recording) {
         if (recording) {
             recordTutorialSwitchContainer.show();
@@ -80,11 +80,10 @@ $(() => {
             function: onStopNewTutorialRecording,
         })
     })
-
+    //executed per popup open. check previous states
     chrome.storage.sync.get(VALUES.RECORDING_STATUS.STATUS, (result) => {
         switch (result[VALUES.RECORDING_STATUS.STATUS]) {
             case VALUES.RECORDING_STATUS.RECORDING: case VALUES.RECORDING_STATUS.BEGAN_RECORDING:
-
                 chrome.storage.sync.get(VALUES.STORAGE.IS_RECORDING_ACTIONS, (result) => {
                     recordTutorialSwitch.prop('checked', result[VALUES.STORAGE.IS_RECORDING_ACTIONS]);
                 });
@@ -100,19 +99,6 @@ $(() => {
                 break;
         };
     });
-
-    // When the button is clicked, inject setPageBackgroundColor into current page
-    recordTutorialSwitch.on('change', async () => {
-        let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-        const checked = recordTutorialSwitch.prop('checked')
-
-        chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            function: onRecordTutorialSwitchChanged,
-            args: [checked]
-        })
-    })
 
     addDescriptionSubmitButton.on('click', async () => {
         const message = addDescriptionInput.val();

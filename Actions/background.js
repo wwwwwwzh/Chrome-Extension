@@ -13,4 +13,5 @@ chrome.runtime.onInstalled.addListener(() => {
     syncStorageSet("RECORDING_STATUS", "NOT_RECORDING")
     syncStorageSet("IS_RECORDING_ACTIONS", false)
     syncStorageSet("CURRENT_URL", "")
+    syncStorageSet("STEP_ACTION_TYPE", "STEP_ACTION_TYPE_NULL")
 });
