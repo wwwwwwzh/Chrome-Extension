@@ -13,7 +13,7 @@
     <div id="popup-container">
         <div id="record-tutorial-switch-container" hidden>
             <h3>
-                Auto-recording
+                Complete Action Detail First
             </h3>
             <label class="switch">
                 <input type="checkbox" id="record-tutorial-switch" disabled="disabled">
@@ -34,7 +34,7 @@
                 Ok
             </button>
         </div>
-        <div id="step-details-container">
+        <div id="step-details-container" class="element-container">
             <div id="add-description-container">
                 <textarea type="text" placeholder="Description for your NEXT step"
                     id="add-description-input"></textarea>
@@ -42,18 +42,23 @@
             <div id="add-description-submit-container">
                 <button id="add-description-submit-button">Done</button>
             </div>
-            <div id="select-action-type-container">
-                <label for="cars">Choose a car:</label>
+            <div id="select-action-type-container" class="element-container">
+                <label for="cars">Action Type</label>
                 <select name="cars" id="cars">
-                    <option value="volvo">Volvo</option>
-                    <option value="saab">Saab</option>
-                    <option value="opel">Opel</option>
-                    <option value="audi">Audi</option>
+                    <option value="STEP_ACTION_TYPE_REDIRECT">Redirect (Open another page directly)</option>
+                    <option value="STEP_ACTION_TYPE_CLICK_REDIRECT">Click and redirect (Open another page by clicking)
+                    </option>
+                    <option value="STEP_ACTION_TYPE_CLICK">Click</option>
+                    <option value="STEP_ACTION_TYPE_INPUT">Input</option>
+                    <option value="STEP_ACTION_TYPE_SELECT">Select</option>
                 </select>
             </div>
+            <div id="click-action-name-input-container" class="element-container">
+                <input type="text" placeholder="Name" id="click-action-name-input">
+            </div>
+
 
         </div>
-
 
         <div id="stop-new-tutorial-button-container" hidden>
             <button id="stop-new-tutorial-button">
