@@ -1,19 +1,13 @@
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const firestoreRef = getFirestore(app);
+
 $(() => {
     //UI elements
-    let recordTutorialSwitchContainer = $('#record-tutorial-switch-container');
-    let recordTutorialSwitch = $('#record-tutorial-switch');
+    let newTutorialContainer = $('#new-tutorial-container');
 
     let newTutorialButtonContainer = $('#new-tutorial-button-container');
     let newTutorialButton = $('#new-tutorial-button');
-
-    let stopNewTutorialButtonContainer = $('#stop-new-tutorial-button-container');
-    let stopNewTutorialButton = $('#stop-new-tutorial-button');
-
-    let addDescriptionContainer = $("#add-description-container");
-    let addDescriptionInput = $("#add-description-input");
-
-    let addDescriptionSubmitContainer = $("#add-description-submit-container");
-    let addDescriptionSubmitButton = $('#add-description-submit-button');
 
     let newTutorialNameInputContainer = $('#new-tutorial-name-input-container');
     let newTutorialNameInput = $('#new-tutorial-name-input');
@@ -21,28 +15,59 @@ $(() => {
     let newTutorialNameButtonContainer = $('#new-tutorial-name-button-container');
     let newTutorialNameButton = $('#new-tutorial-name-button');
 
-    //helper function for starting or ending a tutorial (not for each step)
-    function toogleRecording(recording) {
-        if (recording) {
-            recordTutorialSwitchContainer.show();
-            stopNewTutorialButtonContainer.show();
-            addDescriptionContainer.show();
-            addDescriptionInput.show();
-            addDescriptionSubmitButton.show();
-            newTutorialButtonContainer.hide();
-            addDescriptionSubmitContainer.show();
-            newTutorialNameInputContainer.hide();
-            newTutorialNameButtonContainer.hide();
-        } else {
-            newTutorialButtonContainer.show();
-            recordTutorialSwitchContainer.hide();
-            stopNewTutorialButtonContainer.hide();
-            addDescriptionContainer.hide();
-            addDescriptionInput.hide();
-            addDescriptionSubmitButton.hide();
-            addDescriptionSubmitContainer.hide();
-        }
-    }
+    //
+    let stepDetailsContainer = $('#step-details-container');
+
+    let recordTutorialSwitchContainer = $('#record-tutorial-switch-container');
+    let recordTutorialSwitch = $('#record-tutorial-switch');
+
+
+    let stepNameInputContainer = $("#step-name-input-container");
+    let stepNameInput = $("#step-name-input");
+
+    let stepDescriptionContainer = $("#step-description-container");
+    let stepDescriptionInput = $("#step-description-input");
+
+    let selectActionTypeContainer = $('#select-action-type-container');
+    let selectActionTypeSelect = $('#select-action-type-select');
+
+    let selectedElementIndicatorContainer = $('#selected-element-indicator-container');
+    let selectedElementIndicator = $('#selected-element-indicator');
+
+    let clickActionNameInputContainer = $('#click-action-name-input-container');
+    let clickActionNameInput = $('#click-action-name-input');
+
+    let clickActionDescriptionInputContainer = $('#click-action-description-input-container');
+    let clickActionDescriptionInput = $('#click-action-description-input');
+
+    let addAlternativeActionButtonContainer = $('#add-alternative-action-button-container');
+    let addAlternativeActionButton = $('#add-alternative-action-button');
+
+    // let clickActionNextButtonContainer = $('#click-action-next-button-container');
+    // let clickActionNextButton = $('#click-action-next-button');
+
+    let inputActionInputContainer = $('#input-action-input-container');
+    let inputActionInput = $('#input-action-input');
+
+    let urlInputContainer = $('#url-input-container');
+    let urlInput = $('#url-input');
+
+    // let isMandatoryCheckboxContainer = $('#is-mandatory-checkbox-container');
+    // let isMandatoryCheckbox = $('#is-mandatory-checkbox');
+
+    let nextButtonContainer = $('#next-button-container');
+    let nextButton = $('#next-button');
+
+    let finishButtonContainer = $('#finish-button-container');
+    let finishButton = $('#finish-button');
+
+    let cancelButtonContainer = $('#cancel-button-container');
+    let cancelButton = $('#cancel-button');
+
+    //MARK: new tutorial button set up
+    newTutorialButton.on('click', async () => {
+        onNewTutorialButtonClicked();
+    })
 
     function onNewTutorialButtonClicked() {
         newTutorialNameInputContainer.show();
@@ -54,69 +79,411 @@ $(() => {
     }
 
     async function onNewTutorialNameButtonClicked() {
-        if (newTutorialNameInput.val().length > 4) {
+        if (newTutorialNameInput.val().length > 1) {
             syncStorageSet(VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME, newTutorialNameInput.val());
+            syncStorageSet(VALUES.RECORDING_STATUS.STATUS, VALUES.RECORDING_STATUS.BEGAN_RECORDING);
+            syncStorageSet(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX, 0);
+            syncStorageSet(VALUES.STORAGE.CURRENT_STEP_OBJ, undefined);
+            syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, undefined);
             newTutorialNameInput.val('');
-            let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            toogleRecording(true);
-            chrome.scripting.executeScript({
-                target: { tabId: tab.id },
-                function: onStartNewTutorialRecording,
-            });
+            showStepContainer();
         }
     }
 
-    newTutorialButton.on('click', async () => {
-        onNewTutorialButtonClicked();
-    })
+    //MARK: Set up menu if needed
+    function showStepContainer() {
+        newTutorialContainer.hide();
+        stepDetailsContainer.show();
+    }
 
-    stopNewTutorialButton.on('click', async () => {
-        let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        toogleRecording(false);
-        recordTutorialSwitch.prop('checked', false);
+    function showNewRecordingContainer() {
+        stepDetailsContainer.hide();
+        newTutorialContainer.show();
+    }
 
-        chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            function: onStopNewTutorialRecording,
-        })
-    })
-    //executed per popup open. check previous states
-    chrome.storage.sync.get(VALUES.RECORDING_STATUS.STATUS, (result) => {
+
+    var currentStepObj = undefined;
+
+    chrome.storage.sync.get([VALUES.RECORDING_STATUS.STATUS, VALUES.STORAGE.IS_RECORDING_ACTIONS, VALUES.STORAGE.CURRENT_STEP_OBJ, VALUES.STORAGE.CURRENT_SELECTED_ELEMENT], (result) => {
         switch (result[VALUES.RECORDING_STATUS.STATUS]) {
             case VALUES.RECORDING_STATUS.RECORDING: case VALUES.RECORDING_STATUS.BEGAN_RECORDING:
-                chrome.storage.sync.get(VALUES.STORAGE.IS_RECORDING_ACTIONS, (result) => {
-                    recordTutorialSwitch.prop('checked', result[VALUES.STORAGE.IS_RECORDING_ACTIONS]);
-                });
-                toogleRecording(true);
+                recordTutorialSwitch.prop('checked', result[VALUES.STORAGE.IS_RECORDING_ACTIONS]);
+                //TODO: get h3 element
+                $('h3').html(result[VALUES.STORAGE.IS_RECORDING_ACTIONS] ? "Recording" : "Not Recording");
+                currentStepObj = result[VALUES.STORAGE.CURRENT_STEP_OBJ];
+                loadMenuFromStorage(currentStepObj);
+
+                const selectedElementPath = result[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT];
+                if (typeof selectedElementPath !== 'undefined') {
+                    selectedElementIndicator.html(`Selected Element: ${selectedElementPath.slice(selectedElementPath.length - 2, selectedElementPath.length)}`)
+                } else {
+                    selectedElementIndicator.html('Selected Element: None')
+                }
+                showStepContainer();
                 break;
             case VALUES.RECORDING_STATUS.NOT_RECORDING:
                 syncStorageSet(VALUES.STORAGE.IS_RECORDING_ACTIONS, false);
-                toogleRecording(false);
+                showNewRecordingContainer();
                 break;
             default:
                 onStopNewTutorialRecording()
-                toogleRecording(false);
+                showNewRecordingContainer();
                 break;
         };
     });
 
-    addDescriptionSubmitButton.on('click', async () => {
-        const message = addDescriptionInput.val();
-        addDescriptionInput.val('');
-        syncStorageSet(VALUES.STORAGE.DESCRIPTION_FOR_NEXT_STEP, message);
+    function loadMenuFromStorage(currentStepObj) {
+        if (typeof currentStepObj !== 'undefined') {
+            switchMenu(currentStepObj.actionType);
+            selectActionTypeSelect.val(currentStepObj.actionType);
+        } else {
+            switchMenu(VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL);
+            selectActionTypeSelect.val(VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL);
+        }
+    }
+
+    //MARK: Helper functions to retrieve and update step object 
+    function storeCurrentStep() {
+        syncStorageSet(VALUES.STORAGE.CURRENT_STEP_OBJ, currentStepObj);
+    }
+
+    function prepareCurrentStep(callback) {
+        //check if step exists
+        if (typeof currentStepObj === 'undefined') {
+            const indexKey = VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX;
+            chrome.storage.sync.get([indexKey], result => {
+                currentStepObj = new Step(result[indexKey], VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL, new NullAction(), "", "");
+                callback();
+            })
+        } else {
+            callback();
+        }
+    }
+
+    function updateCurrentStep(update) {
+        prepareCurrentStep(() => {
+            update();
+            storeCurrentStep();
+        });
+    }
+
+    selectActionTypeSelect.on('change', () => {
+        switchMenu(selectActionTypeSelect.val());
     })
+
+    function callFunctionOnActionType(actionType, clickFunc, carFunc, inputFunc, redirectFunc, selectFunc, nullFunc = null, defaultFunc = null) {
+        switch (actionType) {
+            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL:
+                (nullFunc !== null) && nullFunc();
+                break;
+            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK:
+                (clickFunc !== null) && clickFunc();
+                break;
+            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK_REDIRECT:
+                (carFunc !== null) && carFunc();
+                break;
+            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_INPUT:
+                (inputFunc !== null) && inputFunc();
+                break;
+            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_REDIRECT:
+                (redirectFunc !== null) && redirectFunc();
+                break;
+            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SELECT:
+                (selectFunc !== null) && selectFunc();
+                break;
+            default:
+                (defaultFunc !== null) && defaultFunc();
+                break;
+        }
+    }
+
+    function switchMenu(selection) {
+        callFunctionOnActionType(selection, showClickMenu, showClickAndRedirectMenu, showInputMenu, showRedirectMenu, showSelectMenu, showNullMenu);
+        updateCurrentStep(() => {
+            if (currentStepObj.actionType !== selection) {
+                currentStepObj.actionType = selection;
+                callFunctionOnActionType(
+                    selection,
+                    () => {
+                        currentStepObj.actionObject = new ClickAction(new ClickGuide([], null, null, false, null), []);
+                    }, () => {
+                        currentStepObj.actionObject = new ClickAction(new ClickGuide([], null, null, true, null), []);
+                    }, () => {
+                        currentStepObj.actionObject = new InputAction([], "", [], false, VALUES.INPUT_TYPES.TEXT);
+                    }, () => {
+                        currentStepObj.actionObject = new RedirectAction(null);
+                    }, () => {
+                        currentStepObj.actionObject = new SelectAction([], null, false);
+                    }, () => {
+                        currentStepObj.actionObject = new NullAction();
+                    });
+
+            }
+            loadMenuItems(selection);
+        });
+    }
+
+    function loadMenuItems(selection) {
+        stepNameInput.val(currentStepObj.name);
+        stepDescriptionInput.val(currentStepObj.description);
+        callFunctionOnActionType(
+            selection,
+            () => {
+                //click
+                clickActionNameInput.val(currentStepObj.actionObject.defaultClick.name);
+                clickActionDescriptionInput.val(currentStepObj.actionObject.defaultClick.description);
+            }, () => {
+                //car
+                urlInput.val(currentStepObj.actionObject.defaultClick.url);
+            }, () => {
+                //input
+                inputActionInput.val(currentStepObj.actionObject.defaultText)
+            }, () => {
+                //redirect
+                urlInput.val(currentStepObj.actionObject.url);
+            }, () => {
+                //select
+            });
+    }
+
+    //MARK: Step action menu UI manipulation
+    function clearCurrentMenu() {
+        stepDetailsContainer.children().hide();
+        $('.common-action-container').show();
+        selectedElementIndicatorContainer.show();
+    }
+
+    function showNullMenu() {
+        stepDetailsContainer.children().hide();
+        $('.common-action-container').show();
+    }
+
+    function showClickMenu() {
+        clearCurrentMenu();
+        $('.customizable-action-container').show();
+        $('.click-action-container').show();
+        addAlternativeActionButton.html('Add Alternative Click');
+    }
+
+    function showInputMenu() {
+        clearCurrentMenu();
+        inputActionInputContainer.show();
+        $('.customizable-action-container').show();
+        addAlternativeActionButton.html('Add Alternative Input');
+    }
+
+    function showClickAndRedirectMenu() {
+        clearCurrentMenu();
+        urlInputContainer.show();
+    }
+
+    function showRedirectMenu() {
+        clearCurrentMenu();
+        selectedElementIndicatorContainer.hide();
+        urlInputContainer.show();
+    }
+
+    function showSelectMenu() {
+        clearCurrentMenu();
+    }
+
+
+    //MARK: attach listener to inputs
+    stepNameInput.on('input', () => {
+        updateCurrentStep(() => {
+            currentStepObj.name = stepNameInput.val();
+        })
+    })
+
+    stepDescriptionInput.on('input', () => {
+        updateCurrentStep(() => {
+            currentStepObj.description = stepDescriptionInput.val();
+        })
+    })
+
+    urlInput.on('input', () => {
+        const value = urlInput.val();
+        updateCurrentStep(() => {
+            callFunctionOnActionType(
+                currentStepObj.actionType, null, () => {
+                    //click & redirect
+                    currentStepObj.actionObject.defaultClick.url = value;
+                }, null, () => {
+                    //redirect
+                    currentStepObj.actionObject.url = value;
+                }, null);
+        })
+    })
+
+    inputActionInput.on('input', () => {
+        const value = inputActionInput.val();
+        updateCurrentStep(() => {
+            callFunctionOnActionType(currentStepObj.actionType, null, null, () => {
+                currentStepObj.actionObject.defaultText = value;
+            }, null, null);
+        })
+    })
+
+    clickActionNameInput.on('input', () => {
+        const value = clickActionNameInput.val();
+        updateCurrentStep(() => {
+            callFunctionOnActionType(
+                currentStepObj.actionType, () => {
+                    //click
+                    currentStepObj.actionObject.defaultClick.name = value;
+                }, () => { }, () => { }, () => { }, () => { });
+        })
+    })
+
+    clickActionDescriptionInput.on('input', () => {
+        const value = clickActionDescriptionInput.val();
+        updateCurrentStep(() => {
+            callFunctionOnActionType(
+                currentStepObj.actionType, () => {
+                    //click
+                    currentStepObj.actionObject.defaultClick.description = value;
+                }, () => { }, () => { }, () => { }, () => { });
+        })
+    })
+
+
+
+    //MARK: button events
+    recordTutorialSwitch.on('change', () => {
+        const checked = recordTutorialSwitch.prop('checked');
+        syncStorageSet(VALUES.STORAGE.IS_RECORDING_ACTIONS, checked, () => {
+            $('h3').html(checked ? "Recording" : "Not Recording");
+        })
+    })
+
+    nextButton.on('click', async () => {
+        onNextButtonClicked();
+    })
+
+    async function onNextButtonClicked() {
+        chrome.storage.sync.get([VALUES.STORAGE.CURRENT_SELECTED_ELEMENT], result => {
+            const path = result[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT];
+            callFunctionOnActionType(
+                currentStepObj.actionType,
+                () => {
+                    currentStepObj.actionObject.defaultClick.path = path;
+                }, () => {
+                    currentStepObj.actionObject.defaultClick.path = path;
+                }, () => {
+                    //const inputElement = $(jqueryElementStringFromDomPath(path));
+                    //TODO: find input type
+                    currentStepObj.actionObject.inputType = "text";
+                    currentStepObj.actionObject.path = path;
+                }, null, () => {
+                    const selectPath = path.slice(0, path.length - 1);
+                    const selectElement = $(jqueryElementStringFromDomPath(selectPath));
+                    currentStepObj.actionObject.path = selectPath;
+                    currentStepObj.actionObject.defaultValue = selectElement.val();
+                });
+
+            //check if step is complete
+            if (isStepCompleted(currentStepObj)) {
+                //upload to firebase
+                addStepToFirebase(currentStepObj).then(() => {
+                    //refresh menu
+                    if (currentStepObj.actionType === VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_REDIRECT || currentStepObj.actionType === VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK_REDIRECT) {
+                        //after posting to firebase, redirect to specified url
+                        chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+                            chrome.tabs.sendMessage(tabs[0].id, { redirect: urlInput.val() });
+                        });
+                    }
+                    updateCurrentStep(() => { currentStepObj = undefined; })
+                    loadMenuFromStorage(undefined);
+                    syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, undefined);
+                    selectedElementIndicator.html('Selected Element: None');
+                })
+            } else {
+                alert("Please complete required fields first");
+            }
+        })
+    }
+
+    finishButton.on('click', async () => {
+        syncStorageSet(VALUES.RECORDING_STATUS.STATUS, VALUES.RECORDING_STATUS.NOT_RECORDING);
+        syncStorageSet(VALUES.STORAGE.IS_RECORDING_ACTIONS, false);
+        syncStorageSet(VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME, undefined);
+        syncStorageSet(VALUES.STORAGE.CURRENT_STEP_OBJ, undefined);
+    })
+    cancelButton.on('click', async () => {
+        syncStorageSet(VALUES.RECORDING_STATUS.STATUS, VALUES.RECORDING_STATUS.NOT_RECORDING);
+        syncStorageSet(VALUES.STORAGE.IS_RECORDING_ACTIONS, false);
+        syncStorageSet(VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME, undefined);
+        syncStorageSet(VALUES.STORAGE.CURRENT_STEP_OBJ, undefined);
+    })
+
+    //Firebase actions
+    async function addStepToFirebase(stepObj) {
+        chrome.storage.sync.get(VALUES.RECORDING_STATUS.STATUS, (result) => {
+            switch (result[VALUES.RECORDING_STATUS.STATUS]) {
+                case VALUES.RECORDING_STATUS.BEGAN_RECORDING:
+                    postDocToFirebase(
+                        stepObj,
+                        VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL,
+                        VALUES.RECORDING_STATUS.BEGAN_RECORDING
+                    ).then(() => {
+                        syncStorageSet(VALUES.RECORDING_STATUS.STATUS, VALUES.RECORDING_STATUS.RECORDING);
+                    })
+                    break;
+                case VALUES.RECORDING_STATUS.RECORDING:
+                    postDocToFirebase(
+                        stepObj,
+                        VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL,
+                        VALUES.RECORDING_STATUS.RECORDING
+                    );
+                    break;
+                default:
+                    break;
+            };
+        });
+    }
+
+    async function postDocToFirebase(stepObj, type, status) {
+        var docId;
+        var stepIndex = 0;
+        try {
+            switch (status) {
+                case VALUES.RECORDING_STATUS.BEGAN_RECORDING:
+                    chrome.storage.sync.get([VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME, VALUES.STORAGE.CURRENT_URL], async result => {
+                        const docRef = await addDoc(collection(firestoreRef, type), {
+                            name: result[VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME],
+                        });
+                        docId = docRef.id;
+                        syncStorageSet(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID, docId);
+                        addTutorialStep(docId, result[VALUES.STORAGE.CURRENT_URL]);
+                    })
+
+                    break;
+                case VALUES.RECORDING_STATUS.RECORDING:
+                    chrome.storage.sync.get([VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID, VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX, VALUES.STORAGE.CURRENT_URL], (result) => {
+                        stepIndex = result[VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX] + 1;
+                        docId = result[VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID];
+                        addTutorialStep(docId, result[VALUES.STORAGE.CURRENT_URL]);
+                    });
+                    break;
+                default:
+                    break;
+            }
+        } catch (e) {
+            console.error("Error adding document: ", e);
+        }
+
+        async function addTutorialStep(docId, currentUrl) {
+            if (!isEmpty(docId)) {
+                syncStorageSet(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX, stepIndex);
+                //doc object
+                stepObj.index = stepIndex;
+                await addDoc(collection(firestoreRef, type, docId, "Steps"), JSON.parse(JSON.stringify(stepObj)));
+                const tutorialRef = doc(firestoreRef, type, docId);
+                await updateDoc(tutorialRef, {
+                    all_urls: arrayUnion(currentUrl),
+                })
+            }
+        }
+    }
 })
 
-function onStartNewTutorialRecording() {
-    syncStorageSet(VALUES.RECORDING_STATUS.STATUS, VALUES.RECORDING_STATUS.BEGAN_RECORDING);
-}
-
-function onStopNewTutorialRecording() {
-    syncStorageSet(VALUES.RECORDING_STATUS.STATUS, VALUES.RECORDING_STATUS.NOT_RECORDING);
-    syncStorageSet(VALUES.STORAGE.IS_RECORDING_ACTIONS, false);
-    syncStorageSet(VALUES.STORAGE.DESCRIPTION_FOR_NEXT_STEP, undefined);
-}
-
-function onRecordTutorialSwitchChanged(checked) {
-    syncStorageSet(VALUES.STORAGE.IS_RECORDING_ACTIONS, checked)
-}

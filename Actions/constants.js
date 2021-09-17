@@ -77,6 +77,11 @@ const CSS = {
 }
 
 const VALUES = {
+    INPUT_TYPES: {
+        TEXT: "INPUT_TYPES_TEXT",
+        URL: "INPUT_TYPES_URL",
+
+    },
     STORAGE: {
         CURRENT_RECORDING_TUTORIAL_NAME: 'CURRENT_RECORDING_TUTORIAL_NAME',
         IS_RECORDING_TUTORIAL: 'IS_RECORDING_TUTORIAL',
@@ -84,10 +89,12 @@ const VALUES = {
         CURRENT_URL: "CURRENT_URL",
         UNSENT_DOM_PATH: "UNSENT_DOM_PATH",
         UNSENT_DOM_PATH_URL: "UNSENT_DOM_PATH_URL",
-        DESCRIPTION_FOR_NEXT_STEP: "DESCRIPTION_FOR_NEXT_STEP",
+        //DESCRIPTION_FOR_NEXT_STEP: "DESCRIPTION_FOR_NEXT_STEP",
         STEP_ACTION_TYPE: "STEP_ACTION_TYPE",
-        STEP_ACTION_INPUT_VALUE: "STEP_ACTION_INPUT_VALUE",
-        AUTOMATION_SPEED: "AUTOMATION_SPEED"
+        //STEP_ACTION_INPUT_VALUE: "STEP_ACTION_INPUT_VALUE",
+        AUTOMATION_SPEED: "AUTOMATION_SPEED",
+        CURRENT_STEP_OBJ: "CURRENT_STEP_OBJ",
+        CURRENT_SELECTED_ELEMENT: "CURRENT_SELECTED_ELEMENT",
     },
     RECORDING_STATUS: {
         STATUS: "RECORDING_STATUS",
@@ -104,12 +111,7 @@ const VALUES = {
         SIMPLE_TUTORIAL: "Simple Tutorials",
         SIMPLE_TUTORIAL_STEPS: "Steps",
         SIMPLE_TUTORIAL_ALL_URLS: "all_urls",
-        STEP_ACTION_TYPE: "action_type",
-        STEP_ACTION_REDIRECT_TO: "redirect_to",
-        STEP_ACTION_INPUT: "input",
-        STEP_DESCRIPTION: "description",
         STEP_INDEX: "index",
-
     },
     FIRESTORE_QUERY_TYPES: {
         ARRAY_CONTAINS: "array-contains",
@@ -198,9 +200,38 @@ function intervalFromSpeed(speed) {
     }
 }
 
+function min(a, b) {
+    return a > b ? b : a;
+}
+
 function tooglePointerEvent() {
     chrome.storage.sync.get([VALUES.STORAGE.STEP_ACTION_TYPE], result => {
 
     })
     $('body').css('pointer-events', 'none')
+}
+
+/**
+ * 
+ * @param {Array} pathStack 
+ * @returns String of element path starting from the first ancestor with id attribute
+ * stored in jquery element selector format: 'element > element...'
+ */
+function jqueryElementStringFromDomPath(pathStack) {
+    var jqueryString = '';
+    const numberOfElement = pathStack.length;
+    for (let i = 0; i < numberOfElement; i++) {
+        const currentElement = pathStack[i]
+        if (currentElement[0] === '#') {
+            //cut everything before it
+            jqueryString = currentElement;
+        } else {
+            jqueryString += currentElement;
+        }
+        if (i == numberOfElement - 1) {
+            break;
+        }
+        jqueryString += ' > '
+    }
+    return jqueryString
 }

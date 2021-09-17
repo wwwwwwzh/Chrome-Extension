@@ -5,46 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="assets/css/popup.css">
     <script src="packages/jquery-3.6.0.min.js"></script>
+    <script src="packages/firebase.js"></script>
     <script src="constants.js"></script>
+    <script src="classes.js"></script>
     <script src="popup.js"></script>
 </head>
 
 <body>
     <div id="popup-container">
-        <div id="record-tutorial-switch-container" hidden>
-            <h3>
-                Complete Action Detail First
-            </h3>
-            <label class="switch">
-                <input type="checkbox" id="record-tutorial-switch" disabled="disabled">
-                <span class="slider round"></span>
-            </label>
-        </div>
-        <div id="new-tutorial-button-container" hidden>
-            <button id="new-tutorial-button">
-                New Tutorial
-            </button>
+        <div id="new-tutorial-container" hidden>
+            <div id="new-tutorial-button-container" class="element-container">
+                <button id="new-tutorial-button">
+                    New Tutorial
+                </button>
+            </div>
+
+            <div id="new-tutorial-name-input-container" class="element-container" hidden>
+                <input type="text" placeholder="Tutorial Name" id="new-tutorial-name-input">
+            </div>
+            <div id="new-tutorial-name-button-container" class="element-container" hidden>
+                <button id="new-tutorial-name-button">
+                    Ok
+                </button>
+            </div>
         </div>
 
-        <div id="new-tutorial-name-input-container" hidden>
-            <input type="text" placeholder="Tutorial Name" id="new-tutorial-name-input">
-        </div>
-        <div id="new-tutorial-name-button-container" hidden>
-            <button id="new-tutorial-name-button">
-                Ok
-            </button>
-        </div>
-        <div id="step-details-container" class="element-container">
-            <div id="add-description-container">
-                <textarea type="text" placeholder="Description for your NEXT step"
-                    id="add-description-input"></textarea>
+
+        <div id="step-details-container" class="element-container" hidden>
+            <div id="record-tutorial-switch-container" class="element-container common-action-container">
+                <h3>Recording </h3>
+                <label class="switch">
+                    <input type="checkbox" id="record-tutorial-switch">
+                    <span class="slider round"></span>
+                </label>
             </div>
-            <div id="add-description-submit-container">
-                <button id="add-description-submit-button">Done</button>
-            </div>
-            <div id="select-action-type-container" class="element-container">
-                <label for="cars">Action Type</label>
-                <select name="cars" id="cars">
+
+            <div id="select-action-type-container" class="element-container common-action-container">
+                <p>Action Type</p>
+                <select name="action-type" id="select-action-type-select">
+                    <option value="STEP_ACTION_TYPE_NULL">-</option>
                     <option value="STEP_ACTION_TYPE_REDIRECT">Redirect (Open another page directly)</option>
                     <option value="STEP_ACTION_TYPE_CLICK_REDIRECT">Click and redirect (Open another page by clicking)
                     </option>
@@ -53,18 +52,57 @@
                     <option value="STEP_ACTION_TYPE_SELECT">Select</option>
                 </select>
             </div>
-            <div id="click-action-name-input-container" class="element-container">
-                <input type="text" placeholder="Name" id="click-action-name-input">
+            <div id="step-name-input-container" class="element-container common-action-container" hidden>
+                <input type="text" placeholder="Name" id="step-name-input">
+            </div>
+            <div id="step-description-container" class="element-container common-action-container" hidden>
+                <textarea type="text" placeholder="Description for your action" id="step-description-input"></textarea>
             </div>
 
+            <div id="selected-element-indicator-container" class="element-container common-action-container" hidden>
+                <p id="selected-element-indicator">Selected Element: None</p>
+            </div>
+            <div id="click-action-name-input-container" class="element-container click-action-container" hidden>
+                <input type="text" placeholder="ID" id="click-action-name-input">
+            </div>
+            <div id="click-action-description-input-container" class="element-container click-action-container" hidden>
+                <input type="text" placeholder="Description for this option" id="click-action-description-input">
+            </div>
+            <!-- <div id="click-action-next-button-container" class="element-container click-action-button" hidden>
+                <button id="click-action-next-button">Next Action</button>
+            </div> -->
 
+            <div id="input-action-input-container" class="element-container" hidden>
+                <input type="text" placeholder="input" id="input-action-input">
+            </div>
+
+            <div id="url-input-container" class="element-container" hidden>
+                <input type="url" placeholder="URL" id="url-input">
+            </div>
+
+            <div id="add-alternative-action-button-container" class="element-container customizable-action-container"
+                hidden>
+                <button id="add-alternative-action-button">Add Alternative Clicks</button>
+            </div>
+
+            <!-- <div id="is-mandatory-checkbox-container" class="element-container common-action-container" hidden>
+                <input type="checkbox" id="is-mandatory-checkbox">
+            </div> -->
+
+
+
+            <div id="next-button-container" class="element-container common-action-container" hidden>
+                <button id="next-button">Next</button>
+            </div>
+            <div id="finish-button-container" class="element-container common-action-container" hidden>
+                <button id="finish-button">Finish Recording</button>
+            </div>
+            <div id="cancel-button-container" class="element-container common-action-container">
+                <button id="cancel-button">Cancel Recording</button>
+            </div>
         </div>
 
-        <div id="stop-new-tutorial-button-container" hidden>
-            <button id="stop-new-tutorial-button">
-                Stop
-            </button>
-        </div>
+
 
     </div>
 </body>
