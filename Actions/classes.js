@@ -16,12 +16,13 @@ class Step {
      * @param {string} actionType 
      * @param {RedirectAction | ClickAction | InputAction | SelectAction, NullAction} actionObject 
      */
-    constructor(index, actionType, actionObject, name, description) {
+    constructor(index, actionType, actionObject, name, description, url) {
         this.index = index;
         this.actionType = actionType;
         this.actionObject = actionObject;
         this.name = name;
         this.description = description;
+        //this.url = url;
     }
 
     completed() {
@@ -34,7 +35,12 @@ function isStepCompleted(step) {
         isRedirectCompleted(step.actionObject) ||
         isClickActionCompleted(step.actionObject) ||
         isInputCompleted(step.actionObject) ||
-        isSelectCompleted(step.actionObject)) && step.index !== null && step.actionType !== VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL && typeof step.actionObject !== 'NullAction')
+        isSelectCompleted(step.actionObject)) &&
+        isNotNull(step.index) &&
+        step.actionType !== VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL &&
+        typeof step.actionObject !== 'NullAction' &&
+        isNotNull(step.url) &&
+        step.url.length > 0)
 }
 
 //Step Action Objects
@@ -80,7 +86,7 @@ class RedirectAction {
 }
 
 function isRedirectCompleted(redirect) {
-    return (redirect.url !== null && typeof redirect.url !== 'undefined');
+    return (isNotNull(redirect.url));
 }
 
 
@@ -130,12 +136,15 @@ class ClickGuide {
 }
 
 function isClickGuideCompleted(clickGuide) {
-    return (typeof clickGuide !== 'undefined' && clickGuide.path !== null && clickGuide.path !== [] && clickGuide.name !== null && clickGuide.name !== "" && typeof clickGuide.isRedirect !== 'undefined')
+    return (isNotNull(clickGuide) && isNotNull(clickGuide.path) && clickGuide.path !== [] && clickGuide.name !== null && clickGuide.name !== "" && typeof clickGuide.isRedirect !== 'undefined')
 }
 
 class InputAction {
     /**
-     * 
+     * Path is required. Default text used to fill input when selecting using default. 
+     * If there is no default, automation halts and asks for input. If options exist,
+     * automation halts when not using default and asks for input (options only used as
+     * suggestions). 
      * @param {[string]} path 
      * @param {string} defaultText 
      * @param {[string]} optionsText 
@@ -149,12 +158,12 @@ class InputAction {
     }
 
     completed() {
-        return (this.path !== null && this.path !== [] && this.defaultText !== null && this.inputType !== "")
+        return (this.path !== null && this.path !== [])
     }
 }
 
 function isInputCompleted(input) {
-    return (input.path !== null && input.path !== [] && input.defaultText !== null && input.inputType !== "");
+    return (isNotNull(input.path) && input.path !== [] && isNotNull(input.defaultText) && input.inputType !== "");
 }
 
 class SelectAction {
@@ -174,5 +183,5 @@ class SelectAction {
 }
 
 function isSelectCompleted(select) {
-    return (select.path !== null && select.path !== [] && select.defaultValue !== "")
+    return (isNotNull(select.path) && select.path !== [] && select.defaultValue !== "")
 }

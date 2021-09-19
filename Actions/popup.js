@@ -123,6 +123,7 @@ $(() => {
                 break;
             case VALUES.RECORDING_STATUS.NOT_RECORDING:
                 syncStorageSet(VALUES.STORAGE.IS_RECORDING_ACTIONS, false);
+                popupSendMessage({ isRecordingStatus: false });
                 showNewRecordingContainer();
                 break;
             default:
@@ -353,6 +354,7 @@ $(() => {
         const checked = recordTutorialSwitch.prop('checked');
         syncStorageSet(VALUES.STORAGE.IS_RECORDING_ACTIONS, checked, () => {
             $('h3').html(checked ? "Recording" : "Not Recording");
+            popupSendMessage({ isRecordingStatus: checked });
         })
     })
 
@@ -380,7 +382,8 @@ $(() => {
                     currentStepObj.actionObject.path = selectPath;
                     currentStepObj.actionObject.defaultValue = selectElement.val();
                 });
-
+            //TODO: customize step url
+            currentStepObj.url = "null";
             //check if step is complete
             if (isStepCompleted(currentStepObj)) {
                 //upload to firebase
@@ -404,19 +407,40 @@ $(() => {
     }
 
     finishButton.on('click', async () => {
-        syncStorageSet(VALUES.RECORDING_STATUS.STATUS, VALUES.RECORDING_STATUS.NOT_RECORDING);
-        syncStorageSet(VALUES.STORAGE.IS_RECORDING_ACTIONS, false);
-        syncStorageSet(VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME, undefined);
-        syncStorageSet(VALUES.STORAGE.CURRENT_STEP_OBJ, undefined);
-    })
-    cancelButton.on('click', async () => {
-        syncStorageSet(VALUES.RECORDING_STATUS.STATUS, VALUES.RECORDING_STATUS.NOT_RECORDING);
-        syncStorageSet(VALUES.STORAGE.IS_RECORDING_ACTIONS, false);
-        syncStorageSet(VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME, undefined);
-        syncStorageSet(VALUES.STORAGE.CURRENT_STEP_OBJ, undefined);
+        endRecordingHelper();
     })
 
+    //TODO: cancel should delete current document if it exists
+    cancelButton.on('click', async () => {
+        deleteDocIfExists().then(() => {
+            endRecordingHelper();
+        });
+    })
+
+    function endRecordingHelper() {
+        syncStorageSet(VALUES.RECORDING_STATUS.STATUS, VALUES.RECORDING_STATUS.NOT_RECORDING);
+        syncStorageSet(VALUES.STORAGE.IS_RECORDING_ACTIONS, false);
+        popupSendMessage({ isRecordingStatus: false });
+        syncStorageSet(VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME, undefined);
+        syncStorageSet(VALUES.STORAGE.CURRENT_STEP_OBJ, undefined);
+        syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, undefined);
+        syncStorageSet(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID, undefined);
+        showNewRecordingContainer();
+
+    }
+
     //Firebase actions
+
+    async function deleteDocIfExists() {
+        chrome.storage.sync.get(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID, async (result) => {
+            const docId = result[VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID];
+            if (isNotNull(docId)) {
+                const tutorialRef = doc(firestoreRef, VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL, docId);
+                await deleteDoc(tutorialRef);
+            }
+        })
+    }
+
     async function addStepToFirebase(stepObj) {
         chrome.storage.sync.get(VALUES.RECORDING_STATUS.STATUS, (result) => {
             switch (result[VALUES.RECORDING_STATUS.STATUS]) {
@@ -475,6 +499,7 @@ $(() => {
         async function addTutorialStep(docId, currentUrl) {
             if (!isEmpty(docId)) {
                 syncStorageSet(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX, stepIndex);
+                syncStorageSet(VALUES.STORAGE.CURRENT_URL, "");
                 //doc object
                 stepObj.index = stepIndex;
                 await addDoc(collection(firestoreRef, type, docId, "Steps"), JSON.parse(JSON.stringify(stepObj)));

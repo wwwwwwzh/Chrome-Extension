@@ -235,3 +235,13 @@ function jqueryElementStringFromDomPath(pathStack) {
     }
     return jqueryString
 }
+
+function isNotNull(obj) {
+    return (obj !== null && typeof obj !== 'undefined');
+}
+
+function popupSendMessage(message) {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+        chrome.tabs.sendMessage(tabs[0].id, message);
+    });
+}

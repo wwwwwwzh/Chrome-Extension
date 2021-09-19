@@ -79,7 +79,7 @@ async function fetchSimpleTutorials() {
         simpleTutorialQuerySnapshot.forEach((tutorial) => {
 
             mainPopUpContainer.append(`<a class=\"simple-tutorial-button\" id=\"${tutorial.id}\">${tutorial.data().name}</a>`);
-            const button = $(`#${tutorial.id}`);
+            const button = $(`#${tutorial.id}`).first();
             button.css(CSS.MAIN_OPTIONS_POPUP_SIMPLE_TUTORIAL_BUTTON);
             //button click function. store tutorial's steps to storage
             button.on('click', () => {
@@ -202,7 +202,6 @@ async function showTutorialStepManual() {
 }
 
 async function showTutorialStepAuto() {
-    //alert('show')
     chrome.storage.sync.get([VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, VALUES.STORAGE.AUTOMATION_SPEED], result => {
         const tutorialObj = result[VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID];
         const currentStep = tutorialObj.steps[tutorialObj.currentStep];
@@ -212,10 +211,10 @@ async function showTutorialStepAuto() {
         } else {
             switch (currentStep.actionType) {
                 case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK:
-                    autoPerformStep(currentStep.actionObject.defaultClick, tutorialObj, interval);
+                    autoClick(currentStep.actionObject.defaultClick, tutorialObj, interval);
                     break;
                 case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK_REDIRECT:
-                    autoPerformStep(currentStep.actionObject.defaultClick, tutorialObj, interval);
+                    autoClick(currentStep.actionObject.defaultClick, tutorialObj, interval, false);
                     break;
                 case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_REDIRECT:
                     tutorialObj.currentStep = tutorialObj.currentStep + 1;
@@ -224,32 +223,65 @@ async function showTutorialStepAuto() {
                     });
                     break;
                 case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_INPUT:
-                    autoPerformStep(currentStep.actionObject, tutorialObj, interval);
+                    autoInput(currentStep.actionObject, tutorialObj, interval);
                     break;
                 case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SELECT:
-                    autoPerformStep(currentStep.actionObject, tutorialObj, interval);
+                    autoSelect(currentStep.actionObject, tutorialObj, interval);
                     break;
                 default:
-                    autoPerformStep(currentStep, tutorialObj, interval);
+                    alert("Error: Illegal action type")
+                    console.error("Illegal action type");
                     break;
             }
         }
     })
 }
 
-function autoPerformStep(step, tutorialObj, interval) {
-    const element = $(jqueryElementStringFromDomPath(step.path));
-    highlightAndScollTo(step.path);
+function autoClick(step, tutorialObj, interval, showNext = true) {
+    const element = $(jqueryElementStringFromDomPath(step.path)).first();
     setTimeout(() => {
-        element.trigger("click");
-    }, min(interval, 100));
+        highlightAndScollTo(step.path, min(interval, 100), () => {
+            element.trigger("click");
+            //this step completed, go to next step
+            autoIncrementCurrentStepHelper(tutorialObj, interval, showNext);
+        });
+    }, interval);
+}
 
-    //this step completed, go to next step
+function autoInput(step, tutorialObj, interval) {
+    //get and highlight input element
+    const inputEle = $(jqueryElementStringFromDomPath(step.path)).first();
+
+    highlightAndScollTo(step.path, min(interval, 100), () => {
+        //check if there is default input
+        const defaultText = step.defaultText;
+        if (isNotNull(defaultText) && defaultText.length > 0) {
+            //fill input with default
+            inputEle.val(defaultText);
+        } else {
+            //asks for input
+
+        }
+        //this step completed, go to next step
+        autoIncrementCurrentStepHelper(tutorialObj, interval);
+    });
+}
+
+function autoSelect(step, tutorialObj, interval) {
+    //get and highlight input element
+    const selectEle = $(jqueryElementStringFromDomPath(step.path)).first();
+    highlightAndScollTo(step.path, min(interval, 100), () => {
+        //check if there is default input
+        selectEle.val(step.defaultValue);
+        //this step completed, go to next step
+        autoIncrementCurrentStepHelper(tutorialObj, interval);
+    });
+}
+
+function autoIncrementCurrentStepHelper(tutorialObj, showNext = true) {
     tutorialObj.currentStep = tutorialObj.currentStep + 1;
     syncStorageSet(VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, tutorialObj, () => {
-        setTimeout(() => {
-            showTutorialStepAuto();
-        }, interval);
+        showNext && showTutorialStepAuto();
     });
 }
 
@@ -274,7 +306,7 @@ document.body.addEventListener('click', async (event) => {
 async function onClickUniversalHandler(event) {
     chrome.storage.sync.get([VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.STORAGE.IS_RECORDING_ACTIONS], (result) => {
         checkAndInitializeStorageIfUndefined(result, VALUES.STORAGE.IS_RECORDING_ACTIONS, false)
-        isRecordingCache = result[VALUES.STORAGE.IS_RECORDING_ACTIONS];
+        //isRecordingCache = result[VALUES.STORAGE.IS_RECORDING_ACTIONS];
         if (result[VALUES.STORAGE.IS_RECORDING_ACTIONS] === true) {
             onClickWhenRecording(event);
         }
@@ -299,7 +331,7 @@ async function onClickWhenRecording(event) {
 
     syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, domPath);
 
-    highlightAndScollTo(domPath)
+    hightlight(domPath);
 }
 
 async function sendUnsentDomPath() {
@@ -371,16 +403,23 @@ function getDomPathStack(element) {
 
 
 function hightlight(element) {
-    if (typeof element === 'string') {
-        $(jqueryElementStringFromDomPath(element)).css(CSS.HIGHLIGHT_BOX)
-    } else if (typeof element === 'object') {
-        element.css(CSS.HIGHLIGHT_BOX)
+    if (element instanceof jQuery) {
+        element.css(CSS.HIGHLIGHT_BOX);
+    } else if (isNotNull(element.length)) {
+        $(jqueryElementStringFromDomPath(element)).first().css(CSS.HIGHLIGHT_BOX);
+    } else {
+        alert('element type wrong');
     }
 }
 
-function highlightAndScollTo(path) {
-    const element = $(jqueryElementStringFromDomPath(path));
-    hightlight(element);
+function highlightAndScollTo(path, speed = 1000, callback = () => { }) {
+    const element = $(jqueryElementStringFromDomPath(path)).first();
+    $('html, body').first().animate({
+        scrollTop: isNotNull(element.offset()) ? parseInt(element.offset().top) : 0
+    }, speed).promise().then(() => {
+        element.css(CSS.HIGHLIGHT_BOX);
+        callback();
+    })
 }
 
 // async function addStepToFirebase(data) {
@@ -483,7 +522,10 @@ function highlightAndScollTo(path) {
 //MARK: message handler
 chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
-        if (typeof request.redirect !== 'undefined')
+        if (isNotNull(request.redirect)) {
             location.replace(request.redirect)
+        } else if (isNotNull(request.isRecordingStatus)) {
+            isRecordingCache = request.isRecordingStatus;
+        }
     }
 );
