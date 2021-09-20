@@ -52,6 +52,12 @@ $(() => {
     let urlInputContainer = $('#url-input-container');
     let urlInput = $('#url-input');
 
+    let useCustomStepUrlContainer = $('#use-custom-step-url-container');
+    let useCustomStepUrlCheckbox = $('#use-custom-step-url-checkbox');
+
+    let customStepUrlContainer = $('#custom-step-url-container');
+    let customStepUrlInput = $('#custom-step-url-input');
+
     // let isMandatoryCheckboxContainer = $('#is-mandatory-checkbox-container');
     // let isMandatoryCheckbox = $('#is-mandatory-checkbox');
 
@@ -104,7 +110,7 @@ $(() => {
 
     var currentStepObj = undefined;
 
-    chrome.storage.sync.get([VALUES.RECORDING_STATUS.STATUS, VALUES.STORAGE.IS_RECORDING_ACTIONS, VALUES.STORAGE.CURRENT_STEP_OBJ, VALUES.STORAGE.CURRENT_SELECTED_ELEMENT], (result) => {
+    chrome.storage.sync.get([VALUES.RECORDING_STATUS.STATUS, VALUES.STORAGE.IS_RECORDING_ACTIONS, VALUES.STORAGE.CURRENT_STEP_OBJ, VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, VALUES.STORAGE.CURRENT_URL], (result) => {
         switch (result[VALUES.RECORDING_STATUS.STATUS]) {
             case VALUES.RECORDING_STATUS.RECORDING: case VALUES.RECORDING_STATUS.BEGAN_RECORDING:
                 recordTutorialSwitch.prop('checked', result[VALUES.STORAGE.IS_RECORDING_ACTIONS]);
@@ -119,6 +125,10 @@ $(() => {
                 } else {
                     selectedElementIndicator.html('Selected Element: None')
                 }
+                if (isNotNull(result[VALUES.STORAGE.CURRENT_URL])) {
+                    customStepUrlInput.val(result[VALUES.STORAGE.CURRENT_URL]);
+                }
+
                 showStepContainer();
                 break;
             case VALUES.RECORDING_STATUS.NOT_RECORDING:
@@ -137,6 +147,11 @@ $(() => {
         if (typeof currentStepObj !== 'undefined') {
             switchMenu(currentStepObj.actionType);
             selectActionTypeSelect.val(currentStepObj.actionType);
+            if (isNotNull(currentStepObj.url)) {
+                useCustomStepUrlCheckbox.prop('checked', true);
+                customStepUrlContainer.show();
+                customStepUrlInput.val(currentStepObj.url);
+            }
         } else {
             switchMenu(VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL);
             selectActionTypeSelect.val(VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL);
@@ -347,6 +362,34 @@ $(() => {
         })
     })
 
+    useCustomStepUrlCheckbox.on('change', () => {
+        const checked = useCustomStepUrlCheckbox.prop('checked');
+        if (checked) {
+            customStepUrlContainer.show();
+            if (isNotNull(currentStepObj.url)) {
+                customStepUrlInput.val(currentStepObj.url);
+            } else {
+                chrome.storage.sync.get(VALUES.STORAGE.CURRENT_URL, result => {
+                    const currentUrl = result[VALUES.STORAGE.CURRENT_URL];
+                    if (isNotNull(currentUrl)) {
+                        customStepUrlInput.val(currentUrl);
+                        currentStepObj.url = currentUrl;
+                    }
+                })
+            }
+
+        } else {
+            customStepUrlContainer.hide();
+        }
+    })
+
+    customStepUrlInput.on('input', () => {
+        const value = customStepUrlInput.val();
+        updateCurrentStep(() => {
+            currentStepObj.url = value;
+        })
+    })
+
 
 
     //MARK: button events
@@ -382,19 +425,12 @@ $(() => {
                     currentStepObj.actionObject.path = selectPath;
                     currentStepObj.actionObject.defaultValue = selectElement.val();
                 });
-            //TODO: customize step url
-            currentStepObj.url = "null";
+
             //check if step is complete
             if (isStepCompleted(currentStepObj)) {
                 //upload to firebase
                 addStepToFirebase(currentStepObj).then(() => {
                     //refresh menu
-                    if (currentStepObj.actionType === VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_REDIRECT || currentStepObj.actionType === VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK_REDIRECT) {
-                        //after posting to firebase, redirect to specified url
-                        chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-                            chrome.tabs.sendMessage(tabs[0].id, { redirect: urlInput.val() });
-                        });
-                    }
                     updateCurrentStep(() => { currentStepObj = undefined; })
                     loadMenuFromStorage(undefined);
                     syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, undefined);
@@ -425,12 +461,12 @@ $(() => {
         syncStorageSet(VALUES.STORAGE.CURRENT_STEP_OBJ, undefined);
         syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, undefined);
         syncStorageSet(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID, undefined);
+        syncStorageSet(VALUES.STORAGE.STEP_ACTION_TYPE, VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL);
         showNewRecordingContainer();
 
     }
 
-    //Firebase actions
-
+    //MARK: Firebase actions
     async function deleteDocIfExists() {
         chrome.storage.sync.get(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID, async (result) => {
             const docId = result[VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID];
@@ -442,10 +478,10 @@ $(() => {
     }
 
     async function addStepToFirebase(stepObj) {
-        chrome.storage.sync.get(VALUES.RECORDING_STATUS.STATUS, (result) => {
+        chrome.storage.sync.get(VALUES.RECORDING_STATUS.STATUS, async (result) => {
             switch (result[VALUES.RECORDING_STATUS.STATUS]) {
                 case VALUES.RECORDING_STATUS.BEGAN_RECORDING:
-                    postDocToFirebase(
+                    await postDocToFirebase(
                         stepObj,
                         VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL,
                         VALUES.RECORDING_STATUS.BEGAN_RECORDING
@@ -454,7 +490,7 @@ $(() => {
                     })
                     break;
                 case VALUES.RECORDING_STATUS.RECORDING:
-                    postDocToFirebase(
+                    await postDocToFirebase(
                         stepObj,
                         VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL,
                         VALUES.RECORDING_STATUS.RECORDING
@@ -478,15 +514,15 @@ $(() => {
                         });
                         docId = docRef.id;
                         syncStorageSet(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID, docId);
-                        addTutorialStep(docId, result[VALUES.STORAGE.CURRENT_URL]);
+                        await addTutorialStep(docId, result[VALUES.STORAGE.CURRENT_URL]);
                     })
 
                     break;
                 case VALUES.RECORDING_STATUS.RECORDING:
-                    chrome.storage.sync.get([VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID, VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX, VALUES.STORAGE.CURRENT_URL], (result) => {
+                    chrome.storage.sync.get([VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID, VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX, VALUES.STORAGE.CURRENT_URL], async (result) => {
                         stepIndex = result[VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX] + 1;
                         docId = result[VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID];
-                        addTutorialStep(docId, result[VALUES.STORAGE.CURRENT_URL]);
+                        await addTutorialStep(docId, result[VALUES.STORAGE.CURRENT_URL]);
                     });
                     break;
                 default:
@@ -499,14 +535,23 @@ $(() => {
         async function addTutorialStep(docId, currentUrl) {
             if (!isEmpty(docId)) {
                 syncStorageSet(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX, stepIndex);
-                syncStorageSet(VALUES.STORAGE.CURRENT_URL, "");
                 //doc object
                 stepObj.index = stepIndex;
+                if (!isNotNull(stepObj.url)) {
+                    stepObj.url = currentUrl;
+                }
+
                 await addDoc(collection(firestoreRef, type, docId, "Steps"), JSON.parse(JSON.stringify(stepObj)));
                 const tutorialRef = doc(firestoreRef, type, docId);
                 await updateDoc(tutorialRef, {
                     all_urls: arrayUnion(currentUrl),
                 })
+                if (stepObj.actionType === VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_REDIRECT || stepObj.actionType === VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK_REDIRECT) {
+                    //after posting to firebase, redirect to specified url
+                    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+                        chrome.tabs.sendMessage(tabs[0].id, { redirect: urlInput.val() });
+                    });
+                }
             }
         }
     }

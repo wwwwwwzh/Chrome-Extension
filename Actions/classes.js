@@ -22,7 +22,7 @@ class Step {
         this.actionObject = actionObject;
         this.name = name;
         this.description = description;
-        //this.url = url;
+        this.url = url;
     }
 
     completed() {
@@ -38,9 +38,8 @@ function isStepCompleted(step) {
         isSelectCompleted(step.actionObject)) &&
         isNotNull(step.index) &&
         step.actionType !== VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL &&
-        typeof step.actionObject !== 'NullAction' &&
-        isNotNull(step.url) &&
-        step.url.length > 0)
+        typeof step.actionObject !== 'NullAction'
+    )
 }
 
 //Step Action Objects

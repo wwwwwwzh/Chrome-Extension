@@ -194,9 +194,9 @@ function checkAndInitializeStorageIfUndefined(result, key, value) {
 
 function intervalFromSpeed(speed) {
     if (speed < 50) {
-        return 5100 - speed * 70;
+        return 5500 - speed * 70;
     } else {
-        return 1600 - (speed - 50) * 30;
+        return 2000 - (speed - 50) * 30;
     }
 }
 

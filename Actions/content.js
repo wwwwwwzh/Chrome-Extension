@@ -35,8 +35,8 @@ function setUpIframeListner() {
         }
         let iFrameBody = iFrame.contentDocument.getElementsByTagName('body')[0];
 
-        let iframeBodyJQ = $(iFrameBody);
-        iframeBodyJQ.on('click', async (event) => {
+        let iFrameBodyJQ = $(iFrameBody);
+        iFrameBodyJQ.on('click', async (event) => {
             onClickUniversalHandler(event);
         })
     }
@@ -60,12 +60,13 @@ async function fetchSimpleTutorials() {
     mainPopUpContainer.empty();
     automationSpeedSliderHelper();
     const domainName = "https://" + currentUrlObj.hostname + "/";
+    const url_matches = [currentUrl];
     const simpleTutorialQuery = query(collection(firestoreRef,
         VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL),
         where(
             VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL_ALL_URLS,
             VALUES.FIRESTORE_QUERY_TYPES.ARRAY_CONTAINS_ANY,
-            [domainName, currentUrl]
+            url_matches
         ));
 
     const simpleTutorialQuerySnapshot = await getDocs(simpleTutorialQuery);
@@ -134,9 +135,19 @@ async function loadTutorialToStorage(tutorial) {
     const stepsQuerySnapshot = await getDocs(stepsQuery);
     //construct steps array from query
     var steps = [];
+    var isFirstStepReached = false;
     stepsQuerySnapshot.forEach((step) => {
         const data = step.data();
-        steps.push(data);
+        //remove steps used prior to accessing this page
+        if (isFirstStepReached) {
+            steps.push(data);
+        } else {
+            alert(data.url === currentUrl)
+            if (data.url === currentUrl) {
+                isFirstStepReached = true;
+                steps.push(data);
+            }
+        }
     })
 
     //construct tutorial object
@@ -206,6 +217,7 @@ async function showTutorialStepAuto() {
         const tutorialObj = result[VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID];
         const currentStep = tutorialObj.steps[tutorialObj.currentStep];
         const interval = intervalFromSpeed(result[VALUES.STORAGE.AUTOMATION_SPEED]);
+        alert(tutorialObj.currentStep)
         if (tutorialObj.currentStep >= tutorialObj.steps.length) {
             onStopTutorialButtonClicked();
         } else {
