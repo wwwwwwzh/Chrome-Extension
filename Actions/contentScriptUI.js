@@ -2,6 +2,7 @@
 $('body').append("<div id=\"main-popup-container\"></div>");
 const mainPopUpContainer = $('#main-popup-container');
 mainPopUpContainer.css(CSS.MAIN_OPTIONS_POPUP);
+makeElementDraggable(mainPopUpContainer[0]);
 mainPopUpContainer.hide();
 
 //automation speed slider
@@ -14,6 +15,7 @@ const automationSpeedSlider = $('#automation-speed-slider');
 $('body').append("<div id=\"main-stop-options-container\"></div>");
 const mainStopOptionsContainer = $('#main-stop-options-container');
 mainStopOptionsContainer.css(CSS.MAIN_STOP_OPTIONS_CONTAINER);
+makeElementDraggable(mainStopOptionsContainer[0]);
 mainStopOptionsContainer.hide();
 
 mainStopOptionsContainer.append("<button id=\"stop-options-stop-button\">Stop</button>");
@@ -27,6 +29,7 @@ stopOptionsStopButton.on('click', () => {
 $('body').append("<div id=\"main-middle-popup-container\"></div>");
 const mainMiddlePopupContainer = $('#main-middle-popup-container');
 mainMiddlePopupContainer.css(CSS.MAIN_MIDDLE_POPUP);
+makeElementDraggable(mainMiddlePopupContainer[0]);
 mainMiddlePopupContainer.hide();
 
 mainMiddlePopupContainer.append("<button id=\"pop-up-automate-button\">Automate</button>")

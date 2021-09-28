@@ -151,7 +151,7 @@ const VALUES = {
     }
 }
 
-
+//MARK: Utility functions
 function syncStorageSet(key, value, callback) {
     const data = {}
     data[key] = value
@@ -159,32 +159,6 @@ function syncStorageSet(key, value, callback) {
         if (callback) { callback(); }
     });
 
-}
-
-function isEmpty(str) {
-    return (!str || str.length === 0);
-}
-
-function arraysEqual(a, b) {
-    if (a === b) return true;
-    if (a == null || b == null) return false;
-    if (a.length !== b.length) return false;
-
-    for (var i = 0; i < a.length; i++) {
-        if (a[i] !== b[i]) return false;
-    }
-    return true;
-}
-
-function isSubArray(a, b) {
-    if (a === b) return true;
-    if (a == null || b == null) return false;
-
-    const shorterLength = a.length > b.length ? b.length : a.length;
-    for (var i = 0; i < shorterLength; i++) {
-        if (a[i] !== b[i]) return false;
-    }
-    return true;
 }
 
 function checkAndInitializeStorageIfUndefined(result, key, value) {
@@ -202,15 +176,8 @@ function intervalFromSpeed(speed) {
     }
 }
 
-function min(a, b) {
-    return a > b ? b : a;
-}
-
-function tooglePointerEvent() {
-    chrome.storage.sync.get([VALUES.STORAGE.STEP_ACTION_TYPE], result => {
-
-    })
-    $('body').css('pointer-events', 'none')
+function isNotNull(obj) {
+    return (obj !== null && typeof obj !== 'undefined');
 }
 
 /**
@@ -238,12 +205,105 @@ function jqueryElementStringFromDomPath(pathStack) {
     return jqueryString
 }
 
-function isNotNull(obj) {
-    return (obj !== null && typeof obj !== 'undefined');
+/**
+ * Javascript implementation of the JQuery UI scrollParent() function.
+ * @param {HTML Element} element 
+ * @param {*} includeHidden 
+ * @returns nearest scrollable container of the elemnt. If not find, return body
+ */
+function getScrollParent(element, includeHidden) {
+    var style = getComputedStyle(element);
+    var excludeStaticParent = style.position === "absolute";
+    var overflowRegex = includeHidden ? /(auto|scroll|hidden)/ : /(auto|scroll)/;
+
+    if (style.position === "fixed") return document.body;
+    for (var parent = element; (parent = parent.parentElement);) {
+        style = getComputedStyle(parent);
+        if (excludeStaticParent && style.position === "static") {
+            continue;
+        }
+        if (overflowRegex.test(style.overflow + style.overflowY + style.overflowX)) return parent;
+    }
+
+    return document.body;
 }
 
 function popupSendMessage(message) {
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         chrome.tabs.sendMessage(tabs[0].id, message);
     });
+}
+
+function makeElementDraggable(elmnt) {
+    var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+    elmnt.onmousedown = dragMouseDown;
+
+    function dragMouseDown(e) {
+        e = e || window.event;
+        e.preventDefault();
+        // get the mouse cursor position at startup:
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        document.onmouseup = closeDragElement;
+        // call a function whenever the cursor moves:
+        document.onmousemove = elementDrag;
+    }
+
+    function elementDrag(e) {
+        e = e || window.event;
+        e.preventDefault();
+        // calculate the new cursor position:
+        pos1 = pos3 - e.clientX;
+        pos2 = pos4 - e.clientY;
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        // set the element's new position:
+        elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+        elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+    }
+
+    function closeDragElement() {
+        /* stop moving when mouse button is released:*/
+        document.onmouseup = null;
+        document.onmousemove = null;
+    }
+}
+
+
+
+
+
+//MARK: Library functions
+function isEmpty(str) {
+    return (!str || str.length === 0);
+}
+
+function arraysEqual(a, b) {
+    if (a === b) return true;
+    if (a == null || b == null) return false;
+    if (a.length !== b.length) return false;
+
+    for (var i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) return false;
+    }
+    return true;
+}
+
+function isSubArray(a, b) {
+    if (a === b) return true;
+    if (a == null || b == null) return false;
+
+    const shorterLength = a.length > b.length ? b.length : a.length;
+    for (var i = 0; i < shorterLength; i++) {
+        if (a[i] !== b[i]) return false;
+    }
+    return true;
+}
+
+function min(a, b) {
+    return a > b ? b : a;
+}
+
+function max(a, b) {
+    return a > b ? a : b;
 }

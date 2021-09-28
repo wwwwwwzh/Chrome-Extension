@@ -1,10 +1,7 @@
-
-function syncStorageSet(key, value, callback) {
-    const data = {}
-    data[key] = value
-    chrome.storage.sync.set(data, () => {
-        if (callback) { callback(); }
-    });
+try {
+    importScripts("constants.js");
+} catch (e) {
+    console.log(e);
 }
 
 chrome.runtime.onInstalled.addListener(() => {

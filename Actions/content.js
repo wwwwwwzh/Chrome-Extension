@@ -283,9 +283,6 @@ function autoClick(tutorialObj, currentStep, interval, showNext = true) {
  * @param {HTTPS Element} element 
  */
 function simulateClick(element) {
-    // var evt = document.createEvent("MouseEvents");
-    // evt.initMouseEvent("click", true, true, window,
-    //     0, 0, 0, 0, 0, false, false, false, false, 0, null);
     const evt = new MouseEvent('click', {
         view: window,
         bubbles: true,
@@ -377,33 +374,27 @@ async function onClickUniversalHandler(event) {
             default:
                 break;
         }
-
     });
 }
 
 
 
 async function onClickWhenRecording(event) {
-
     //get element
     const domPath = getDomPathStack(event.target);
-
     syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, domPath);
-
     hightlight(domPath);
 }
 
-async function sendUnsentDomPath() {
-    const key = VALUES.STORAGE.UNSENT_DOM_PATH;
-    chrome.storage.sync.get(key, (result) => {
-        if (result[key]) {
-            //addStepToFirebase(result[key]);
-            syncStorageSet(key, null);
-            //resetting url is handled in post to firestore function
-        }
-    });
-}
-
+// async function sendUnsentDomPath() {
+//     const key = VALUES.STORAGE.UNSENT_DOM_PATH;
+//     chrome.storage.sync.get(key, (result) => {
+//         if (result[key]) {
+//             syncStorageSet(key, null);
+//             //resetting url is handled in post to firestore function
+//         }
+//     });
+// }
 
 
 function onClickWhenFollowingTutorial(event) {
@@ -481,25 +472,30 @@ function getDomPathStack(element) {
 
 
 /**
- * Highlight the element with a growing border
+ * USED ONLY DURING RECORDING: Highlight the element with a growing border
  * @param {jQuery | [string]} element An jQuery instance or an array of strings representing path to a DOM element
  */
 function hightlight(element) {
-    if (element instanceof jQuery) {
-        element.css(CSS.HIGHLIGHT_BOX);
-    } else if (isNotNull(element.length)) {
-        $(jqueryElementStringFromDomPath(element)).first().css(CSS.HIGHLIGHT_BOX);
-    } else {
-        alert('element type wrong');
-    }
+    // if (element instanceof jQuery) {
+    //     element.css(CSS.HIGHLIGHT_BOX);
+    // } else if (isNotNull(element.length)) {
+    //     $(jqueryElementStringFromDomPath(element)).first().css(CSS.HIGHLIGHT_BOX);
+    // } else {
+    //     alert('element type wrong');
+    // }
+    $(jqueryElementStringFromDomPath(element)).first().css(CSS.HIGHLIGHT_BOX);
 }
 
+
 function highlightAndScollTo(path, speed = 500, callback = () => { }) {
-    const element = $(jqueryElementStringFromDomPath(path)).first();
-    $('html, body').first().animate({
-        scrollTop: isNotNull(element.offset()) ? parseInt(element.offset().top) : 0
+
+    //TODO: Repeat if element not found, might not be handled here
+    const jQelement = $(jqueryElementStringFromDomPath(path));
+    const htmlElement = $(jqueryElementStringFromDomPath(path))[0];
+    $(getScrollParent(htmlElement, false)).animate({
+        scrollTop: isNotNull(jQelement.offset()) ? max(0, parseInt(jQelement.offset().top) - window.innerHeight / 2) : 0
     }, speed).promise().then(() => {
-        element.css(CSS.HIGHLIGHT_BOX);
+        jQelement.css(CSS.HIGHLIGHT_BOX);
         callback();
     })
 }
