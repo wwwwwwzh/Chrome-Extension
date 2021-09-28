@@ -41,8 +41,10 @@ function setUpIframeListner() {
         })
     }
 }
+$(() => {
+    setUp();
+})
 
-setUp();
 
 //MARK: Start of giving suggestions
 
@@ -124,7 +126,6 @@ async function onPopUpManualButtonClicked(tutorial) {
 }
 
 async function loadTutorialToStorage(tutorial) {
-
     syncStorageSet(VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_ID, tutorial.id);
     //get all information about the tutorial from firebase
     const stepsQuery = query(collection(firestoreRef,
@@ -142,7 +143,6 @@ async function loadTutorialToStorage(tutorial) {
         if (isFirstStepReached) {
             steps.push(data);
         } else {
-            alert(data.url === currentUrl)
             if (data.url === currentUrl) {
                 isFirstStepReached = true;
                 steps.push(data);
@@ -160,6 +160,7 @@ async function loadTutorialToStorage(tutorial) {
 async function onStopTutorialButtonClicked() {
     mainStopOptionsContainer.hide();
     syncStorageSet(VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.FOLLOWING_TUTORIAL_STATUS.NOT_FOLLOWING_TUTORIAL);
+    syncStorageSet(VALUES.STORAGE.REVISIT_PAGE_COUNT, 0);
     fetchSimpleTutorials();
 }
 
@@ -167,7 +168,6 @@ async function onStopTutorialButtonClicked() {
 
 async function checkFollowingTutorialStatus() {
     chrome.storage.sync.get(VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, (result) => {
-        checkAndInitializeStorageIfUndefined(result, VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.FOLLOWING_TUTORIAL_STATUS.NOT_FOLLOWING_TUTORIAL);
         switch (result[VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS]) {
             case VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
                 mainStopOptionsContainer.show();
@@ -187,58 +187,62 @@ async function checkFollowingTutorialStatus() {
     })
 }
 
+//INCOMPLETE
+function onEnteredWrongPage(tutorialObj, urlToMatch) {
+    for (let i = 0; i < tutorialObj.steps.length; i++) {
+        const currentStep = tutorialObj.steps[i];
+        if (currentStep.url === urlToMatch) {
+            //show the matched step
+            tutorialObj.currentStep = i;
+            const RPCKey = VALUES.STORAGE.REVISIT_PAGE_COUNT;
+            chrome.storage.sync.get([RPCKey], result => {
+                if (result[RPCKey] > VALUES.STORAGE.MAX_REVISIT_PAGE_COUNT) {
+                    alert('no matching page');
+                    onStopTutorialButtonClicked();
+                    return false;
+                }
+                syncStorageSet(RPCKey, result[RPCKey] + 1, () => {
+                    syncStorageSet(VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, tutorialObj, () => {
+                        showTutorialStepAuto();
 
-async function showTutorialStepManual() {
-    chrome.storage.sync.get([VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID], result => {
-        const tutorialObj = result[VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID];
-        const currentStep = tutorialObj.steps[tutorialObj.currentStep];
-
-        switch (currentStep.actionType) {
-            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK:
-                highlightAndScollTo(currentStep.path);
-                break;
-            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK_REDIRECT:
-                highlightAndScollTo(currentStep.path);
-                break;
-            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_REDIRECT:
-                location.replace(currentStep.redirect_to);
-                break;
-            default:
-                highlightAndScollTo(currentStep.path);
-                break;
+                        return true;
+                    });
+                })
+            })
         }
-
-
-    })
+    }
 }
 
-async function showTutorialStepAuto() {
+async function showTutorialStepGeneric(onStepActionClick, onStepActionClickRedirect, onStepActionRedirect, onStepActionInput, onStepActionSelect) {
     chrome.storage.sync.get([VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, VALUES.STORAGE.AUTOMATION_SPEED], result => {
         const tutorialObj = result[VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID];
         const currentStep = tutorialObj.steps[tutorialObj.currentStep];
+        // alert(JSON.stringify(currentStep));
         const interval = intervalFromSpeed(result[VALUES.STORAGE.AUTOMATION_SPEED]);
-        alert(tutorialObj.currentStep)
         if (tutorialObj.currentStep >= tutorialObj.steps.length) {
             onStopTutorialButtonClicked();
-        } else {
+        }
+        // else if (currentUrl !== currentStep.url) {
+        //     //onEnteredWrongPage(tutorialObj, currentStep.url);
+        // } 
+        else {
+            syncStorageSet(VALUES.STORAGE.REVISIT_PAGE_COUNT, 0);
             switch (currentStep.actionType) {
                 case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK:
-                    autoClick(currentStep.actionObject.defaultClick, tutorialObj, interval);
+                    //alert('bingo')
+                    onStepActionClick(tutorialObj, currentStep, interval);
                     break;
                 case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK_REDIRECT:
-                    autoClick(currentStep.actionObject.defaultClick, tutorialObj, interval, false);
+                    onStepActionClickRedirect(tutorialObj, currentStep, interval, false);
                     break;
                 case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_REDIRECT:
-                    tutorialObj.currentStep = tutorialObj.currentStep + 1;
-                    syncStorageSet(VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, tutorialObj, () => {
-                        location.replace(currentStep.actionObject.url);
-                    });
+                    onStepActionRedirect(tutorialObj, currentStep, interval);
                     break;
                 case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_INPUT:
-                    autoInput(currentStep.actionObject, tutorialObj, interval);
+                    onStepActionInput(tutorialObj, currentStep, interval);
                     break;
                 case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SELECT:
-                    autoSelect(currentStep.actionObject, tutorialObj, interval);
+                    onStepActionSelect(tutorialObj, currentStep, interval);
                     break;
                 default:
                     alert("Error: Illegal action type")
@@ -249,22 +253,62 @@ async function showTutorialStepAuto() {
     })
 }
 
-function autoClick(step, tutorialObj, interval, showNext = true) {
-    const element = $(jqueryElementStringFromDomPath(step.path)).first();
-    setTimeout(() => {
-        highlightAndScollTo(step.path, min(interval, 100), () => {
-            element.trigger("click");
-            //this step completed, go to next step
-            autoIncrementCurrentStepHelper(tutorialObj, interval, showNext);
-        });
-    }, interval);
+async function showTutorialStepManual() {
+    showTutorialStepGeneric(highlightNextStepManual, highlightNextStepManual);
 }
 
-function autoInput(step, tutorialObj, interval) {
+function highlightNextStepManual(tutorialObj, currentStep, interval, showNext = true) {
+    const step = currentStep.actionObject.defaultClick;
+    const element = $(jqueryElementStringFromDomPath(step.path)).first();
+    highlightAndScollTo(step.path, interval);
+}
+
+
+async function showTutorialStepAuto() {
+    showTutorialStepGeneric(autoClick, autoClick, autoRedirect, autoInput, autoSelect)
+}
+
+function autoClick(tutorialObj, currentStep, interval, showNext = true) {
+    const step = currentStep.actionObject.defaultClick;
+    const element = $(jqueryElementStringFromDomPath(step.path))[0];
+    highlightAndScollTo(step.path, interval, () => {
+        simulateClick(element);
+        incrementCurrentStepHelper(tutorialObj, showNext);
+    });
+}
+
+/**
+ * Stimulate any type of click using javascript's dispatch event. Covers cases where jquery.click() or 
+ * .trigger('click') don't work
+ * @param {HTTPS Element} element 
+ */
+function simulateClick(element) {
+    // var evt = document.createEvent("MouseEvents");
+    // evt.initMouseEvent("click", true, true, window,
+    //     0, 0, 0, 0, 0, false, false, false, false, 0, null);
+    const evt = new MouseEvent('click', {
+        view: window,
+        bubbles: true,
+        cancelable: true
+    });
+    element.dispatchEvent(evt);
+}
+
+function autoRedirect(tutorialObj, currentStep, interval) {
+    const url = currentStep.actionObject.url;
+    tutorialObj.currentStep = tutorialObj.currentStep + 1;
+    syncStorageSet(VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, tutorialObj, () => {
+        location.replace(url);
+    });
+}
+
+
+function autoInput(tutorialObj, currentStep, interval) {
+    const step = currentStep.actionObject;
     //get and highlight input element
     const inputEle = $(jqueryElementStringFromDomPath(step.path)).first();
 
-    highlightAndScollTo(step.path, min(interval, 100), () => {
+    highlightAndScollTo(step.path, interval, () => {
         //check if there is default input
         const defaultText = step.defaultText;
         if (isNotNull(defaultText) && defaultText.length > 0) {
@@ -275,25 +319,31 @@ function autoInput(step, tutorialObj, interval) {
 
         }
         //this step completed, go to next step
-        autoIncrementCurrentStepHelper(tutorialObj, interval);
+        incrementCurrentStepHelper(tutorialObj);
     });
 }
 
-function autoSelect(step, tutorialObj, interval) {
+function autoSelect(tutorialObj, currentStep, interval) {
+    const step = currentStep.actionObject;
     //get and highlight input element
     const selectEle = $(jqueryElementStringFromDomPath(step.path)).first();
-    highlightAndScollTo(step.path, min(interval, 100), () => {
+    highlightAndScollTo(step.path, interval, () => {
         //check if there is default input
         selectEle.val(step.defaultValue);
         //this step completed, go to next step
-        autoIncrementCurrentStepHelper(tutorialObj, interval);
+        incrementCurrentStepHelper(tutorialObj);
     });
 }
 
-function autoIncrementCurrentStepHelper(tutorialObj, showNext = true) {
+function incrementCurrentStepHelper(tutorialObj, showNext = true, auto = true) {
     tutorialObj.currentStep = tutorialObj.currentStep + 1;
     syncStorageSet(VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, tutorialObj, () => {
-        showNext && showTutorialStepAuto();
+        if (auto) {
+            showNext && showTutorialStepAuto();
+        } else {
+            //alert(1)
+            showNext && showTutorialStepManual();
+        }
     });
 }
 
@@ -317,12 +367,9 @@ document.body.addEventListener('click', async (event) => {
 
 async function onClickUniversalHandler(event) {
     chrome.storage.sync.get([VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.STORAGE.IS_RECORDING_ACTIONS], (result) => {
-        checkAndInitializeStorageIfUndefined(result, VALUES.STORAGE.IS_RECORDING_ACTIONS, false)
-        //isRecordingCache = result[VALUES.STORAGE.IS_RECORDING_ACTIONS];
         if (result[VALUES.STORAGE.IS_RECORDING_ACTIONS] === true) {
             onClickWhenRecording(event);
         }
-        checkAndInitializeStorageIfUndefined(result, VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.FOLLOWING_TUTORIAL_STATUS.NOT_FOLLOWING_TUTORIAL)
         switch (result[VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS]) {
             case VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
                 onClickWhenFollowingTutorial(event);
@@ -361,22 +408,42 @@ async function sendUnsentDomPath() {
 
 function onClickWhenFollowingTutorial(event) {
     const domPath = getDomPathStack(event.target);
-    chrome.storage.sync.get(VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, result => {
-        var tutorialObj = result[VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID];
+    chrome.storage.sync.get([VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, VALUES.STORAGE.AUTOMATION_SPEED], result => {
+        const tutorialObj = result[VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID];
         const currentStep = tutorialObj.steps[tutorialObj.currentStep];
-        if (isSubArray(domPath, currentStep.path)) {
-            //user clicked on highlighted element, go to next step if it exists
-            if (tutorialObj.currentStep + 1 < tutorialObj.steps.length) {
-                //not last step
-                tutorialObj.currentStep = tutorialObj.currentStep + 1;
-                syncStorageSet(VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, tutorialObj);
-            } else {
-                //last step
-                onStopTutorialButtonClicked();
+        const interval = intervalFromSpeed(result[VALUES.STORAGE.AUTOMATION_SPEED]);
+        if (tutorialObj.currentStep >= tutorialObj.steps.length) {
+            onStopTutorialButtonClicked();
+        } else if (currentUrl !== currentStep.url) {
+            //onEnteredWrongPage(tutorialObj, currentStep.url);
+        } else {
+            syncStorageSet(VALUES.STORAGE.REVISIT_PAGE_COUNT, 0);
+            switch (currentStep.actionType) {
+                case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK:
+                    if (isSubArray(domPath, currentStep.actionObject.defaultClick.path)) {
+                        incrementCurrentStepHelper(tutorialObj, true, false);
+                    }
+                    break;
+                case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK_REDIRECT:
+                    onStepActionClickRedirect(tutorialObj, currentStep, interval, false);
+                    break;
+                case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_REDIRECT:
+                    onStepActionRedirect(tutorialObj, currentStep, interval);
+                    break;
+                case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_INPUT:
+                    onStepActionInput(tutorialObj, currentStep, interval);
+                    break;
+                case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SELECT:
+                    onStepActionSelect(tutorialObj, currentStep, interval);
+                    break;
+                default:
+                    alert("Error: Illegal action type")
+                    console.error("Illegal action type");
+                    break;
             }
-            showTutorialStepManual();
         }
     })
+
 }
 
 /**
@@ -413,7 +480,10 @@ function getDomPathStack(element) {
 }
 
 
-
+/**
+ * Highlight the element with a growing border
+ * @param {jQuery | [string]} element An jQuery instance or an array of strings representing path to a DOM element
+ */
 function hightlight(element) {
     if (element instanceof jQuery) {
         element.css(CSS.HIGHLIGHT_BOX);
@@ -424,7 +494,7 @@ function hightlight(element) {
     }
 }
 
-function highlightAndScollTo(path, speed = 1000, callback = () => { }) {
+function highlightAndScollTo(path, speed = 500, callback = () => { }) {
     const element = $(jqueryElementStringFromDomPath(path)).first();
     $('html, body').first().animate({
         scrollTop: isNotNull(element.offset()) ? parseInt(element.offset().top) : 0
@@ -433,103 +503,6 @@ function highlightAndScollTo(path, speed = 1000, callback = () => { }) {
         callback();
     })
 }
-
-// async function addStepToFirebase(data) {
-//     chrome.storage.sync.get(VALUES.RECORDING_STATUS.STATUS, (result) => {
-//         switch (result[VALUES.RECORDING_STATUS.STATUS]) {
-//             case VALUES.RECORDING_STATUS.BEGAN_RECORDING:
-//                 postDocToFirebase(
-//                     data,
-//                     VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL,
-//                     VALUES.RECORDING_STATUS.BEGAN_RECORDING
-//                 ).then(() => {
-//                     syncStorageSet(VALUES.RECORDING_STATUS.STATUS, VALUES.RECORDING_STATUS.RECORDING);
-//                 })
-//                 break;
-//             case VALUES.RECORDING_STATUS.RECORDING:
-//                 postDocToFirebase(
-//                     data,
-//                     VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL,
-//                     VALUES.RECORDING_STATUS.RECORDING
-//                 );
-//                 break;
-//             default:
-//                 break;
-//         };
-//     });
-// }
-
-// async function postDocToFirebase(data, type, status) {
-//     var docId;
-//     var stepIndex = 0;
-//     try {
-//         switch (status) {
-//             case VALUES.RECORDING_STATUS.BEGAN_RECORDING:
-//                 chrome.storage.sync.get(VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME, async result => {
-//                     const docRef = await addDoc(collection(firestoreRef, type), {
-//                         name: result[VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME],
-//                     });
-//                     docId = docRef.id;
-//                     syncStorageSet(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID, docId);
-//                     addTutorialStep(docId);
-//                 })
-
-//                 break;
-//             case VALUES.RECORDING_STATUS.RECORDING:
-//                 chrome.storage.sync.get([VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID, VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX], (result) => {
-//                     stepIndex = result[VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX] + 1;
-//                     docId = result[VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID];
-//                     addTutorialStep(docId);
-//                 });
-//                 break;
-//             default:
-//                 break;
-//         }
-
-//     } catch (e) {
-//         console.error("Error adding document: ", e);
-//     }
-
-//     async function addTutorialStep(docId) {
-//         if (!isEmpty(docId)) {
-//             syncStorageSet(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX, stepIndex);
-//             var urlToSend = currentUrl;
-//             var description = null;
-//             var actionType = VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK;
-//             const urlKey = VALUES.STORAGE.UNSENT_DOM_PATH_URL;
-//             const descriptionKey = VALUES.STORAGE.DESCRIPTION_FOR_NEXT_STEP;
-//             const stepActionTypeKey = VALUES.STORAGE.STEP_ACTION_TYPE;
-//             //check if redirect results in unsent data and use previous url
-//             chrome.storage.sync.get([urlKey, descriptionKey, stepActionTypeKey], async result => {
-//                 if (result[urlKey]) {
-//                     urlToSend = result[urlKey];
-//                     syncStorageSet(urlKey, null);
-//                 }
-//                 if (result[descriptionKey]) {
-//                     description = result[descriptionKey];
-//                     syncStorageSet(descriptionKey, null);
-//                 }
-//                 actionType = result[stepActionTypeKey];
-//                 syncStorageSet(stepActionTypeKey, VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK);
-//                 //doc object
-//                 var docToAdd = {
-//                     path: data,
-//                     url: urlToSend,
-//                 };
-//                 docToAdd[VALUES.FIRESTORE_CONSTANTS.STEP_ACTION_TYPE] = actionType;
-//                 docToAdd[VALUES.FIRESTORE_CONSTANTS.STEP_DESCRIPTION] = description;
-//                 docToAdd[VALUES.FIRESTORE_CONSTANTS.STEP_INDEX] = stepIndex;
-
-//                 await addDoc(collection(firestoreRef, type, docId, "Steps"), docToAdd);
-//                 const tutorialRef = doc(firestoreRef, type, docId);
-
-//                 await updateDoc(tutorialRef, {
-//                     all_urls: arrayUnion(urlToSend),
-//                 });
-//             })
-//         }
-//     }
-// }
 
 //MARK: message handler
 chrome.runtime.onMessage.addListener(

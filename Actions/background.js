@@ -15,6 +15,7 @@ chrome.runtime.onInstalled.addListener(() => {
     syncStorageSet("CURRENT_URL", "")
     syncStorageSet("STEP_ACTION_TYPE", "STEP_ACTION_TYPE_NULL");
     syncStorageSet("CURRENT_STEP_OBJ", undefined);
-    syncStorageSet("CURRENT_SELECTED_ELEMENT", undefined)
-    syncStorageSet('AUTOMATION_SPEED', 50)
+    syncStorageSet("CURRENT_SELECTED_ELEMENT", undefined);
+    syncStorageSet('AUTOMATION_SPEED', 50);
+    syncStorageSet('REVISIT_PAGE_COUNT', 0);
 });
