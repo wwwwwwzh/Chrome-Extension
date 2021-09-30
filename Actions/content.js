@@ -77,6 +77,8 @@ async function fetchSimpleTutorials() {
         //create popup window
         if (mainPopUpContainer.is(":hidden")) {
             mainPopUpContainer.show();
+            mainPopUpContainer.append(mainDraggableArea);
+            makeElementDraggable(mainDraggableArea[0], mainPopUpContainer[0]);
         }
         //iterate query to add tutorial buttons
         simpleTutorialQuerySnapshot.forEach((tutorial) => {
@@ -97,8 +99,14 @@ async function onFollowTutorialButtonClicked(tutorial) {
     //toogle html elements
     mainPopUpContainer.hide();
     mainStopOptionsContainer.show();
+    mainStopOptionsContainer.append(optionsDraggableArea);
+    makeElementDraggable(optionsDraggableArea[0], mainStopOptionsContainer[0]);
+
     automationSpeedSliderHelper(mainStopOptionsContainer, true);
     mainMiddlePopupContainer.show();
+    mainMiddlePopupContainer.append(middleDraggableArea);
+    makeElementDraggable(middleDraggableArea[0], mainMiddlePopupContainer[0]);
+
 
     popUpAutomateButton.on('click', () => {
         onPopUpAutomateButtonClicked(tutorial);
@@ -112,7 +120,6 @@ async function onFollowTutorialButtonClicked(tutorial) {
 async function onPopUpAutomateButtonClicked(tutorial) {
     loadTutorialToStorage(tutorial).then(() => {
         syncStorageSet(VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.FOLLOWING_TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL);
-        mainMiddlePopupContainer.hide();
         showTutorialStepAuto();
     })
 }
@@ -120,7 +127,6 @@ async function onPopUpAutomateButtonClicked(tutorial) {
 async function onPopUpManualButtonClicked(tutorial) {
     loadTutorialToStorage(tutorial).then(() => {
         syncStorageSet(VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL);
-        mainMiddlePopupContainer.hide();
         showTutorialStepManual();
     })
 }
@@ -159,6 +165,7 @@ async function loadTutorialToStorage(tutorial) {
 
 async function onStopTutorialButtonClicked() {
     mainStopOptionsContainer.hide();
+    mainMiddlePopupContainer.hide();
     syncStorageSet(VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.FOLLOWING_TUTORIAL_STATUS.NOT_FOLLOWING_TUTORIAL);
     syncStorageSet(VALUES.STORAGE.REVISIT_PAGE_COUNT, 0);
     fetchSimpleTutorials();
@@ -261,6 +268,9 @@ function highlightNextStepManual(tutorialObj, currentStep, interval, showNext = 
     const step = currentStep.actionObject.defaultClick;
     const element = $(jqueryElementStringFromDomPath(step.path)).first();
     highlightAndScollTo(step.path, interval);
+    //UI
+    popUpStepName.html(currentStep.name);
+    popUpStepDescription.html(currentStep.description);
 }
 
 
@@ -360,7 +370,7 @@ document.body.addEventListener('click', async (event) => {
     }
 
     onClickUniversalHandler(event);
-}, true);
+}, false);
 
 async function onClickUniversalHandler(event) {
     chrome.storage.sync.get([VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.STORAGE.IS_RECORDING_ACTIONS], (result) => {
@@ -382,8 +392,23 @@ async function onClickUniversalHandler(event) {
 async function onClickWhenRecording(event) {
     //get element
     const domPath = getDomPathStack(event.target);
+    const jQElement = $(event.target).first();
+
     syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, domPath);
-    hightlight(domPath);
+
+    //get table if it exists for tutorial
+    const nearestTable = getNearestTableOrList(jQElement[0]);
+    if (isEmpty(nearestTable)) {
+        syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, null);
+    } else {
+        syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, getDomPathStack(nearestTable));
+    }
+    //Highlight
+    if (jQElement.is('a')) {
+        jQElement.parent().css(CSS.HIGHLIGHT_BOX);
+    } else {
+        jQElement.css(CSS.HIGHLIGHT_BOX);
+    }
 }
 
 // async function sendUnsentDomPath() {
@@ -437,65 +462,17 @@ function onClickWhenFollowingTutorial(event) {
 
 }
 
-/**
- * 
- * @param {*} element DOM element
- * @returns Path of element starting with "body" stored in a stack. Elements with id
- * attribute are stored as #id
- */
-function getDomPathStack(element) {
-    var stack = [];
-    while (element.parentNode != null) {
-        var sibCount = 0;
-        var sibIndex = 0;
-        for (var i = 0; i < element.parentNode.childNodes.length; i++) {
-            var sib = element.parentNode.childNodes[i];
-            if (sib.nodeName == element.nodeName) {
-                if (sib === element) {
-                    sibIndex = sibCount;
-                }
-                sibCount++;
-            }
-        }
-        if (element.hasAttribute('id') && element.id != '') {
-            stack.unshift('#' + element.id);
-            return stack;
-        } else if (sibCount > 1) {
-            stack.unshift(element.nodeName.toLowerCase() + ':eq(' + sibIndex + ')');
-        } else {
-            stack.unshift(element.nodeName.toLowerCase());
-        }
-        element = element.parentNode;
-    }
-    return stack.slice(1); // removes the html element
-}
 
-
-/**
- * USED ONLY DURING RECORDING: Highlight the element with a growing border
- * @param {jQuery | [string]} element An jQuery instance or an array of strings representing path to a DOM element
- */
-function hightlight(element) {
-    // if (element instanceof jQuery) {
-    //     element.css(CSS.HIGHLIGHT_BOX);
-    // } else if (isNotNull(element.length)) {
-    //     $(jqueryElementStringFromDomPath(element)).first().css(CSS.HIGHLIGHT_BOX);
-    // } else {
-    //     alert('element type wrong');
-    // }
-    $(jqueryElementStringFromDomPath(element)).first().css(CSS.HIGHLIGHT_BOX);
-}
 
 
 function highlightAndScollTo(path, speed = 500, callback = () => { }) {
-
     //TODO: Repeat if element not found, might not be handled here
     const jQelement = $(jqueryElementStringFromDomPath(path));
     const htmlElement = $(jqueryElementStringFromDomPath(path))[0];
+    jQelement.css(CSS.HIGHLIGHT_BOX);
     $(getScrollParent(htmlElement, false)).animate({
         scrollTop: isNotNull(jQelement.offset()) ? max(0, parseInt(jQelement.offset().top) - window.innerHeight / 2) : 0
     }, speed).promise().then(() => {
-        jQelement.css(CSS.HIGHLIGHT_BOX);
         callback();
     })
 }

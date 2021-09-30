@@ -23,8 +23,18 @@ const CSS = {
         'height': '300px',
         'padding': '12px',
         'background-color': 'orange',
-        'border-radius': '12px',
-        'z-index': 2147483647
+        'border-radius': '6px',
+        'z-index': 2147483647,
+    },
+    POPUP_DRAGGABLE: {
+        "position": "absolute",
+        'top': '0',
+        'left': '0',
+        'width': '100%',
+        'height': '100%',
+        'padding': '12px',
+        'border-radius': '6px',
+        'z-index': -1,
     },
     AUTOMATION_SPEED_SLIDER: {
         "-webkit-appearance": "none",
@@ -38,14 +48,14 @@ const CSS = {
     },
     MAIN_MIDDLE_POPUP: {
         'position': 'fixed',
-        'top': '50%',
+        'top': '12px',
         'left': '50%',
-        'transform': 'translate(-50%, -50%)',
+        'transform': 'translate(-50%, 0%)',
         'width': '200px',
-        'height': '200px',
+        'height': '150px',
         'padding': '12px',
         'background-color': 'orange',
-        'border-radius': '12px',
+        'border-radius': '6px',
         'z-index': 2147483647
     },
     MAIN_OPTIONS_POPUP_SIMPLE_TUTORIAL_BUTTON: {
@@ -71,7 +81,7 @@ const CSS = {
         'height': '300px',
         'padding': '12px',
         'background-color': 'orange',
-        'border-radius': '12px',
+        'border-radius': '6px',
         'z-index': 2147483647
     }
 }
@@ -95,6 +105,7 @@ const VALUES = {
         AUTOMATION_SPEED: "AUTOMATION_SPEED",
         CURRENT_STEP_OBJ: "CURRENT_STEP_OBJ",
         CURRENT_SELECTED_ELEMENT: "CURRENT_SELECTED_ELEMENT",
+        CURRENT_SELECTED_ELEMENT_PARENT_TABLE: "CURRENT_SELECTED_ELEMENT_PARENT_TABLE",
         REVISIT_PAGE_COUNT: "REVISIT_PAGE_COUNT",
         MAX_REVISIT_PAGE_COUNT: 3,
     },
@@ -182,6 +193,22 @@ function isNotNull(obj) {
 
 /**
  * 
+ * @param {*} element DOM element
+ * @returns Path of element starting with "body" stored in a stack. Elements with id
+ * attribute are stored as #id
+ */
+function getDomPathStack(element) {
+    var stack = [];
+    while (element.parentNode != null) {
+        const index = $(element).index() + 1;
+        stack.unshift(element.nodeName.toLowerCase() + ':nth-child(' + index + ')');
+        element = element.parentNode;
+    }
+    return stack.slice(1); // removes the html element
+}
+
+/**
+ * 
  * @param {Array} pathStack 
  * @returns String of element path starting from the first ancestor with id attribute
  * stored in jquery element selector format: 'element > element...'
@@ -191,12 +218,7 @@ function jqueryElementStringFromDomPath(pathStack) {
     const numberOfElement = pathStack.length;
     for (let i = 0; i < numberOfElement; i++) {
         const currentElement = pathStack[i]
-        if (currentElement[0] === '#') {
-            //cut everything before it
-            jqueryString = currentElement;
-        } else {
-            jqueryString += currentElement;
-        }
+        jqueryString += currentElement;
         if (i == numberOfElement - 1) {
             break;
         }
@@ -234,7 +256,7 @@ function popupSendMessage(message) {
     });
 }
 
-function makeElementDraggable(elmnt) {
+function makeElementDraggable(elmnt, target = elmnt) {
     var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
     elmnt.onmousedown = dragMouseDown;
 
@@ -258,8 +280,8 @@ function makeElementDraggable(elmnt) {
         pos3 = e.clientX;
         pos4 = e.clientY;
         // set the element's new position:
-        elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
-        elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+        target.style.top = (target.offsetTop - pos2) + "px";
+        target.style.left = (target.offsetLeft - pos1) + "px";
     }
 
     function closeDragElement() {
@@ -268,6 +290,24 @@ function makeElementDraggable(elmnt) {
         document.onmousemove = null;
     }
 }
+
+function getNearestTableOrList(element) {
+    const table = element.closest('table');
+    if (!isEmpty(table)) {
+        return table;
+    }
+    const ul = element.closest('ul');
+    if (!isEmpty(ul)) {
+        return ul;
+    }
+    const ol = element.closest('ol');
+    if (!isEmpty(ol)) {
+        return ol;
+    }
+    return null;
+}
+
+
 
 
 

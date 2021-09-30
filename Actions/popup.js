@@ -40,6 +40,10 @@ $(() => {
     let clickActionDescriptionInputContainer = $('#click-action-description-input-container');
     let clickActionDescriptionInput = $('#click-action-description-input');
 
+    let useAnyElementInTableContainer = $('#use-any-element-in-table-container');
+    let useAnyElementInTableCheckbox = $('#use-any-element-in-table-checkbox');
+    let useAnyElementInTableInput = $('#use-any-element-in-table-input');
+
     let addAlternativeActionButtonContainer = $('#add-alternative-action-button-container');
     let addAlternativeActionButton = $('#add-alternative-action-button');
 
@@ -110,6 +114,8 @@ $(() => {
 
     var currentStepObj = undefined;
 
+
+
     chrome.storage.sync.get([VALUES.RECORDING_STATUS.STATUS, VALUES.STORAGE.IS_RECORDING_ACTIONS, VALUES.STORAGE.CURRENT_STEP_OBJ, VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, VALUES.STORAGE.CURRENT_URL], (result) => {
         switch (result[VALUES.RECORDING_STATUS.STATUS]) {
             case VALUES.RECORDING_STATUS.RECORDING: case VALUES.RECORDING_STATUS.BEGAN_RECORDING:
@@ -121,7 +127,7 @@ $(() => {
 
                 const selectedElementPath = result[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT];
                 if (typeof selectedElementPath !== 'undefined') {
-                    selectedElementIndicator.html(`Selected Element: ${selectedElementPath.slice(selectedElementPath.length - 2, selectedElementPath.length)}`)
+                    selectedElementIndicator.html(`Selected Element: ${selectedElementPath.slice(max(selectedElementPath.length - 2, 0), selectedElementPath.length)}`)
                 } else {
                     selectedElementIndicator.html('Selected Element: None')
                 }
@@ -221,9 +227,9 @@ $(() => {
                 callFunctionOnActionType(
                     selection,
                     () => {
-                        currentStepObj.actionObject = new ClickAction(new ClickGuide([], null, null, false, null), []);
+                        currentStepObj.actionObject = new ClickAction(new ClickGuide([], null, null, false, null, false, null), []);
                     }, () => {
-                        currentStepObj.actionObject = new ClickAction(new ClickGuide([], null, null, true, null), []);
+                        currentStepObj.actionObject = new ClickAction(new ClickGuide([], null, null, true, null, false, null), []);
                     }, () => {
                         currentStepObj.actionObject = new InputAction([], "", [], false, VALUES.INPUT_TYPES.TEXT);
                     }, () => {
@@ -279,6 +285,15 @@ $(() => {
         $('.customizable-action-container').show();
         $('.click-action-container').show();
         addAlternativeActionButton.html('Add Alternative Click');
+
+        chrome.storage.sync.get(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, result => {
+            const table = result[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE];
+            alert(table)
+            if (isEmpty(table)) {
+            } else {
+                useAnyElementInTableInput.val(table)
+            }
+        })
     }
 
     function showInputMenu() {
@@ -362,6 +377,22 @@ $(() => {
         })
     })
 
+    useAnyElementInTableCheckbox.on('change', () => {
+        const checked = useAnyElementInTableCheckbox.prop('checked');
+        updateCurrentStep(() => {
+            callFunctionOnActionType(
+                currentStepObj.actionType, () => {
+                    //click
+                    currentStepObj.actionObject.defaultClick.useAnythingInTable = checked;
+                    if (checked) {
+                        currentStepObj.actionObject.defaultClick.table = useAnyElementInTableInput.val();
+                    } else {
+                        currentStepObj.actionObject.defaultClick.table = null;
+                    }
+                }, () => { }, () => { }, () => { }, () => { });
+        })
+    })
+
     useCustomStepUrlCheckbox.on('change', () => {
         const checked = useCustomStepUrlCheckbox.prop('checked');
         if (checked) {
@@ -390,7 +421,17 @@ $(() => {
         })
     })
 
-
+    useAnyElementInTableInput.on('input', () => {
+        const value = useAnyElementInTableInput.val();
+        updateCurrentStep(() => {
+            callFunctionOnActionType(
+                currentStepObj.actionType, () => {
+                    //click
+                    currentStepObj.actionObject.defaultClick.table = value;
+                    syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, value);
+                }, () => { }, () => { }, () => { }, () => { });
+        })
+    })
 
     //MARK: button events
     recordTutorialSwitch.on('change', () => {

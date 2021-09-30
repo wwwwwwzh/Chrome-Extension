@@ -14,7 +14,7 @@ class Step {
      * 
      * @param {number} index 
      * @param {string} actionType 
-     * @param {RedirectAction | ClickAction | InputAction | SelectAction, NullAction} actionObject 
+     * @param {RedirectAction | ClickAction | InputAction | SelectAction | NullAction} actionObject 
      */
     constructor(index, actionType, actionObject, name, description, url) {
         this.index = index;
@@ -23,10 +23,6 @@ class Step {
         this.name = name;
         this.description = description;
         this.url = url;
-    }
-
-    completed() {
-        return (this.actionObject.completed() && this.index !== null && this.actionType !== VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL && typeof this.actionObject !== 'NullAction')
     }
 }
 
@@ -42,30 +38,6 @@ function isStepCompleted(step) {
     )
 }
 
-//Step Action Objects
-// class ClickAndRedirectAction {
-//     /**
-//      * 
-//      * @param {CAR} defaultCAR 
-//      * @param {[CAR]} options 
-//      */
-//     constructor(defaultCAR, options) {
-//         this.defaultCAR = defaultCAR;
-//         this.options = options;
-//     }
-// }
-
-// class CAR {
-//     /**
-//      * Click and redirect object used in ClickAndRedirectAction
-//      * @param {[string]} path 
-//      * @param {string} url 
-//      */
-//     constructor(path, url) {
-//         this.path = path;
-//         this.url = url;
-//     }
-// }
 
 /**
  * Placeholder action class for initialization of step object
@@ -77,10 +49,6 @@ class NullAction {
 class RedirectAction {
     constructor(url) {
         this.url = url;
-    }
-
-    completed() {
-        return (this.url !== null && typeof this.url !== 'undefined');
     }
 }
 
@@ -98,10 +66,6 @@ class ClickAction {
     constructor(defaultClick, optionsClick) {
         this.defaultClick = defaultClick;
         this.optionsClick = optionsClick;
-    }
-
-    completed() {
-        return this.defaultClick.completed();
     }
 }
 
@@ -121,16 +85,14 @@ class ClickGuide {
      * @param {boolean} isRedirect
      * @param {string} url
      */
-    constructor(path, name, description, isRedirect, url) {
+    constructor(path, name, description, isRedirect, url, useAnythingInTable, table) {
         this.path = path;
         this.name = name;
         this.description = description;
         this.isRedirect = isRedirect;
         this.url = url;
-    }
-
-    completed() {
-        return (this.path !== null && this.path !== [] && this.name !== null && this.name !== "" && typeof this.isRedirect !== 'undefined')
+        this.useAnythingInTable = useAnythingInTable;
+        this.table = table;
     }
 }
 
@@ -155,10 +117,6 @@ class InputAction {
         this.optionsText = optionsText;
         this.inputType = inputType;
     }
-
-    completed() {
-        return (this.path !== null && this.path !== [])
-    }
 }
 
 function isInputCompleted(input) {
@@ -174,10 +132,6 @@ class SelectAction {
     constructor(path, defaultValue) {
         this.path = path;
         this.defaultValue = defaultValue;
-    }
-
-    completed() {
-        return (this.path !== null && this.path !== [] && this.defaultValue !== "")
     }
 }
 

@@ -15,4 +15,5 @@ chrome.runtime.onInstalled.addListener(() => {
     syncStorageSet("CURRENT_SELECTED_ELEMENT", undefined);
     syncStorageSet('AUTOMATION_SPEED', 50);
     syncStorageSet('REVISIT_PAGE_COUNT', 0);
+    syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, null)
 });
