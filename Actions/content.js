@@ -265,9 +265,13 @@ async function showTutorialStepManual() {
 }
 
 function highlightNextStepManual(tutorialObj, currentStep, interval, showNext = true) {
-    const step = currentStep.actionObject.defaultClick;
-    const element = $(jqueryElementStringFromDomPath(step.path)).first();
-    highlightAndScollTo(step.path, interval);
+    const click = currentStep.actionObject.defaultClick;
+    const element = $(jqueryElementStringFromDomPath(click.path)).first();
+    if (currentStep.actionObject.defaultClick.useAnythingInTable) {
+        highlightAndScollTo(click.table);
+    } else {
+        highlightAndScollTo(click.path, interval);
+    }
     //UI
     popUpStepName.html(currentStep.name);
     popUpStepDescription.html(currentStep.description);
@@ -411,17 +415,6 @@ async function onClickWhenRecording(event) {
     }
 }
 
-// async function sendUnsentDomPath() {
-//     const key = VALUES.STORAGE.UNSENT_DOM_PATH;
-//     chrome.storage.sync.get(key, (result) => {
-//         if (result[key]) {
-//             syncStorageSet(key, null);
-//             //resetting url is handled in post to firestore function
-//         }
-//     });
-// }
-
-
 function onClickWhenFollowingTutorial(event) {
     const domPath = getDomPathStack(event.target);
     chrome.storage.sync.get([VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, VALUES.STORAGE.AUTOMATION_SPEED], result => {
@@ -436,8 +429,14 @@ function onClickWhenFollowingTutorial(event) {
             syncStorageSet(VALUES.STORAGE.REVISIT_PAGE_COUNT, 0);
             switch (currentStep.actionType) {
                 case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK:
-                    if (isSubArray(domPath, currentStep.actionObject.defaultClick.path)) {
-                        incrementCurrentStepHelper(tutorialObj, true, false);
+                    if (currentStep.actionObject.defaultClick.useAnythingInTable) {
+                        if (isSubArray(domPath, currentStep.actionObject.defaultClick.table)) {
+                            incrementCurrentStepHelper(tutorialObj, true, false);
+                        }
+                    } else {
+                        if (isSubArray(domPath, currentStep.actionObject.defaultClick.path)) {
+                            incrementCurrentStepHelper(tutorialObj, true, false);
+                        }
                     }
                     break;
                 case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK_REDIRECT:
@@ -468,7 +467,7 @@ function onClickWhenFollowingTutorial(event) {
 function highlightAndScollTo(path, speed = 500, callback = () => { }) {
     //TODO: Repeat if element not found, might not be handled here
     const jQelement = $(jqueryElementStringFromDomPath(path));
-    const htmlElement = $(jqueryElementStringFromDomPath(path))[0];
+    const htmlElement = jQelement[0];
     jQelement.css(CSS.HIGHLIGHT_BOX);
     $(getScrollParent(htmlElement, false)).animate({
         scrollTop: isNotNull(jQelement.offset()) ? max(0, parseInt(jQelement.offset().top) - window.innerHeight / 2) : 0

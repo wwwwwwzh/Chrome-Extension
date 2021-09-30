@@ -95,6 +95,8 @@ $(() => {
             syncStorageSet(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX, 0);
             syncStorageSet(VALUES.STORAGE.CURRENT_STEP_OBJ, undefined);
             syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, undefined);
+            syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, undefined);
+
             newTutorialNameInput.val('');
             showStepContainer();
         }
@@ -288,7 +290,6 @@ $(() => {
 
         chrome.storage.sync.get(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, result => {
             const table = result[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE];
-            alert(table)
             if (isEmpty(table)) {
             } else {
                 useAnyElementInTableInput.val(table)
@@ -385,7 +386,7 @@ $(() => {
                     //click
                     currentStepObj.actionObject.defaultClick.useAnythingInTable = checked;
                     if (checked) {
-                        currentStepObj.actionObject.defaultClick.table = useAnyElementInTableInput.val();
+                        currentStepObj.actionObject.defaultClick.table = useAnyElementInTableInput.val().split(',');
                     } else {
                         currentStepObj.actionObject.defaultClick.table = null;
                     }
@@ -427,8 +428,8 @@ $(() => {
             callFunctionOnActionType(
                 currentStepObj.actionType, () => {
                     //click
-                    currentStepObj.actionObject.defaultClick.table = value;
-                    syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, value);
+                    currentStepObj.actionObject.defaultClick.table = value.split(',');
+                    syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, value.split(','));
                 }, () => { }, () => { }, () => { }, () => { });
         })
     })
@@ -475,6 +476,7 @@ $(() => {
                     updateCurrentStep(() => { currentStepObj = undefined; })
                     loadMenuFromStorage(undefined);
                     syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, undefined);
+                    syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, undefined);
                     selectedElementIndicator.html('Selected Element: None');
                 })
             } else {
@@ -501,6 +503,7 @@ $(() => {
         syncStorageSet(VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME, undefined);
         syncStorageSet(VALUES.STORAGE.CURRENT_STEP_OBJ, undefined);
         syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, undefined);
+        syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, undefined);
         syncStorageSet(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID, undefined);
         syncStorageSet(VALUES.STORAGE.STEP_ACTION_TYPE, VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL);
         showNewRecordingContainer();
