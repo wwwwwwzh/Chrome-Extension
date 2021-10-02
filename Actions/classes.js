@@ -16,13 +16,14 @@ class Step {
      * @param {string} actionType 
      * @param {RedirectAction | ClickAction | InputAction | SelectAction | NullAction} actionObject 
      */
-    constructor(index, actionType, actionObject, name, description, url) {
+    constructor(index, actionType, actionObject, name, description, url, automationInterrupt = false) {
         this.index = index;
         this.actionType = actionType;
         this.actionObject = actionObject;
         this.name = name;
         this.description = description;
         this.url = url;
+        this.automationInterrupt = automationInterrupt;
     }
 }
 

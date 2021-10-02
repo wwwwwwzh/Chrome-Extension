@@ -20,6 +20,7 @@
     "permissions": [
         "storage",
         "activeTab",
+        "unlimitedStorage",
         "scripting"
     ],
     "content_scripts": [

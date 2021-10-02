@@ -90,12 +90,14 @@ $(() => {
 
     async function onNewTutorialNameButtonClicked() {
         if (newTutorialNameInput.val().length > 1) {
-            syncStorageSet(VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME, newTutorialNameInput.val());
-            syncStorageSet(VALUES.RECORDING_STATUS.STATUS, VALUES.RECORDING_STATUS.BEGAN_RECORDING);
-            syncStorageSet(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX, 0);
-            syncStorageSet(VALUES.STORAGE.CURRENT_STEP_OBJ, undefined);
-            syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, undefined);
-            syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, undefined);
+            var data = {};
+            data[VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME] = newTutorialNameInput.val();
+            data[VALUES.RECORDING_STATUS.STATUS] = VALUES.RECORDING_STATUS.BEGAN_RECORDING;
+            data[VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX] = 0;
+            data[VALUES.STORAGE.CURRENT_STEP_OBJ] = undefined;
+            data[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT] = undefined;
+            data[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE] = undefined;
+            syncStorageSetBatch(data);
 
             newTutorialNameInput.val('');
             showStepContainer();
@@ -171,7 +173,7 @@ $(() => {
         syncStorageSet(VALUES.STORAGE.CURRENT_STEP_OBJ, currentStepObj);
     }
 
-    function prepareCurrentStep(callback) {
+    function prepareCurrentStep(callback = () => { }) {
         //check if step exists
         if (typeof currentStepObj === 'undefined') {
             const indexKey = VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX;
@@ -290,7 +292,7 @@ $(() => {
 
         chrome.storage.sync.get(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, result => {
             const table = result[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE];
-            if (isEmpty(table)) {
+            if (!isNotNull(table)) {
             } else {
                 useAnyElementInTableInput.val(table)
             }
@@ -472,12 +474,19 @@ $(() => {
             if (isStepCompleted(currentStepObj)) {
                 //upload to firebase
                 addStepToFirebase(currentStepObj).then(() => {
+                    const data = {};
+                    data[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT] = undefined;
+                    data[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE] = undefined;
+                    data[VALUES.STORAGE.IS_RECORDING_ACTIONS] = false;
+                    syncStorageSetBatch(data);
                     //refresh menu
                     updateCurrentStep(() => { currentStepObj = undefined; })
                     loadMenuFromStorage(undefined);
-                    syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, undefined);
-                    syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, undefined);
+                    useAnyElementInTableInput.val('');
                     selectedElementIndicator.html('Selected Element: None');
+                    recordTutorialSwitch.prop('checked', false);
+                    //auto click the recorded element
+                    popupSendMessage({ clickPath: path, isRecordingStatus: false });
                 })
             } else {
                 alert("Please complete required fields first");
@@ -497,15 +506,17 @@ $(() => {
     })
 
     function endRecordingHelper() {
-        syncStorageSet(VALUES.RECORDING_STATUS.STATUS, VALUES.RECORDING_STATUS.NOT_RECORDING);
-        syncStorageSet(VALUES.STORAGE.IS_RECORDING_ACTIONS, false);
+        var data = {};
+        data[VALUES.RECORDING_STATUS.STATUS] = VALUES.RECORDING_STATUS.NOT_RECORDING;
+        data[VALUES.STORAGE.IS_RECORDING_ACTIONS] = false;
+        data[VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME] = undefined;
+        data[VALUES.STORAGE.CURRENT_STEP_OBJ] = undefined;
+        data[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT] = undefined;
+        data[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE] = undefined;
+        data[VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID] = undefined;
+        data[VALUES.STORAGE.STEP_ACTION_TYPE] = VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL;
         popupSendMessage({ isRecordingStatus: false });
-        syncStorageSet(VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME, undefined);
-        syncStorageSet(VALUES.STORAGE.CURRENT_STEP_OBJ, undefined);
-        syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, undefined);
-        syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, undefined);
-        syncStorageSet(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID, undefined);
-        syncStorageSet(VALUES.STORAGE.STEP_ACTION_TYPE, VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL);
+        syncStorageSetBatch(data);
         showNewRecordingContainer();
 
     }
@@ -577,7 +588,7 @@ $(() => {
         }
 
         async function addTutorialStep(docId, currentUrl) {
-            if (!isEmpty(docId)) {
+            if (isNotNull(docId)) {
                 syncStorageSet(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX, stepIndex);
                 //doc object
                 stepObj.index = stepIndex;

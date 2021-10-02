@@ -163,13 +163,16 @@ const VALUES = {
 }
 
 //MARK: Utility functions
-function syncStorageSet(key, value, callback) {
-    const data = {}
+function syncStorageSet(key, value, callback = () => { }) {
+    const data = {};
     data[key] = value
-    chrome.storage.sync.set(data, () => {
-        if (callback) { callback(); }
-    });
+    chrome.storage.sync.set(data, callback);
+    console.log(data);
+}
 
+function syncStorageSetBatch(data, callback = () => { }) {
+    chrome.storage.sync.set(data, callback);
+    console.log(data);
 }
 
 function checkAndInitializeStorageIfUndefined(result, key, value) {
@@ -187,9 +190,7 @@ function intervalFromSpeed(speed) {
     }
 }
 
-function isNotNull(obj) {
-    return (obj !== null && typeof obj !== 'undefined');
-}
+
 
 /**
  * 
@@ -293,15 +294,15 @@ function makeElementDraggable(elmnt, target = elmnt) {
 
 function getNearestTableOrList(element) {
     const table = element.closest('table');
-    if (!isEmpty(table)) {
+    if (isNotNull(table)) {
         return table;
     }
     const ul = element.closest('ul');
-    if (!isEmpty(ul)) {
+    if (isNotNull(ul)) {
         return ul;
     }
     const ol = element.closest('ol');
-    if (!isEmpty(ol)) {
+    if (isNotNull(ol)) {
         return ol;
     }
     return null;
@@ -310,10 +311,11 @@ function getNearestTableOrList(element) {
 
 
 
-
-
-
 //MARK: Library functions
+function isNotNull(obj) {
+    return (obj !== null && typeof obj !== 'undefined');
+}
+
 function isEmpty(str) {
     return (!str || str.length === 0);
 }
