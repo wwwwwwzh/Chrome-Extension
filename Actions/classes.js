@@ -98,7 +98,13 @@ class ClickGuide {
 }
 
 function isClickGuideCompleted(clickGuide) {
-    return (isNotNull(clickGuide) && isNotNull(clickGuide.path) && clickGuide.path !== [] && clickGuide.name !== null && clickGuide.name !== "" && typeof clickGuide.isRedirect !== 'undefined')
+    return (
+        isNotNull(clickGuide) &&
+        isNotNull(clickGuide.path) &&
+        clickGuide.path.length > 0 &&
+        clickGuide.name !== null &&
+        clickGuide.name !== "" &&
+        typeof clickGuide.isRedirect !== 'undefined')
 }
 
 class InputAction {

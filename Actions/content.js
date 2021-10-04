@@ -273,10 +273,22 @@ async function showTutorialStepGeneric(onStepActionClick, onStepActionClickRedir
 }
 
 async function showTutorialStepManual() {
-    showTutorialStepGeneric(manualStep, manualStep);
+    showTutorialStepGeneric(manualStep, manualRedirect, manualStep, manualInput, manualSelect);
 }
 
 function manualStep(tutorialObj, currentStep, interval, showNext = true) {
+    const click = currentStep.actionObject.defaultClick;
+    //const element = $(jqueryElementStringFromDomPath(click.path)).first();
+    if (currentStep.actionObject.defaultClick.useAnythingInTable) {
+        highlightAndScollTo(click.table, interval);
+    } else {
+        highlightAndScollTo(click.path, interval);
+    }
+    //UI
+    updateStepInstructionUIHelper(currentStep);
+}
+
+function manualRedirect(tutorialObj, currentStep, interval, showNext = true) {
     const click = currentStep.actionObject.defaultClick;
     const element = $(jqueryElementStringFromDomPath(click.path)).first();
     if (currentStep.actionObject.defaultClick.useAnythingInTable) {
@@ -285,6 +297,32 @@ function manualStep(tutorialObj, currentStep, interval, showNext = true) {
         highlightAndScollTo(click.path, interval);
     }
     //UI
+    popUpStepName.html(currentStep.name);
+    popUpStepDescription.html(currentStep.description);
+}
+
+function manualInput(tutorialObj, currentStep, interval, showNext = true) {
+    const inputObj = currentStep.actionObject;
+    //const element = $(jqueryElementStringFromDomPath(inputObj.path)).first();
+    highlightAndScollTo(inputObj.path, interval);
+    //UI
+    updateStepInstructionUIHelper(currentStep);
+}
+
+function manualSelect(tutorialObj, currentStep, interval, showNext = true) {
+    const click = currentStep.actionObject.defaultClick;
+    const element = $(jqueryElementStringFromDomPath(click.path)).first();
+    if (currentStep.actionObject.defaultClick.useAnythingInTable) {
+        highlightAndScollTo(click.table, interval);
+    } else {
+        highlightAndScollTo(click.path, interval);
+    }
+    //UI
+    popUpStepName.html(currentStep.name);
+    popUpStepDescription.html(currentStep.description);
+}
+
+function updateStepInstructionUIHelper(currentStep) {
     popUpStepName.html(currentStep.name);
     popUpStepDescription.html(currentStep.description);
 }
@@ -328,15 +366,17 @@ function autoInput(tutorialObj, currentStep, interval) {
     highlightAndScollTo(step.path, interval, () => {
         //check if there is default input
         const defaultText = step.defaultText;
-        if (isNotNull(defaultText) && !isEmpty(defaultText)) {
-            //fill input with default
-            inputEle.val(defaultText);
-        } else {
-            //asks for input
+        // if (isNotNull(defaultText) && !isEmpty(defaultText)) {
+        //     //fill input with default
+        //     inputEle.val(defaultText);
+        //     incrementCurrentStepHelper(tutorialObj);
+        // } else {
+        //     //asks for input
 
-        }
-        //this step completed, go to next step
-        incrementCurrentStepHelper(tutorialObj);
+        // }        
+        isAutomationInterrupt = true;
+        manualInput(tutorialObj, currentStep, interval, showNext);
+        return;
     });
 }
 
@@ -345,8 +385,8 @@ function autoInput(tutorialObj, currentStep, interval) {
  * .trigger('click') don't work
  * @param {HTML Element} element 
  */
-function simulateClick(element) {
-    const evt = new MouseEvent('click', {
+function simulateClick(element, eventType = 'click') {
+    const evt = new MouseEvent(eventType, {
         view: window,
         bubbles: true,
         cancelable: true
@@ -373,6 +413,7 @@ function incrementCurrentStepHelper(tutorialObj, showNext = true, auto = true) {
         if (auto) {
             showNext && showTutorialStepAuto();
         } else {
+            simulateClick(currentElement);
             showNext && showTutorialStepManual();
         }
     });
@@ -388,7 +429,8 @@ chrome.storage.sync.get(VALUES.STORAGE.IS_RECORDING_ACTIONS, result => {
     isRecordingCache = result[VALUES.STORAGE.IS_RECORDING_ACTIONS];
 })
 
-
+var domPath = null;
+var currentElement = null;
 /**blur focus focusin focusout load resize scroll unload click " +
 "dblclick mousedown mouseup mousemove mouseover mouseout mouseenter " + 
 "mouseleave change select submit keydown keypress keyup error
@@ -401,17 +443,27 @@ $(() => {
     $('*').bind('click', event => {
         if (isRecordingCache) {
             preventDefaultHelper(event);
-            onClickUniversalHandler(event);
-            console.log(event.type)
+            processEventHelper(event.target);
         }
     });
 
     $(document.body).bind('click', event => {
         if (!isRecordingCache) {
-            onClickUniversalHandler(event);
-            console.log(event.type)
+            preventDefaultHelper(event);
+            processEventHelper(event.target);
         }
     });
+
+    function processEventHelper(target) {
+        domPath = getShortDomPathStack(target);
+        console.log($(jqueryElementStringFromDomPath(domPath)).length)
+        if ($(jqueryElementStringFromDomPath(domPath)).length > 1) {
+            domPath = getCompleteDomPathStack(target);
+        }
+        console.log(domPath)
+        currentElement = target;
+        onClickUniversalHandler();
+    }
 })
 
 function preventDefaultHelper(event) {
@@ -423,28 +475,27 @@ function preventDefaultHelper(event) {
 }
 
 
-async function onClickUniversalHandler(event) {
+async function onClickUniversalHandler() {
     chrome.storage.sync.get([VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.STORAGE.IS_RECORDING_ACTIONS], (result) => {
         if (result[VALUES.STORAGE.IS_RECORDING_ACTIONS] === true) {
-            onClickWhenRecording(event);
+            onClickWhenRecording();
         }
         switch (result[VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS]) {
             case VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
-                onClickWhenFollowingTutorial(event);
+                onClickWhenFollowingTutorial();
                 break;
             default:
                 break;
         }
         if (isAutomationInterrupt) {
-            onClickWhenFollowingTutorial(event);
+            onClickWhenFollowingTutorial();
         }
     });
 }
 
-async function onClickWhenRecording(event) {
+async function onClickWhenRecording() {
     //get element
-    const domPath = getDomPathStack(event.target);
-    const jQElement = $(event.target);
+    const jQElement = $(currentElement);
 
     syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, domPath);
 
@@ -453,7 +504,12 @@ async function onClickWhenRecording(event) {
     if (!isNotNull(nearestTable)) {
         syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, null);
     } else {
-        syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, getDomPathStack(nearestTable));
+        var nearestTablePath = getShortDomPathStack(nearestTable)
+        console.log($(jqueryElementStringFromDomPath(nearestTablePath)).length)
+        if ($(jqueryElementStringFromDomPath(nearestTablePath)).length > 1) {
+            nearestTablePath = getCompleteDomPathStack(nearestTable);
+        }
+        syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, nearestTablePath);
     }
     //Highlight
     if (jQElement.is('a')) {
@@ -463,8 +519,8 @@ async function onClickWhenRecording(event) {
     }
 }
 
-function onClickWhenFollowingTutorial(event) {
-    const domPath = getDomPathStack(event.target);
+function onClickWhenFollowingTutorial() {
+
     chrome.storage.sync.get([VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, VALUES.STORAGE.AUTOMATION_SPEED, VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS], result => {
         const tutorialObj = result[VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID];
         const currentStep = tutorialObj.steps[tutorialObj.currentStep];
@@ -494,7 +550,9 @@ function onClickWhenFollowingTutorial(event) {
                     onStepActionRedirect(tutorialObj, currentStep, interval);
                     break;
                 case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_INPUT:
-                    onStepActionInput(tutorialObj, currentStep, interval);
+                    if (isSubArray(domPath, currentStep.actionObject.path)) {
+                        incrementCurrentStepHelper(tutorialObj, true, false);
+                    }
                     break;
                 case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SELECT:
                     onStepActionSelect(tutorialObj, currentStep, interval);
@@ -530,7 +588,6 @@ function highlightAndScollTo(path, speed = 500, callback = () => { }) {
         return;
     }
     highlightAndRemoveLastHighlight(jQElement);
-    alert(max(0, parseInt(jQElement.offset().top) - window.innerHeight / 2));
     $(getScrollParent(htmlElement, false)).animate({
         scrollTop: isNotNull(jQElement.offset()) ? max(0, parseInt(jQElement.offset().top) - window.innerHeight / 2) : 0
     }, speed).promise().then(() => {

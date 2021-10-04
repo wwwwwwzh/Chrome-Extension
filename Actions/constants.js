@@ -198,11 +198,26 @@ function intervalFromSpeed(speed) {
  * @returns Path of element starting with "body" stored in a stack. Elements with id
  * attribute are stored as #id
  */
-function getDomPathStack(element) {
+function getCompleteDomPathStack(element) {
     var stack = [];
     while (element.parentNode != null) {
         const index = $(element).index() + 1;
         stack.unshift(element.nodeName.toLowerCase() + ':nth-child(' + index + ')');
+        element = element.parentNode;
+    }
+    return stack.slice(1); // removes the html element
+}
+
+function getShortDomPathStack(element) {
+    var stack = [];
+    while (element.parentNode != null) {
+        const index = $(element).index() + 1;
+        if (element.hasAttribute('id') && element.id !== '') {
+            stack.unshift('#' + element.id);
+            return stack;
+        } else {
+            stack.unshift(element.nodeName.toLowerCase() + ':nth-child(' + index + ')');
+        }
         element = element.parentNode;
     }
     return stack.slice(1); // removes the html element
@@ -292,6 +307,9 @@ function makeElementDraggable(elmnt, target = elmnt) {
     }
 }
 
+/**
+ * Receives HTML element and returns HTML element
+ */
 function getNearestTableOrList(element) {
     const table = element.closest('table');
     if (isNotNull(table)) {
@@ -331,12 +349,14 @@ function arraysEqual(a, b) {
     return true;
 }
 
+/**
+ * @returns true if b is subarray of a
+ */
 function isSubArray(a, b) {
     if (a === b) return true;
     if (a == null || b == null) return false;
 
-    const shorterLength = a.length > b.length ? b.length : a.length;
-    for (var i = 0; i < shorterLength; i++) {
+    for (var i = 0; i < b.length; i++) {
         if (a[i] !== b[i]) return false;
     }
     return true;

@@ -452,6 +452,10 @@ $(() => {
     async function onNextButtonClicked() {
         chrome.storage.sync.get([VALUES.STORAGE.CURRENT_SELECTED_ELEMENT], result => {
             const path = result[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT];
+            if (!isNotNull(path) || isEmpty(path)) {
+                alert("Please complete required fields first");
+                return;
+            }
             callFunctionOnActionType(
                 currentStepObj.actionType,
                 () => {
