@@ -62,7 +62,7 @@ async function fetchSimpleTutorials() {
     mainPopUpContainer.empty();
     automationSpeedSliderHelper();
     const domainName = "https://" + currentUrlObj.hostname + "/";
-    const url_matches = [currentUrl];
+    const url_matches = [currentUrl, domainName];
     const simpleTutorialQuery = query(collection(firestoreRef,
         VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL),
         where(
@@ -111,6 +111,7 @@ function createAndShowMiddlePopupContainer() {
 
 async function onFollowTutorialButtonClicked(tutorial) {
     //toogle html elements
+    reHighlightAttempt = 0;
     mainPopUpContainer.hide();
     createAndShowOptionsContainer();
     automationSpeedSliderHelper(mainStopOptionsContainer, true);
@@ -129,6 +130,7 @@ async function onFollowTutorialButtonClicked(tutorial) {
 async function onPopUpAutomateButtonClicked(tutorial) {
     loadTutorialToStorage(tutorial).then(() => {
         syncStorageSet(VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.FOLLOWING_TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL);
+        globalEventsHandler.setFollwingTutorialStatusCache(VALUES.FOLLOWING_TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL);
         showTutorialStepAuto();
     })
 }
@@ -136,6 +138,7 @@ async function onPopUpAutomateButtonClicked(tutorial) {
 async function onPopUpManualButtonClicked(tutorial) {
     loadTutorialToStorage(tutorial).then(() => {
         syncStorageSet(VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL);
+        globalEventsHandler.setFollwingTutorialStatusCache(VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL);
         showTutorialStepManual();
     })
 }
@@ -151,6 +154,7 @@ async function loadTutorialToStorage(tutorial) {
     const stepsQuerySnapshot = await getDocs(stepsQuery);
     //construct steps array from query
     var steps = [];
+    //TODO!: solve url problem (possibly using regex)
     var isFirstStepReached = false;
     stepsQuerySnapshot.forEach((step) => {
         const data = step.data();
@@ -158,9 +162,19 @@ async function loadTutorialToStorage(tutorial) {
         if (isFirstStepReached) {
             steps.push(data);
         } else {
-            if (data.url === currentUrl) {
-                isFirstStepReached = true;
-                steps.push(data);
+            const url = data.url;
+            if (url[0] === '/') {
+                //regex
+                const regex = new RegExp(url.substr(1, url.length - 2));
+                if (regex.test(currentUrl)) {
+                    isFirstStepReached = true;
+                    steps.push(data);
+                }
+            } else {
+                if (url === currentUrl) {
+                    isFirstStepReached = true;
+                    steps.push(data);
+                }
             }
         }
     })
@@ -176,14 +190,17 @@ async function onStopTutorialButtonClicked() {
     mainStopOptionsContainer.hide();
     mainMiddlePopupContainer.hide();
     syncStorageSet(VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.FOLLOWING_TUTORIAL_STATUS.NOT_FOLLOWING_TUTORIAL);
+    globalEventsHandler.setFollwingTutorialStatusCache(VALUES.FOLLOWING_TUTORIAL_STATUS.NOT_FOLLOWING_TUTORIAL);
     syncStorageSet(VALUES.STORAGE.REVISIT_PAGE_COUNT, 0);
     fetchSimpleTutorials();
+    removeLastHighlight();
 }
 
 
 
 async function checkFollowingTutorialStatus() {
     chrome.storage.sync.get(VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, (result) => {
+        globalEventsHandler.setFollwingTutorialStatusCache(result[VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS]);
         switch (result[VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS]) {
             case VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
                 createAndShowOptionsContainer();
@@ -231,7 +248,7 @@ function onEnteredWrongPage(tutorialObj, urlToMatch) {
     }
 }
 
-async function showTutorialStepGeneric(onStepActionClick, onStepActionClickRedirect, onStepActionRedirect, onStepActionInput, onStepActionSelect) {
+async function callFunctionOnSwitchStepType(onStepActionClick, onStepActionClickRedirect, onStepActionRedirect, onStepActionInput, onStepActionSelect) {
     chrome.storage.sync.get([VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, VALUES.STORAGE.AUTOMATION_SPEED], result => {
         const tutorialObj = result[VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID];
         const currentStep = tutorialObj.steps[tutorialObj.currentStep];
@@ -273,7 +290,7 @@ async function showTutorialStepGeneric(onStepActionClick, onStepActionClickRedir
 }
 
 async function showTutorialStepManual() {
-    showTutorialStepGeneric(manualStep, manualRedirect, manualStep, manualInput, manualSelect);
+    callFunctionOnSwitchStepType(manualStep, manualRedirect, manualStep, manualInput, manualSelect);
 }
 
 function manualStep(tutorialObj, currentStep, interval, showNext = true) {
@@ -329,7 +346,7 @@ function updateStepInstructionUIHelper(currentStep) {
 
 
 async function showTutorialStepAuto() {
-    showTutorialStepGeneric(autoClick, autoClick, autoRedirect, autoInput, autoSelect)
+    callFunctionOnSwitchStepType(autoClick, autoClick, autoRedirect, autoInput, autoSelect)
 }
 
 var isAutomationInterrupt = false
@@ -386,12 +403,14 @@ function autoInput(tutorialObj, currentStep, interval) {
  * @param {HTML Element} element 
  */
 function simulateClick(element, eventType = 'click') {
+    isSimulatingClick = true;
     const evt = new MouseEvent(eventType, {
         view: window,
         bubbles: true,
         cancelable: true
     });
     element.dispatchEvent(evt);
+
 }
 
 function autoSelect(tutorialObj, currentStep, interval) {
@@ -424,10 +443,24 @@ function onAutomationSpeedSliderChanged() {
 }
 
 //MARK: Start of recording events
-var isRecordingCache = false;
-chrome.storage.sync.get(VALUES.STORAGE.IS_RECORDING_ACTIONS, result => {
-    isRecordingCache = result[VALUES.STORAGE.IS_RECORDING_ACTIONS];
+var isSimulatingClick = false;
+var globalEventsHandler = new GlobalEventsHandler();
+chrome.storage.sync.get([VALUES.STORAGE.IS_RECORDING_ACTIONS, VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS], result => {
+    globalEventsHandler.setIsRecordingCache(result[VALUES.STORAGE.IS_RECORDING_ACTIONS]);
+    globalEventsHandler.setFollwingTutorialStatusCache(result[VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS]);
 })
+
+function addGlobalEventListeners() {
+    $('*').on('blur focus focusin focusout change dblclick keydown keypress keyup mousedown mouseup select submit',
+        preventDefaultHelper);
+    $('*').on('click', onClickHelper);
+}
+
+function removeGlobalEventListeners() {
+    $('*').off('blur focus focusin focusout change dblclick keydown keypress keyup mousedown mouseup select submit',
+        preventDefaultHelper);
+    $('*').off('click', onClickHelper);
+}
 
 var domPath = null;
 var currentElement = null;
@@ -435,39 +468,31 @@ var currentElement = null;
 "dblclick mousedown mouseup mousemove mouseover mouseout mouseenter " + 
 "mouseleave change select submit keydown keypress keyup error
 */
-$(() => {
-    $('*').bind('blur focus focusin focusout change dblclick keydown keypress keyup mousedown mouseup select submit', event => {
-        preventDefaultHelper(event);
-    });
 
-    $('*').bind('click', event => {
-        if (isRecordingCache) {
-            preventDefaultHelper(event);
+
+function onClickHelper(event) {
+    preventDefaultHelper(event);
+    if (event.target !== currentElement) {
+        if (!isSimulatingClick) {
             processEventHelper(event.target);
         }
-    });
-
-    $(document.body).bind('click', event => {
-        if (!isRecordingCache) {
-            preventDefaultHelper(event);
-            processEventHelper(event.target);
-        }
-    });
-
-    function processEventHelper(target) {
-        domPath = getShortDomPathStack(target);
-        console.log($(jqueryElementStringFromDomPath(domPath)).length)
-        if ($(jqueryElementStringFromDomPath(domPath)).length > 1) {
-            domPath = getCompleteDomPathStack(target);
-        }
-        console.log(domPath)
-        currentElement = target;
-        onClickUniversalHandler();
+        isSimulatingClick = false;
     }
-})
+}
+
+function processEventHelper(target) {
+    domPath = getShortDomPathStack(target);
+    if ($(jqueryElementStringFromDomPath(domPath)).length > 1) {
+        domPath = getCompleteDomPathStack(target);
+    }
+    console.log(`clicking: ${domPath}`);
+    currentElement = target;
+    onClickUniversalHandler();
+}
 
 function preventDefaultHelper(event) {
-    if (isRecordingCache) {
+    console.log(JSON.stringify(globalEventsHandler));
+    if (!isSimulatingClick) {
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation()
@@ -476,21 +501,20 @@ function preventDefaultHelper(event) {
 
 
 async function onClickUniversalHandler() {
-    chrome.storage.sync.get([VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.STORAGE.IS_RECORDING_ACTIONS], (result) => {
-        if (result[VALUES.STORAGE.IS_RECORDING_ACTIONS] === true) {
-            onClickWhenRecording();
-        }
-        switch (result[VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS]) {
+    if (globalEventsHandler.isRecordingCache === true) {
+        onClickWhenRecording();
+    } else {
+        switch (globalEventsHandler.followingTutorialStatusCache) {
             case VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
                 onClickWhenFollowingTutorial();
                 break;
             default:
                 break;
         }
-        if (isAutomationInterrupt) {
-            onClickWhenFollowingTutorial();
-        }
-    });
+    }
+    if (isAutomationInterrupt) {
+        onClickWhenFollowingTutorial();
+    }
 }
 
 async function onClickWhenRecording() {
@@ -505,7 +529,6 @@ async function onClickWhenRecording() {
         syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, null);
     } else {
         var nearestTablePath = getShortDomPathStack(nearestTable)
-        console.log($(jqueryElementStringFromDomPath(nearestTablePath)).length)
         if ($(jqueryElementStringFromDomPath(nearestTablePath)).length > 1) {
             nearestTablePath = getCompleteDomPathStack(nearestTable);
         }
@@ -519,56 +542,53 @@ async function onClickWhenRecording() {
     }
 }
 
-function onClickWhenFollowingTutorial() {
 
-    chrome.storage.sync.get([VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, VALUES.STORAGE.AUTOMATION_SPEED, VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS], result => {
-        const tutorialObj = result[VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID];
-        const currentStep = tutorialObj.steps[tutorialObj.currentStep];
-        const interval = intervalFromSpeed(result[VALUES.STORAGE.AUTOMATION_SPEED]);
-        if (tutorialObj.currentStep >= tutorialObj.steps.length) {
-            onStopTutorialButtonClicked();
-        } else if (currentUrl !== currentStep.url) {
-            //onEnteredWrongPage(tutorialObj, currentStep.url);
+
+function onClickWhenFollowingTutorial() {
+    //TODO: add regexp and handle user mistakes
+    console.log('onClickWhenFollowingTutorial');
+    callFunctionOnSwitchStepType(onClickWithStepTypeClick, onClickWithStepTypeClick, onClickWithStepTypeRedirect, onClickWithStepTypeInput, null);
+    function onClickWithStepTypeClick(tutorialObj, currentStep, interval, showNext = true) {
+        if (currentStep.actionObject.defaultClick.useAnythingInTable) {
+            const tablePath = currentStep.actionObject.defaultClick.table;
+            if (isSubArray(domPath, tablePath)) {
+                incrementCurrentStepHelper(tutorialObj, true, false);
+            } else {
+                onClickedOnWrongElement(tablePath);
+            }
         } else {
-            //syncStorageSet(VALUES.STORAGE.REVISIT_PAGE_COUNT, 0);
-            switch (currentStep.actionType) {
-                case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK:
-                    if (currentStep.actionObject.defaultClick.useAnythingInTable) {
-                        if (isSubArray(domPath, currentStep.actionObject.defaultClick.table)) {
-                            incrementCurrentStepHelper(tutorialObj, true, false);
-                        }
-                    } else {
-                        if (isSubArray(domPath, currentStep.actionObject.defaultClick.path)) {
-                            incrementCurrentStepHelper(tutorialObj, true, false);
-                        }
-                    }
-                    break;
-                case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK_REDIRECT:
-                    onStepActionClickRedirect(tutorialObj, currentStep, interval, false);
-                    break;
-                case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_REDIRECT:
-                    onStepActionRedirect(tutorialObj, currentStep, interval);
-                    break;
-                case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_INPUT:
-                    if (isSubArray(domPath, currentStep.actionObject.path)) {
-                        incrementCurrentStepHelper(tutorialObj, true, false);
-                    }
-                    break;
-                case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SELECT:
-                    onStepActionSelect(tutorialObj, currentStep, interval);
-                    break;
-                default:
-                    alert("Error: Illegal action type")
-                    console.error("Illegal action type");
-                    break;
+            const clickPath = currentStep.actionObject.defaultClick.path;
+            if (isSubArray(domPath, clickPath)) {
+                incrementCurrentStepHelper(tutorialObj, true, false);
+                return;
+            } else {
+                onClickedOnWrongElement(clickPath);
             }
         }
-    })
+    }
 
+    function onClickWithStepTypeInput(tutorialObj, currentStep, interval, showNext = true) {
+        const inputPath = currentStep.actionObject.path;
+        if (isSubArray(domPath, inputPath)) {
+            //TODO: record input and go to next step only when inputted one char
+            incrementCurrentStepHelper(tutorialObj, true, false);
+            return;
+        } else {
+            onClickedOnWrongElement(inputPath);
+        }
+    }
+
+    function onClickWithStepTypeRedirect(tutorialObj, currentStep, interval, showNext = true) {
+
+    }
+
+    function onClickedOnWrongElement(path) {
+        simulateClick(currentElement);
+        highlightAndScollTo(path);
+    }
 }
 
 var reHighlightAttempt = 0;
-
 var lastSelectedElement = null;
 var lastSelectedElementCSS = null;
 
@@ -579,6 +599,8 @@ function highlightAndScollTo(path, speed = 500, callback = () => { }) {
     if (!isNotNull(htmlElement)) {
         if (reHighlightAttempt > 5) {
             //stop refinding element
+            console.error("ELEMENT NOT FOUND");
+            onStopTutorialButtonClicked();
             return;
         }
         reHighlightAttempt++;
@@ -587,6 +609,7 @@ function highlightAndScollTo(path, speed = 500, callback = () => { }) {
         }, 200);
         return;
     }
+    reHighlightAttempt = 0;
     highlightAndRemoveLastHighlight(jQElement);
     $(getScrollParent(htmlElement, false)).animate({
         scrollTop: isNotNull(jQElement.offset()) ? max(0, parseInt(jQElement.offset().top) - window.innerHeight / 2) : 0
@@ -596,12 +619,16 @@ function highlightAndScollTo(path, speed = 500, callback = () => { }) {
 }
 
 function highlightAndRemoveLastHighlight(jQElement) {
-    if (isNotNull(lastSelectedElement)) {
-        lastSelectedElement.css(lastSelectedElementCSS);
-    }
+    removeLastHighlight();
     lastSelectedElement = jQElement;
     lastSelectedElementCSS = jQElement.css(['box-shadow', 'padding', 'border', 'border-radius']);
     jQElement.css(CSS.HIGHLIGHT_BOX);
+}
+
+function removeLastHighlight() {
+    if (isNotNull(lastSelectedElement)) {
+        lastSelectedElement.css(lastSelectedElementCSS);
+    }
 }
 
 //MARK: message handler
@@ -611,7 +638,7 @@ chrome.runtime.onMessage.addListener(
             location.replace(request.redirect)
         }
         if (isNotNull(request.isRecordingStatus)) {
-            isRecordingCache = request.isRecordingStatus;
+            globalEventsHandler.setIsRecordingCache(request.isRecordingStatus);
         }
         if (isNotNull(request.clickPath)) {
             simulateClick($(jqueryElementStringFromDomPath(request.clickPath))[0]);

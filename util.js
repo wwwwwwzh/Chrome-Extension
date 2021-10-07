@@ -11,4 +11,9 @@
 
 // console.log(result)
 
-console.log(0.0018 * 30 + 0.037 + 0.0092 * 20)
+
+//^(http|https):\/\/(\w*[.])?\w*[.]\w*(\/.*)?$
+//(http|https):\/\/(.*[.])+.*?\/courses/\d*/assignments\/\d*/outline/edit
+let regex = new RegExp('/https:\/\/www.gradescope.com\/courses\/[0-9]+?\/assignments\/[0-9]+?\/outline\/edit/')
+console.log(regex instanceof RegExp)
+console.log(regex.test('https://www.gradescope.com/courses/322028/assignments/1547768/outline/edit'))

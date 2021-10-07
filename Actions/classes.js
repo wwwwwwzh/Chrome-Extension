@@ -145,3 +145,37 @@ class SelectAction {
 function isSelectCompleted(select) {
     return (isNotNull(select.path) && select.path !== [] && select.defaultValue !== "")
 }
+
+class GlobalEventsHandler {
+    constructor() {
+        this.isRecordingCache = false;
+        this.followingTutorialStatusCache = VALUES.FOLLOWING_TUTORIAL_STATUS.NOT_FOLLOWING_TUTORIAL;
+        this.isLisenting = false;
+    }
+
+    shouldListen() {
+        return (this.isRecordingCache || (this.followingTutorialStatusCache === VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL))
+    }
+
+    onChange() {
+        if (this.shouldListen()) {
+            if (!this.isLisenting) {
+                addGlobalEventListeners();
+                this.isLisenting = true;
+            }
+        } else {
+            removeGlobalEventListeners();
+            this.isLisenting = false;
+        }
+    }
+
+    setIsRecordingCache(isRecording) {
+        this.isRecordingCache = isRecording;
+        this.onChange();
+    }
+
+    setFollwingTutorialStatusCache(followingTutorialStatusCache) {
+        this.followingTutorialStatusCache = followingTutorialStatusCache;
+        this.onChange();
+    }
+}
