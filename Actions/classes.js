@@ -14,7 +14,7 @@ class Step {
      * 
      * @param {number} index 
      * @param {string} actionType 
-     * @param {RedirectAction | ClickAction | InputAction | SelectAction | NullAction} actionObject 
+     * @param {RedirectAction | ClickAction | InputAction | SelectAction | SideInstructionAction | NullAction} actionObject 
      */
     constructor(index, actionType, actionObject, name, description, url, automationInterrupt = false) {
         this.index = index;
@@ -32,7 +32,8 @@ function isStepCompleted(step) {
         isRedirectCompleted(step.actionObject) ||
         isClickActionCompleted(step.actionObject) ||
         isInputCompleted(step.actionObject) ||
-        isSelectCompleted(step.actionObject)) &&
+        isSelectCompleted(step.actionObject) ||
+        isSideInstructionCompleted(step.actionObject)) &&
         isNotNull(step.index) &&
         step.actionType !== VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL &&
         typeof step.actionObject !== 'NullAction'
@@ -146,15 +147,28 @@ function isSelectCompleted(select) {
     return (isNotNull(select.path) && select.path !== [] && select.defaultValue !== "")
 }
 
+
+class SideInstructionAction {
+    constructor(path) {
+        this.path = path;
+    }
+}
+
+function isSideInstructionCompleted(si) {
+    return (isNotNull(si.path) && si.path !== [])
+}
+
 class GlobalEventsHandler {
     constructor() {
+        removeGlobalEventListeners();
         this.isRecordingCache = false;
         this.followingTutorialStatusCache = VALUES.FOLLOWING_TUTORIAL_STATUS.NOT_FOLLOWING_TUTORIAL;
         this.isLisenting = false;
+        this.isAutomationInterrupt = false;
     }
 
     shouldListen() {
-        return (this.isRecordingCache || (this.followingTutorialStatusCache === VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL))
+        return (this.isRecordingCache || this.isAutomationInterrupt || (this.followingTutorialStatusCache === VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL))
     }
 
     onChange() {
@@ -177,5 +191,40 @@ class GlobalEventsHandler {
     setFollwingTutorialStatusCache(followingTutorialStatusCache) {
         this.followingTutorialStatusCache = followingTutorialStatusCache;
         this.onChange();
+    }
+
+    setIsAutomationInterrupt(isAutomationInterrupt) {
+        this.isAutomationInterrupt = isAutomationInterrupt;
+        this.onChange();
+    }
+}
+
+class GlobalCache {
+    constructor(
+        tutorialObj = null,
+        currentStep = null,
+        interval = 2000,
+        reHighlightTimer = null,
+        isSimulatingClick = false,
+        globalEventsHandler = new GlobalEventsHandler(),
+        domPath = null,
+        currentElement = null,
+        reHighlightAttempt = 0,
+        lastSelectedElement = null,
+        lastSelectedElementCSS = null,
+        currentJQScrollingParent = null
+    ) {
+        this.tutorialObj = tutorialObj;
+        this.currentStep = currentStep;
+        this.interval = interval;
+        this.reHighlightTimer = reHighlightTimer;
+        this.isSimulatingClick = isSimulatingClick;
+        this.globalEventsHandler = globalEventsHandler;
+        this.domPath = domPath;
+        this.currentElement = currentElement;
+        this.reHighlightAttempt = reHighlightAttempt;
+        this.lastSelectedElement = lastSelectedElement;
+        this.lastSelectedElementCSS = lastSelectedElementCSS;
+        this.currentJQScrollingParent = currentJQScrollingParent;
     }
 }

@@ -159,6 +159,7 @@ const VALUES = {
         STEP_ACTION_TYPE_CLICK: "STEP_ACTION_TYPE_CLICK",
         STEP_ACTION_TYPE_INPUT: "STEP_ACTION_TYPE_INPUT",
         STEP_ACTION_TYPE_SELECT: "STEP_ACTION_TYPE_SELECT",
+        STEP_ACTION_TYPE_SIDE_INSTRUCTION: "STEP_ACTION_TYPE_SIDE_INSTRUCTION",
     }
 }
 
@@ -325,6 +326,10 @@ function getNearestTableOrList(element) {
     }
     return null;
 }
+
+
+
+
 
 
 

@@ -50,8 +50,13 @@ $(() => {
     // let clickActionNextButtonContainer = $('#click-action-next-button-container');
     // let clickActionNextButton = $('#click-action-next-button');
 
-    let inputActionInputContainer = $('#input-action-input-container');
-    let inputActionInput = $('#input-action-input');
+    let inputActionDefaultInputContainer = $('#input-action-default-input-container');
+    let inputActionDefaultInput = $('#input-action-default-input');
+
+    let inputActionInputOptionsContainer = $('#input-action-input-options-container');
+    let inputActionInputOptionTemplate = $('#input-action-input-option-container-template');
+
+
 
     let urlInputContainer = $('#url-input-container');
     let urlInput = $('#url-input');
@@ -197,7 +202,7 @@ $(() => {
         switchMenu(selectActionTypeSelect.val());
     })
 
-    function callFunctionOnActionType(actionType, clickFunc, carFunc, inputFunc, redirectFunc, selectFunc, nullFunc = null, defaultFunc = null) {
+    function callFunctionOnActionType(actionType, clickFunc, carFunc, inputFunc, redirectFunc, selectFunc, instructionFunc, nullFunc = null, defaultFunc = null) {
         switch (actionType) {
             case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL:
                 (nullFunc !== null) && nullFunc();
@@ -217,6 +222,9 @@ $(() => {
             case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SELECT:
                 (selectFunc !== null) && selectFunc();
                 break;
+            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SIDE_INSTRUCTION:
+                (instructionFunc !== null) && instructionFunc();
+                break;
             default:
                 (defaultFunc !== null) && defaultFunc();
                 break;
@@ -224,7 +232,7 @@ $(() => {
     }
 
     function switchMenu(selection) {
-        callFunctionOnActionType(selection, showClickMenu, showClickAndRedirectMenu, showInputMenu, showRedirectMenu, showSelectMenu, showNullMenu);
+        callFunctionOnActionType(selection, showClickMenu, showClickAndRedirectMenu, showInputMenu, showRedirectMenu, showSelectMenu, showSideInstructionMenu, showNullMenu);
         updateCurrentStep(() => {
             if (currentStepObj.actionType !== selection) {
                 currentStepObj.actionType = selection;
@@ -240,6 +248,8 @@ $(() => {
                         currentStepObj.actionObject = new RedirectAction(null);
                     }, () => {
                         currentStepObj.actionObject = new SelectAction([], null, false);
+                    }, () => {
+                        currentStepObj.actionObject = new SideInstructionAction([]);
                     }, () => {
                         currentStepObj.actionObject = new NullAction();
                     });
@@ -263,16 +273,19 @@ $(() => {
                 urlInput.val(currentStepObj.actionObject.defaultClick.url);
             }, () => {
                 //input
-                inputActionInput.val(currentStepObj.actionObject.defaultText)
+                inputActionDefaultInput.val(currentStepObj.actionObject.defaultText)
             }, () => {
                 //redirect
                 urlInput.val(currentStepObj.actionObject.url);
             }, () => {
                 //select
+            }, () => {
+                //side instruction
             });
     }
-
-    //MARK: Step action menu UI manipulation
+    //------------------------------------------------------------------------------------------------------------
+    //MARK: Step action menu UI manipulation ------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------
     function clearCurrentMenu() {
         stepDetailsContainer.children().hide();
         $('.common-action-container').show();
@@ -301,7 +314,7 @@ $(() => {
 
     function showInputMenu() {
         clearCurrentMenu();
-        inputActionInputContainer.show();
+        $('.input-action-container').show();
         $('.customizable-action-container').show();
         addAlternativeActionButton.html('Add Alternative Input');
     }
@@ -321,8 +334,13 @@ $(() => {
         clearCurrentMenu();
     }
 
+    function showSideInstructionMenu() {
+        clearCurrentMenu();
+    }
 
-    //MARK: attach listener to inputs
+    //------------------------------------------------------------------------------------------------------------
+    //MARK: attach listener to inputs------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------
     stepNameInput.on('input', () => {
         updateCurrentStep(() => {
             currentStepObj.name = stepNameInput.val();
@@ -345,16 +363,16 @@ $(() => {
                 }, null, () => {
                     //redirect
                     currentStepObj.actionObject.url = value;
-                }, null);
+                }, null, null);
         })
     })
 
-    inputActionInput.on('input', () => {
-        const value = inputActionInput.val();
+    inputActionDefaultInput.on('input', () => {
+        const value = inputActionDefaultInput.val();
         updateCurrentStep(() => {
             callFunctionOnActionType(currentStepObj.actionType, null, null, () => {
                 currentStepObj.actionObject.defaultText = value;
-            }, null, null);
+            }, null, null, null);
         })
     })
 
@@ -365,7 +383,7 @@ $(() => {
                 currentStepObj.actionType, () => {
                     //click
                     currentStepObj.actionObject.defaultClick.name = value;
-                }, () => { }, () => { }, () => { }, () => { });
+                }, null, null, null, null, null);
         })
     })
 
@@ -376,7 +394,7 @@ $(() => {
                 currentStepObj.actionType, () => {
                     //click
                     currentStepObj.actionObject.defaultClick.description = value;
-                }, () => { }, () => { }, () => { }, () => { });
+                }, null, null, null, null, null);
         })
     })
 
@@ -392,7 +410,7 @@ $(() => {
                     } else {
                         currentStepObj.actionObject.defaultClick.table = null;
                     }
-                }, () => { }, () => { }, () => { }, () => { });
+                }, null, null, null, null, null);
         })
     })
 
@@ -432,11 +450,12 @@ $(() => {
                     //click
                     currentStepObj.actionObject.defaultClick.table = value.split(',');
                     syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, value.split(','));
-                }, () => { }, () => { }, () => { }, () => { });
+                }, null, null, null, null, null);
         })
     })
-
-    //MARK: button events
+    //------------------------------------------------------------------------------------------------------------
+    //MARK: button events------------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------
     recordTutorialSwitch.on('change', () => {
         const checked = recordTutorialSwitch.prop('checked');
         syncStorageSet(VALUES.STORAGE.IS_RECORDING_ACTIONS, checked, () => {
@@ -444,6 +463,21 @@ $(() => {
             popupSendMessage({ isRecordingStatus: checked });
         })
     })
+
+    addAlternativeActionButton.on('click', () => {
+        let inputContainer = document.querySelector('.input-action-input-option-container-template').cloneNode(true);
+        inputContainer.setAttribute('id', inputActionInputOptionTemplate.attr('id'));
+        document.getElementById('input-action-input-options-container').appendChild(inputContainer);
+        // inputContainer.querySelector('.input-action-input-options').addEventListener("input", event => {
+        //     const value = event.target.value;
+        // });
+        inputContainer.querySelector('.input-action-input-options-delete').addEventListener("click", () => {
+            inputContainer.remove();
+        });
+        inputContainer.hidden = false;
+    })
+
+
 
     nextButton.on('click', async () => {
         onNextButtonClicked();
@@ -459,19 +493,28 @@ $(() => {
             callFunctionOnActionType(
                 currentStepObj.actionType,
                 () => {
+                    //click
                     currentStepObj.actionObject.defaultClick.path = path;
                 }, () => {
+                    //car
                     currentStepObj.actionObject.defaultClick.path = path;
                 }, () => {
-                    //const inputElement = $(jqueryElementStringFromDomPath(path));
+                    //input
                     //TODO: find input type
                     currentStepObj.actionObject.inputType = "text";
                     currentStepObj.actionObject.path = path;
+                    document.querySelectorAll('.input-action-input-option-container-template').forEach((element, currentIndex, listObj) => {
+                        currentStepObj.actionObject.optionsText.push(element.querySelector('.input-action-input-options').value);
+                    })
                 }, null, () => {
+                    //select
                     const selectPath = path.slice(0, path.length - 1);
-                    const selectElement = $(jqueryElementStringFromDomPath(selectPath));
+                    const selectedElement = $(jqueryElementStringFromDomPath(selectPath));
                     currentStepObj.actionObject.path = selectPath;
-                    currentStepObj.actionObject.defaultValue = selectElement.val();
+                    currentStepObj.actionObject.defaultValue = selectedElement.val();
+                }, () => {
+                    //instruction
+                    currentStepObj.actionObject.path = path;
                 });
 
             //check if step is complete
@@ -482,15 +525,16 @@ $(() => {
                     data[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT] = undefined;
                     data[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE] = undefined;
                     data[VALUES.STORAGE.IS_RECORDING_ACTIONS] = false;
-                    syncStorageSetBatch(data);
-                    //refresh menu
-                    updateCurrentStep(() => { currentStepObj = undefined; })
-                    loadMenuFromStorage(undefined);
-                    useAnyElementInTableInput.val('');
-                    selectedElementIndicator.html('Selected Element: None');
-                    recordTutorialSwitch.prop('checked', false);
-                    //auto click the recorded element
-                    popupSendMessage({ clickPath: path, isRecordingStatus: false });
+                    syncStorageSetBatch(data, () => {
+                        //refresh menu
+                        updateCurrentStep(() => { currentStepObj = undefined; })
+                        loadMenuFromStorage(undefined);
+                        useAnyElementInTableInput.val('');
+                        selectedElementIndicator.html('Selected Element: None');
+                        recordTutorialSwitch.prop('checked', false);
+                        //auto click the recorded element
+                        popupSendMessage({ clickPath: path, isRecordingStatus: false });
+                    });
                 })
             } else {
                 alert("Please complete required fields first");
@@ -524,8 +568,9 @@ $(() => {
         showNewRecordingContainer();
 
     }
-
-    //MARK: Firebase actions
+    //------------------------------------------------------------------------------------------------------------
+    //MARK: Firebase actions------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------
     async function deleteDocIfExists() {
         chrome.storage.sync.get(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID, async (result) => {
             const docId = result[VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID];

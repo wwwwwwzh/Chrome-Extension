@@ -43,15 +43,18 @@ const middleDraggableArea = $('#middle-draggable-area');
 middleDraggableArea.css(CSS.POPUP_DRAGGABLE);
 
 //automate and walk through buttons
-mainMiddlePopupContainer.append("<button id=\"pop-up-automate-button\">Automate</button>")
-mainMiddlePopupContainer.append("<button id=\"pop-up-manual-button\">Walk Me Through</button>")
+mainMiddlePopupContainer.append("<button id=\"pop-up-automate-button\">Automate</button>");
+mainMiddlePopupContainer.append("<button id=\"pop-up-manual-button\">Walk Me Through</button>");
 
 const popUpAutomateButton = $("#pop-up-automate-button");
 const popUpManualButton = $("#pop-up-manual-button");
 
 //guides during tutorial
-mainMiddlePopupContainer.append("<h3 id=\"pop-up-step-name\"></h3>")
-mainMiddlePopupContainer.append("<p id=\"pop-up-step-description\"></p>")
+mainMiddlePopupContainer.append("<h3 id=\"pop-up-step-name\"></h3>");
+mainMiddlePopupContainer.append("<p id=\"pop-up-step-description\"></p>");
+mainMiddlePopupContainer.append("<button id=\"pop-up-next-step-button\">Next</button>");
 
 const popUpStepName = $("#pop-up-step-name");
 const popUpStepDescription = $("#pop-up-step-description");
+const popUpNextStepButton = $("#pop-up-next-step-button");
+popUpNextStepButton.hide();
