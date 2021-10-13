@@ -45,8 +45,11 @@ $(() => {
     setUp();
 })
 
-
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
 //MARK: Start of giving suggestions
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
 function automationSpeedSliderHelper(parent = mainPopUpContainer) {
     parent.append(automationSpeedSlider);
     automationSpeedSlider.on('change', () => {
@@ -201,6 +204,9 @@ async function loadTutorialToStorage(tutorial) {
 }
 
 async function onStopTutorialButtonClicked() {
+    clearInterval(globalCache.highlightedElementInterval);
+    isNotNull(globalCache.lastHighlightedElement) && globalCache.lastHighlightedElement.stop();
+
     startTutorialButtonClicked = false;
 
     mainStopOptionsContainer.hide();
@@ -228,11 +234,13 @@ async function checkFollowingTutorialStatus() {
             case VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
                 createAndShowOptionsContainer();
                 createAndShowMiddlePopupContainer();
+                popUpNextStepButton.show()
                 showTutorialStepManual();
                 break;
             case VALUES.FOLLOWING_TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL:
                 createAndShowOptionsContainer();
                 createAndShowMiddlePopupContainer();
+                popUpNextStepButton.show();
                 showTutorialStepAuto();
                 break;
             case VALUES.FOLLOWING_TUTORIAL_STATUS.NOT_FOLLOWING_TUTORIAL:
@@ -330,12 +338,20 @@ popUpNextStepButton.on('click', event => {
     //stop timers and animations
     isNotNull(globalCache.currentJQScrollingParent) && globalCache.currentJQScrollingParent.stop();
     isNotNull(timer) && clearTimeout(timer);
+    removeLastHighlight();
     globalCache.currentJQScrollingParent = null;
     timer = null;
+    globalCache.highlightedElementInterval = null;
     //auto go to next step
+    globalCache.isAutomatingNextStep = true;
     showTutorialStepAuto();
 })
 
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+//MARK: Walk me through screen actions
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
 function manualStep(showNext = true) {
     console.log('manual step');
     const click = globalCache.currentStep.actionObject.defaultClick;
@@ -377,6 +393,9 @@ function manualSideInstruction(showNext = true) {
     highlightAndScollTo(sideInstructionObj.path);
     //UI
     updateStepInstructionUIHelper();
+    globalCache.sideInstructionAutoNextTimer = setTimeout(() => {
+        incrementCurrentStepHelper(showNext, false);
+    }, 3000);
 }
 
 function updateStepInstructionUIHelper() {
@@ -384,7 +403,11 @@ function updateStepInstructionUIHelper() {
     popUpStepDescription.html(globalCache.currentStep.description);
 }
 
-
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+//MARK: Automating tutorial functions
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
 async function showTutorialStepAuto() {
     callFunctionOnSwitchStepType(autoClick, autoClick, autoRedirect, autoInput, autoSelect, autoSideInstruction)
 }
@@ -481,7 +504,6 @@ function incrementCurrentStepHelper(showNext = true, auto = true) {
         } else if (auto) {
             showNext && showTutorialStepManual();
         } else {
-            simulateClick(globalCache.currentElement);
             showNext && showTutorialStepManual();
         }
     });
@@ -491,22 +513,34 @@ function onAutomationSpeedSliderChanged() {
     syncStorageSet(VALUES.STORAGE.AUTOMATION_SPEED, automationSpeedSlider.val());
 }
 
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
 //MARK: Start of recording events
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
 chrome.storage.sync.get([VALUES.STORAGE.IS_RECORDING_ACTIONS, VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS], result => {
     globalCache.globalEventsHandler.setIsRecordingCache(result[VALUES.STORAGE.IS_RECORDING_ACTIONS]);
     globalCache.globalEventsHandler.setFollwingTutorialStatusCache(result[VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS]);
 })
 
 
-function addGlobalEventListeners() {
+function addGlobalEventListenersWhenRecording() {
     $('*').on('blur focus focusin focusout load resize scroll unload dblclick mousedown mouseup mousemove mouseover mouseout mouseenter mouseleave change select submit keydown keypress keyup error',
         preventDefaultHelper);
     $('*').on('click', onClickHelper);
 }
 
-function removeGlobalEventListeners() {
+function removeGlobalEventListenersWhenRecording() {
     $('*').off('blur focus focusin focusout load resize scroll unload dblclick mousedown mouseup mousemove mouseover mouseout mouseenter mouseleave change select submit keydown keypress keyup error',
         preventDefaultHelper);
+    $('*').off('click', onClickHelper);
+}
+
+function addGlobalEventListenersWhenFollowing() {
+    $('*').on('click', onClickHelper);
+}
+
+function removeGlobalEventListenersWhenFollowing() {
     $('*').off('click', onClickHelper);
 }
 
@@ -516,9 +550,7 @@ function removeGlobalEventListeners() {
 
 
 function onClickHelper(event) {
-    //preventDefaultHelper(event);
-    console.log(event.target.onclick)
-    event.target.replaceWith(event.target.cloneNode(true));
+    preventDefaultHelper(event);
     if (event.target !== globalCache.currentElement) {
         if (!globalCache.isSimulatingClick) {
             processEventHelper(event.target);
@@ -528,7 +560,6 @@ function onClickHelper(event) {
 }
 
 function processEventHelper(target) {
-    target.replaceWith(target.cloneNode(true));
     globalCache.domPath = getShortDomPathStack(target);
     if ($(jqueryElementStringFromDomPath(globalCache.domPath)).length > 1) {
         globalCache.domPath = getCompleteDomPathStack(target);
@@ -539,8 +570,7 @@ function processEventHelper(target) {
 }
 
 function preventDefaultHelper(event) {
-    //console.log(JSON.stringify(globalCache.globalEventsHandler));
-    if (!globalCache.isSimulatingClick) {
+    if (!globalCache.isSimulatingClick && globalCache.globalEventsHandler.isLisentingRecording) {
         event.stopPropagation();
         event.stopImmediatePropagation();
         return false
@@ -549,9 +579,9 @@ function preventDefaultHelper(event) {
 
 
 async function onClickUniversalHandler() {
-    if (globalCache.globalEventsHandler.isRecordingCache === true) {
+    if (globalCache.globalEventsHandler.isLisentingRecording) {
         onClickWhenRecording();
-    } else {
+    } else if (globalCache.globalEventsHandler.isLisentingFollowing) {
         switch (globalCache.globalEventsHandler.followingTutorialStatusCache) {
             case VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
                 onClickWhenFollowingTutorial();
@@ -591,11 +621,15 @@ async function onClickWhenRecording() {
 }
 
 
-
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+//MARK: Handling click when walking through tutorial
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
 function onClickWhenFollowingTutorial() {
     //TODO: add regexp and handle user mistakes
     console.log('onClickWhenFollowingTutorial');
-    callFunctionOnSwitchStepType(onClickWithStepTypeClick, onClickWithStepTypeClick, onClickWithStepTypeRedirect, onClickWithStepTypeInput, null, null);
+    callFunctionOnSwitchStepType(onClickWithStepTypeClick, onClickWithStepTypeClick, onClickWithStepTypeRedirect, onClickWithStepTypeInput, null, onClickWithStepTypeSideInstruction);
     function onClickWithStepTypeClick(showNext = true) {
         const click = globalCache.currentStep.actionObject.defaultClick;
         if (click.useAnythingInTable) {
@@ -607,6 +641,8 @@ function onClickWhenFollowingTutorial() {
             }
         } else {
             const clickPath = click.path;
+            console.log(globalCache.domPath)
+            console.log(clickPath)
             if (isSubArray(globalCache.domPath, clickPath)) {
                 incrementCurrentStepHelper(true, false);
                 return;
@@ -620,7 +656,7 @@ function onClickWhenFollowingTutorial() {
         const inputPath = globalCache.currentStep.actionObject.path;
         if (isSubArray(globalCache.domPath, inputPath)) {
             //TODO: record input and go to next step only when inputted one char
-            incrementCurrentStepHelper(true, false);
+            incrementCurrentStepHelper(showNext, false);
             return;
         } else {
             onClickedOnWrongElement(inputPath);
@@ -631,57 +667,125 @@ function onClickWhenFollowingTutorial() {
 
     }
 
+    function onClickWithStepTypeSideInstruction(showNext = true) {
+        const elementPath = globalCache.currentStep.actionObject.path;
+        if (isSubArray(globalCache.domPath, elementPath)) {
+            clearTimeout(globalCache.sideInstructionAutoNextTimer);
+            globalCache.sideInstructionAutoNextTimer = null;
+            incrementCurrentStepHelper(showNext, false);
+            return;
+        } else {
+            onClickedOnWrongElement(inputPath);
+        }
+    }
+
     function onClickedOnWrongElement(path) {
-        simulateClick(globalCache.currentElement);
+        //simulateClick(globalCache.currentElement);
         highlightAndScollTo(path);
     }
 }
 
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+//MARK: highlight functions
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
 function highlightAndScollTo(path, callback = () => { }) {
     const jQElement = $(jqueryElementStringFromDomPath(path));
     const htmlElement = jQElement[0];
+
+    if (highlightAndRemoveLastHighlight(jQElement)) {
+        //Scroll
+        const interval = globalCache.isAutomatingNextStep ? 0 : globalCache.interval;
+        globalCache.isAutomatingNextStep = false;
+        globalCache.currentJQScrollingParent = $(getScrollParent(htmlElement, false));
+        var offset = 0;
+        const eleOffset = jQElement.offset();
+        const scrollParentOffset = globalCache.currentJQScrollingParent.offset();
+        if (isNotNull(eleOffset) && isNotNull(scrollParentOffset)) {
+            offset = parseInt(eleOffset.top) - parseInt(scrollParentOffset.top) - window.innerHeight / 2
+        }
+        globalCache.currentJQScrollingParent.animate({
+            scrollTop: `+=${offset}px`
+        }, interval).promise().then(() => {
+            callback();
+        })
+    }
+}
+
+function highlightAndRemoveLastHighlight(jQElement) {
     //Repeat if element not found, might not be handled here
-    if (!isNotNull(htmlElement)) {
+    if (!isNotNull(jQElement[0])) {
         if (globalCache.reHighlightAttempt > 5) {
             //stop refinding element
             console.error("ELEMENT NOT FOUND");
-            onStopTutorialButtonClicked();
-            return;
+            //onStopTutorialButtonClicked();
+            return false;
         }
         globalCache.reHighlightAttempt++;
         setTimeout(() => {
             timer = highlightAndScollTo(path, callback);
-        }, 200);
-        return;
+        }, 300);
+        return false;
     }
     globalCache.reHighlightAttempt = 0;
-    highlightAndRemoveLastHighlight(jQElement);
-    globalCache.currentJQScrollingParent = $(getScrollParent(htmlElement, false));
-    var offset = 0;
-    if (isNotNull(jQElement.offset()) && isNotNull(globalCache.currentJQScrollingParent.offset())) {
-        offset = parseInt(jQElement.offset().top) - parseInt(globalCache.currentJQScrollingParent.offset().top) - window.innerHeight / 2
-    }
-    globalCache.currentJQScrollingParent.animate({
-        scrollTop: `+=${offset}px`
-    }, globalCache.interval).promise().then(() => {
-        callback();
-    })
-}
 
-function highlightAndRemoveLastHighlight(jQElement) {
     removeLastHighlight();
-    globalCache.lastSelectedElement = jQElement;
-    globalCache.lastSelectedElementCSS = jQElement.css(['box-shadow', 'padding', 'border', 'border-radius']);
+    globalCache.lastHighlightedElement = jQElement;
+    globalCache.lastHighlightedElementCSS = jQElement.css(['box-shadow', 'padding', 'border', 'border-radius']);
     jQElement.css(CSS.HIGHLIGHT_BOX);
+    alertElement(jQElement);
+    return true;
 }
 
 function removeLastHighlight() {
-    if (isNotNull(globalCache.lastSelectedElement)) {
-        globalCache.lastSelectedElement.css(globalCache.lastSelectedElementCSS);
+    if (isNotNull(globalCache.lastHighlightedElement)) {
+        globalCache.lastHighlightedElement.stop();
+        clearInterval(globalCache.highlightedElementInterval)
+        globalCache.lastHighlightedElement.css(globalCache.lastHighlightedElementCSS);
     }
 }
 
+function alertElement(element) {
+    var perAnimationBorderLoopCount = 0;
+
+    borderOut();
+
+    globalCache.highlightedElementInterval = setInterval(() => {
+        element.stop();
+        borderOut();
+    }, 3000);
+
+    function borderOut() {
+        element.animate({
+            borderWidth: '8px',
+            color: "rgb( 255, 0, 0 )",
+        }, 200).promise().then(() => {
+            borderIn();
+        });
+    }
+
+    function borderIn() {
+        element.animate({
+            borderWidth: '2px',
+            color: "rgb( 255, 110, 20 )",
+        }, 200).promise().then(() => {
+            if (++perAnimationBorderLoopCount < 3) {
+                borderOut();
+            } else {
+                element.stop();
+                perAnimationBorderLoopCount = 0;
+            }
+        });
+    }
+}
+
+
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
 //MARK: message handler
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
 chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
         if (isNotNull(request.redirect)) {

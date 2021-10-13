@@ -333,7 +333,6 @@ function getNearestTableOrList(element) {
 
 
 
-
 //MARK: Library functions
 function isNotNull(obj) {
     return (obj !== null && typeof obj !== 'undefined');

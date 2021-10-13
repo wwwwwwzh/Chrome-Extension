@@ -160,26 +160,38 @@ function isSideInstructionCompleted(si) {
 
 class GlobalEventsHandler {
     constructor() {
-        removeGlobalEventListeners();
+        removeGlobalEventListenersWhenFollowing();
+        removeGlobalEventListenersWhenRecording();
         this.isRecordingCache = false;
         this.followingTutorialStatusCache = VALUES.FOLLOWING_TUTORIAL_STATUS.NOT_FOLLOWING_TUTORIAL;
-        this.isLisenting = false;
+        this.isLisentingRecording = false;
+        this.isLisentingFollowing = false;
         this.isAutomationInterrupt = false;
     }
 
-    shouldListen() {
-        return (this.isRecordingCache || this.isAutomationInterrupt || (this.followingTutorialStatusCache === VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL))
-    }
-
     onChange() {
-        if (this.shouldListen()) {
-            if (!this.isLisenting) {
-                addGlobalEventListeners();
-                this.isLisenting = true;
+        if (this.isRecordingCache) {
+            if (!this.isLisentingRecording) {
+                addGlobalEventListenersWhenRecording();
+                this.isLisentingRecording = true;
             }
         } else {
-            removeGlobalEventListeners();
-            this.isLisenting = false;
+            if (this.isLisentingRecording) {
+                removeGlobalEventListenersWhenRecording();
+                this.isLisentingRecording = false;
+            }
+        }
+
+        if (this.isAutomationInterrupt || (this.followingTutorialStatusCache === VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL)) {
+            if (!this.isLisentingFollowing) {
+                addGlobalEventListenersWhenFollowing();
+                this.isLisentingFollowing = true;
+            }
+        } else {
+            if (this.isLisentingFollowing) {
+                removeGlobalEventListenersWhenFollowing();
+                this.isLisentingFollowing = false;
+            }
         }
     }
 
@@ -223,8 +235,11 @@ class GlobalCache {
         this.domPath = domPath;
         this.currentElement = currentElement;
         this.reHighlightAttempt = reHighlightAttempt;
-        this.lastSelectedElement = lastSelectedElement;
-        this.lastSelectedElementCSS = lastSelectedElementCSS;
+        this.lastHighlightedElement = lastSelectedElement;
+        this.lastHighlightedElementCSS = lastSelectedElementCSS;
         this.currentJQScrollingParent = currentJQScrollingParent;
+        this.highlightedElementInterval = null;
+        this.isAutomatingNextStep = false;
+        this.sideInstructionAutoNextTimer = null;
     }
 }
