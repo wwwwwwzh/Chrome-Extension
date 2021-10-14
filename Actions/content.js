@@ -1,7 +1,7 @@
 // Initialize Firebase
-var app;
+var app = initializeApp(firebaseConfig);
 // const analytics = getAnalytics(app);
-var firestoreRef;
+var firestoreRef = getFirestore(app);
 
 //cache
 var currentUrl;
@@ -10,13 +10,17 @@ var globalCache = new GlobalCache();
 
 //set up functions
 async function setUp() {
-    app = initializeApp(firebaseConfig);
-    firestoreRef = getFirestore(app);
     currentUrl = $(location).attr('href');
     syncStorageSet(VALUES.STORAGE.CURRENT_URL, currentUrl);
     currentUrlObj = new URL(currentUrl);
 
-    checkFollowingTutorialStatus();
+    chrome.storage.sync.get(VALUES.STORAGE.IS_RECORDING_ACTIONS, result => {
+        const isRecording = result[VALUES.STORAGE.IS_RECORDING_ACTIONS];
+        globalCache.globalEventsHandler.setIsRecordingCache(isRecording);
+        if (!isRecording) {
+            checkFollowingTutorialStatus();
+        }
+    })
     //setUpIframeListner();
 }
 
@@ -24,10 +28,10 @@ function setUpIframeListner() {
     getFrameContents();
     function getFrameContents() {
         const iFrame = document.getElementsByTagName('iframe')[0];
-        if (typeof iFrame === 'undefined' || iFrame === null) {
+        if (isNotNull(iFrame)) {
             return;
         }
-        if (typeof iFrame.contentDocument === 'undefined' || iFrame.contentDocument === null) {
+        if (isNotNull(iFrame.contentDocument)) {
             setTimeout(() => {
                 getFrameContents();
             }, 1000);
@@ -84,7 +88,6 @@ async function fetchSimpleTutorials() {
         }
         //iterate query to add tutorial buttons
         simpleTutorialQuerySnapshot.forEach((tutorial) => {
-            console.log(tutorial.id)
             mainPopUpContainer.append(`<a class=\"simple-tutorial-button\" id=\"${tutorial.id}\">${tutorial.data().name}</a>`);
             const button = $(`#${tutorial.id}`).first();
             button.css(CSS.MAIN_OPTIONS_POPUP_SIMPLE_TUTORIAL_BUTTON);
@@ -180,19 +183,22 @@ async function loadTutorialToStorage(tutorial) {
         if (isFirstStepReached) {
             steps.push(data);
         } else {
-            const url = data.url;
-            if (url[0] === '/') {
-                //regex
-                const regex = new RegExp(url.substr(1, url.length - 2));
-                if (regex.test(currentUrl)) {
-                    isFirstStepReached = true;
-                    steps.push(data);
-                }
-            } else {
-                if (url === currentUrl) {
-                    isFirstStepReached = true;
-                    steps.push(data);
-                }
+            // if (url[0] === '/') {
+            //     //regex
+            //     const regex = new RegExp(url.substr(1, url.length - 2));
+            //     if (regex.test(currentUrl)) {
+            //         isFirstStepReached = true;
+            //         steps.push(data);
+            //     }
+            // } else {
+            //     if (url === currentUrl) {
+            //         isFirstStepReached = true;
+            //         steps.push(data);
+            //     }
+            // }
+            if (checkIfUrlMatch(data.url, currentUrl)) {
+                isFirstStepReached = true;
+                steps.push(data);
             }
         }
     })
@@ -204,11 +210,14 @@ async function loadTutorialToStorage(tutorial) {
 }
 
 async function onStopTutorialButtonClicked() {
+    //clear stuff
     clearInterval(globalCache.highlightedElementInterval);
     isNotNull(globalCache.lastHighlightedElement) && globalCache.lastHighlightedElement.stop();
+    removeLastHighlight();
 
     startTutorialButtonClicked = false;
 
+    //UI
     mainStopOptionsContainer.hide();
     mainMiddlePopupContainer.hide();
     popUpNextStepButton.hide();
@@ -222,26 +231,41 @@ async function onStopTutorialButtonClicked() {
     globalCache = new GlobalCache();
 
     fetchSimpleTutorials();
-    removeLastHighlight();
 }
 
+function prepareTutorialIfIsFollowing(recordingStatus, afterPrepare) {
+    //check if on right page
+    chrome.storage.sync.get([VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID], result => {
+        const tutorialObj = result[VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID];
+        const currentStep = tutorialObj.steps[tutorialObj.currentStep];
 
+        globalCache.tutorialObj = tutorialObj;
+        globalCache.currentStep = currentStep;
+
+        if (checkIfUrlMatch(currentStep.url, currentUrl)) {
+            createAndShowOptionsContainer();
+            createAndShowMiddlePopupContainer();
+            popUpNextStepButton.show();
+
+            globalCache.globalEventsHandler.setFollwingTutorialStatusCache(recordingStatus);
+
+            afterPrepare();
+        } else {
+            //TODO
+        }
+    });
+}
 
 async function checkFollowingTutorialStatus() {
     chrome.storage.sync.get(VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, (result) => {
-        globalCache.globalEventsHandler.setFollwingTutorialStatusCache(result[VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS]);
+        const recordingStatus = result[VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS];
+        globalCache.globalEventsHandler.setFollwingTutorialStatusCache(recordingStatus);
         switch (result[VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS]) {
             case VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
-                createAndShowOptionsContainer();
-                createAndShowMiddlePopupContainer();
-                popUpNextStepButton.show()
-                showTutorialStepManual();
+                prepareTutorialIfIsFollowing(recordingStatus, showTutorialStepManual);
                 break;
             case VALUES.FOLLOWING_TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL:
-                createAndShowOptionsContainer();
-                createAndShowMiddlePopupContainer();
-                popUpNextStepButton.show();
-                showTutorialStepAuto();
+                prepareTutorialIfIsFollowing(recordingStatus, showTutorialStepAuto);
                 break;
             case VALUES.FOLLOWING_TUTORIAL_STATUS.NOT_FOLLOWING_TUTORIAL:
                 fetchSimpleTutorials();
@@ -290,7 +314,6 @@ async function callFunctionOnSwitchStepType(onStepActionClick, onStepActionClick
         globalCache.interval = interval;
 
         if (tutorialObj.currentStep >= tutorialObj.steps.length) {
-            console.log('onStopTutorialButtonClicked')
             onStopTutorialButtonClicked();
         }
         // else if (currentUrl !== currentStep.url) {
@@ -334,7 +357,6 @@ async function showTutorialStepManual() {
 var timer = null;
 
 popUpNextStepButton.on('click', event => {
-    console.log('click next')
     //stop timers and animations
     isNotNull(globalCache.currentJQScrollingParent) && globalCache.currentJQScrollingParent.stop();
     isNotNull(timer) && clearTimeout(timer);
@@ -353,7 +375,6 @@ popUpNextStepButton.on('click', event => {
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
 function manualStep(showNext = true) {
-    console.log('manual step');
     const click = globalCache.currentStep.actionObject.defaultClick;
     //const element = $(jqueryElementStringFromDomPath(click.path)).first();
     if (click.useAnythingInTable) {
@@ -413,7 +434,6 @@ async function showTutorialStepAuto() {
 }
 
 function autoClick(showNext = true) {
-    console.log('auto click')
     const step = globalCache.currentStep.actionObject.defaultClick;
     if (step.useAnythingInTable || globalCache.currentStep.automationInterrupt) {
         //stop automation
@@ -518,12 +538,6 @@ function onAutomationSpeedSliderChanged() {
 //MARK: Start of recording events
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
-chrome.storage.sync.get([VALUES.STORAGE.IS_RECORDING_ACTIONS, VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS], result => {
-    globalCache.globalEventsHandler.setIsRecordingCache(result[VALUES.STORAGE.IS_RECORDING_ACTIONS]);
-    globalCache.globalEventsHandler.setFollwingTutorialStatusCache(result[VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS]);
-})
-
-
 function addGlobalEventListenersWhenRecording() {
     $('*').on('blur focus focusin focusout load resize scroll unload dblclick mousedown mouseup mousemove mouseover mouseout mouseenter mouseleave change select submit keydown keypress keyup error',
         preventDefaultHelper);
@@ -547,8 +561,6 @@ function removeGlobalEventListenersWhenFollowing() {
 /**blur focus focusin focusout load resize scroll unload dblclick mousedown mouseup mousemove mouseover mouseout mouseenter mouseleave change select submit keydown keypress keyup error
 */
 
-
-
 function onClickHelper(event) {
     preventDefaultHelper(event);
     if (event.target !== globalCache.currentElement) {
@@ -571,12 +583,12 @@ function processEventHelper(target) {
 
 function preventDefaultHelper(event) {
     if (!globalCache.isSimulatingClick && globalCache.globalEventsHandler.isLisentingRecording) {
+        event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
         return false
     }
 }
-
 
 async function onClickUniversalHandler() {
     if (globalCache.globalEventsHandler.isLisentingRecording) {
@@ -641,8 +653,7 @@ function onClickWhenFollowingTutorial() {
             }
         } else {
             const clickPath = click.path;
-            console.log(globalCache.domPath)
-            console.log(clickPath)
+            console.log('should click' + clickPath)
             if (isSubArray(globalCache.domPath, clickPath)) {
                 incrementCurrentStepHelper(true, false);
                 return;
@@ -694,7 +705,7 @@ function highlightAndScollTo(path, callback = () => { }) {
     const jQElement = $(jqueryElementStringFromDomPath(path));
     const htmlElement = jQElement[0];
 
-    if (highlightAndRemoveLastHighlight(jQElement)) {
+    if (highlightAndRemoveLastHighlight(jQElement, path, callback)) {
         //Scroll
         const interval = globalCache.isAutomatingNextStep ? 0 : globalCache.interval;
         globalCache.isAutomatingNextStep = false;
@@ -713,22 +724,25 @@ function highlightAndScollTo(path, callback = () => { }) {
     }
 }
 
-function highlightAndRemoveLastHighlight(jQElement) {
-    //Repeat if element not found, might not be handled here
-    if (!isNotNull(jQElement[0])) {
-        if (globalCache.reHighlightAttempt > 5) {
-            //stop refinding element
-            console.error("ELEMENT NOT FOUND");
-            //onStopTutorialButtonClicked();
+function highlightAndRemoveLastHighlight(jQElement, path = null, callback = null) {
+    //if path is null, calling from recording highlight
+    if (path !== null) {
+        //Repeat if element not found, might not be handled here
+        if (!isNotNull(jQElement[0])) {
+            if (globalCache.reHighlightAttempt > 5) {
+                //stop refinding element
+                console.error("ELEMENT NOT FOUND");
+                //onStopTutorialButtonClicked();
+                return false;
+            }
+            globalCache.reHighlightAttempt++;
+            setTimeout(() => {
+                timer = highlightAndScollTo(path, callback);
+            }, 300);
             return false;
         }
-        globalCache.reHighlightAttempt++;
-        setTimeout(() => {
-            timer = highlightAndScollTo(path, callback);
-        }, 300);
-        return false;
+        globalCache.reHighlightAttempt = 0;
     }
-    globalCache.reHighlightAttempt = 0;
 
     removeLastHighlight();
     globalCache.lastHighlightedElement = jQElement;
@@ -796,6 +810,9 @@ chrome.runtime.onMessage.addListener(
         }
         if (isNotNull(request.clickPath)) {
             simulateClick($(jqueryElementStringFromDomPath(request.clickPath))[0]);
+        }
+        if (isNotNull(request.removeHighlight) && request.removeHighlight) {
+            removeLastHighlight()
         }
     }
 );

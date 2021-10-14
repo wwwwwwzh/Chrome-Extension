@@ -168,12 +168,12 @@ function syncStorageSet(key, value, callback = () => { }) {
     const data = {};
     data[key] = value
     chrome.storage.sync.set(data, callback);
-    console.log(data);
+    console.log('syncStorageSet' + JSON.stringify(data));
 }
 
 function syncStorageSetBatch(data, callback = () => { }) {
     chrome.storage.sync.set(data, callback);
-    console.log(data);
+    console.log('syncStorageSetBatch' + JSON.stringify(data));
 }
 
 function checkAndInitializeStorageIfUndefined(result, key, value) {
@@ -327,7 +327,14 @@ function getNearestTableOrList(element) {
     return null;
 }
 
-
+function checkIfUrlMatch(urlToMatch, testingUrl) {
+    if (urlToMatch[0] === '/') {
+        const regex = new RegExp(urlToMatch.substr(1, urlToMatch.length - 2));
+        return regex.test(testingUrl);
+    } else {
+        return urlToMatch === testingUrl;
+    }
+}
 
 
 

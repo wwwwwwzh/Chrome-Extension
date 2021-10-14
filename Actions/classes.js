@@ -105,7 +105,7 @@ function isClickGuideCompleted(clickGuide) {
         clickGuide.path.length > 0 &&
         clickGuide.name !== null &&
         clickGuide.name !== "" &&
-        typeof clickGuide.isRedirect !== 'undefined')
+        isNotNull(clickGuide.isRedirect))
 }
 
 class InputAction {
