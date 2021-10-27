@@ -8,31 +8,78 @@ const firebaseConfig = {
     measurementId: "G-LM6FVJF8S6"
 }
 
+const CLOSE_BUTTON_WIDTH = 30;
+const CLOSE_BUTTON_RADIUS = 15;
+const CLOSE_BUTTON_OFFSET = 6;
+
 const CSS = {
+    HIGHLIGHT_INSTRUCTION_WINDOW: {
+        "position": "fixed",
+        'max-width': '300px',
+        'display': 'inline-block',
+        'padding': '12px',
+        'background-color': 'rgba(255,165,0,0.4)',
+        'border-radius': '6px',
+        'z-index': 2147483647,
+    },
     HIGHLIGHT_BOX: {
-        'box-shadow': '0 0 20px rgba(255, 203, 42, 1)',
+        'box-shadow': '0px 0px 20px 10px rgba(255, 203, 42, 1)',
         'padding': '3px',
         'border': '2px solid rgba(246, 131, 11, 0.5)',
         'border-radius': '5px'
     },
-    MAIN_OPTIONS_POPUP: {
-        "position": "fixed",
+    MAIN_POPUP_START_POSITION: {
         "top": '12px',
         "left": '12px',
+    },
+    MAIN_POPUP: {
+        "position": "fixed",
         'width': '200px',
         'height': '300px',
         'padding': '12px',
-        'background-color': 'orange',
+        'background-color': 'rgba(255,165,0,0.7)',
         'border-radius': '6px',
         'z-index': 2147483647,
+    },
+    POPUP_COLLAPSED: {
+        'width': CLOSE_BUTTON_WIDTH + CLOSE_BUTTON_OFFSET * 2,
+        'height': CLOSE_BUTTON_WIDTH + CLOSE_BUTTON_OFFSET * 2,
+        'border-radius': CLOSE_BUTTON_RADIUS,
+    },
+    BUTTON: {
+        "box-shadow": "inset 0px 0px 0px 0px #cf866c",
+        'background-color': '#e74c3c',
+        "border-radius": "6px",
+        "display": "inline-block",
+        "cursor": "pointer",
+        "color": "#ffffff",
+        "font-family": "Arial",
+        "font-size": "14px",
+        "padding": "12px 18px",
+        "margin": '6px',
+        "text-decoration": "none",
+        "text-shadow": "0px 1px 0px #854629",
+    },
+    BUTTON_HOVER: {
+        'background-color': '#c0392b',
+    },
+    CLOSE_BUTTON: {
+        'cursor': 'pointer',
+        'position': 'absolute',
+        'top': CLOSE_BUTTON_OFFSET,
+        'right': CLOSE_BUTTON_OFFSET,
+        'font-size': '30px',
+        'width': CLOSE_BUTTON_WIDTH,
+        'height': CLOSE_BUTTON_WIDTH,
+        'text-align': 'center',
+        'border-radius': CLOSE_BUTTON_RADIUS
     },
     POPUP_DRAGGABLE: {
         "position": "absolute",
         'top': '0',
         'left': '0',
-        'width': '100%',
-        'height': '100%',
-        'padding': '12px',
+        'right': '0',
+        'bottom': '0',
         'border-radius': '6px',
         'z-index': -1,
     },
@@ -46,43 +93,12 @@ const CSS = {
         "-webkit-transition": ".2s",
         "transition": "opacity .2s",
     },
-    MAIN_MIDDLE_POPUP: {
-        'position': 'fixed',
-        'top': '12px',
-        'left': '50%',
-        'transform': 'translate(-50%, 0%)',
-        'width': '200px',
-        'height': '150px',
-        'padding': '12px',
-        'background-color': 'orange',
-        'border-radius': '6px',
-        'z-index': 2147483647
-    },
-    MAIN_OPTIONS_POPUP_SIMPLE_TUTORIAL_BUTTON: {
-        "box-shadow": "inset 0px 0px 0px 0px #cf866c",
-        "background": "linear-gradient(to bottom, #d0451b 5%, #bc3315 100%)",
-        "background-color": "#d0451b",
-        "border-radius": "6px",
-        "border": "1px solid #942911",
-        "display": "inline-block",
-        "cursor": "pointer",
-        "color": "#ffffff",
-        "font-family": "Arial",
-        "font-size": "13px",
-        "padding": "14px 24px",
-        "text-decoration": "none",
-        "text-shadow": "0px 1px 0px #854629",
-    },
-    MAIN_STOP_OPTIONS_CONTAINER: {
-        "position": "fixed",
-        "top": '12px',
-        "left": '12px',
-        'width': '200px',
-        'height': '300px',
-        'padding': '12px',
-        'background-color': 'orange',
-        'border-radius': '6px',
-        'z-index': 2147483647
+    WRONG_PAGE_REDIRECT_BUTTON: {
+        'max-width': 260,
+        'overflow-wrap': 'break-word',
+        'color': 'black',
+        'margin-top': '20px',
+        'padding': '6px',
     }
 }
 
@@ -168,12 +184,12 @@ function syncStorageSet(key, value, callback = () => { }) {
     const data = {};
     data[key] = value
     chrome.storage.sync.set(data, callback);
-    console.log('syncStorageSet' + JSON.stringify(data));
+    //console.log('syncStorageSet' + JSON.stringify(data));
 }
 
 function syncStorageSetBatch(data, callback = () => { }) {
     chrome.storage.sync.set(data, callback);
-    console.log('syncStorageSetBatch' + JSON.stringify(data));
+    //console.log('syncStorageSetBatch' + JSON.stringify(data));
 }
 
 function checkAndInitializeStorageIfUndefined(result, key, value) {
@@ -334,6 +350,100 @@ function checkIfUrlMatch(urlToMatch, testingUrl) {
     } else {
         return urlToMatch === testingUrl;
     }
+}
+
+const LAYOUT_TYPE = {
+    LEFT_DOWN: 0,
+    LEFT_UP: 1,
+    RIGHT_DOWN: 2,
+    RIGHT_UP: 3,
+    TOP_LEFT: 4,
+    TOP_RIGHT: 5,
+    BOTTOM_LEFT: 6,
+    BOTTOM_RIGHT: 7,
+    DEFAULT: 8,
+};
+
+function getInstructionWindowLayout(element) {
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+
+    const boundingRect = element[0].getBoundingClientRect();
+    const elementLeft = boundingRect.left;
+    const elementTop = boundingRect.top;
+    const leftMargin = elementLeft;
+    const rightMargin = windowWidth - boundingRect.right;
+    const topMargin = elementTop;
+    const bottomMargin = windowHeight - boundingRect.bottom;
+    const moreLeft = leftMargin > rightMargin;
+    const moreTop = topMargin > bottomMargin;
+    let layout = {
+        type: LAYOUT_TYPE.DEFAULT,
+        css: {
+            top: '',
+            bottom: '',
+            right: '',
+            left: '',
+        },
+    };
+
+    if ((topMargin + bottomMargin) > 100) {
+        if (moreTop) {
+            if (moreLeft) {
+                layout.type = LAYOUT_TYPE.TOP_LEFT;
+                layout.css.bottom = windowHeight - topMargin;
+                layout.css.right = rightMargin;
+            }
+            else {
+                layout.type = LAYOUT_TYPE.TOP_RIGHT;
+                layout.css.bottom = windowHeight - topMargin;
+                layout.css.left = leftMargin;
+            }
+        } else {
+            if (moreLeft) {
+                layout.type = LAYOUT_TYPE.BOTTOM_LEFT;
+                layout.css.top = windowHeight - bottomMargin;
+                layout.css.right = rightMargin;
+            }
+            else {
+                layout.type = LAYOUT_TYPE.BOTTOM_RIGHT;
+                console.log('aa')
+                layout.css.top = windowHeight - bottomMargin;
+                layout.css.left = leftMargin;
+            }
+        }
+    } else {
+        //use left or right margin
+        if ((leftMargin + rightMargin) > 100) {
+            if (moreTop) {
+                if (moreLeft) {
+                    layout.type = LAYOUT_TYPE.LEFT_UP;
+                    layout.css.bottom = windowHeight - topMargin;
+                    layout.css.right = rightMargin;
+                }
+                else {
+                    layout.type = LAYOUT_TYPE.RIGHT_UP;
+                    layout.css.bottom = windowHeight - topMargin;
+                    layout.css.right = rightMargin;
+                }
+            } else {
+                if (moreLeft) {
+                    layout.type = LAYOUT_TYPE.LEFT_DOWN;
+                    layout.css.bottom = windowHeight - topMargin;
+                    layout.css.right = rightMargin;
+                }
+                else {
+                    layout.type = LAYOUT_TYPE.RIGHT_DOWN;
+                    layout.css.bottom = windowHeight - topMargin;
+                    layout.css.right = rightMargin;
+                }
+            }
+        } else {
+            console.log("NOT enough margin")
+        }
+    }
+
+    return layout;
 }
 
 

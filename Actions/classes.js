@@ -167,9 +167,11 @@ class GlobalEventsHandler {
         this.isLisentingRecording = false;
         this.isLisentingFollowing = false;
         this.isAutomationInterrupt = false;
+        this.isOnRightPage = true;
     }
 
     onChange() {
+        //add or remove when recording or not recording
         if (this.isRecordingCache) {
             if (!this.isLisentingRecording) {
                 addGlobalEventListenersWhenRecording();
@@ -182,7 +184,7 @@ class GlobalEventsHandler {
             }
         }
 
-        if (this.isAutomationInterrupt || (this.followingTutorialStatusCache === VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL)) {
+        if (this.isOnRightPage && (this.isAutomationInterrupt || (this.followingTutorialStatusCache === VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL))) {
             if (!this.isLisentingFollowing) {
                 addGlobalEventListenersWhenFollowing();
                 this.isLisentingFollowing = true;
@@ -207,6 +209,11 @@ class GlobalEventsHandler {
 
     setIsAutomationInterrupt(isAutomationInterrupt) {
         this.isAutomationInterrupt = isAutomationInterrupt;
+        this.onChange();
+    }
+
+    setIsOnRightPage(isOnRightPage) {
+        this.isOnRightPage = isOnRightPage;
         this.onChange();
     }
 }
@@ -241,5 +248,6 @@ class GlobalCache {
         this.highlightedElementInterval = null;
         this.isAutomatingNextStep = false;
         this.sideInstructionAutoNextTimer = null;
+        this.isMainPopUpCollapsed = false;
     }
 }

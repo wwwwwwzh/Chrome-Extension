@@ -29,10 +29,11 @@
                 "*://*/*"
             ],
             "css": [
-                "assets/css/popup.css"
+                "assets/css/main.css"
             ],
             "js": [
                 "./packages/jquery-3.6.0.min.js",
+                "./packages/jquery.box-shadow-animator.min.js",
                 "./packages/firebase.js",
                 "constants.js",
                 "classes.js",

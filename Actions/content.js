@@ -22,7 +22,12 @@ async function setUp() {
         }
     })
     //setUpIframeListner();
+
 }
+
+$(() => {
+    setUp();
+})
 
 function setUpIframeListner() {
     getFrameContents();
@@ -45,27 +50,20 @@ function setUpIframeListner() {
         })
     }
 }
-$(() => {
-    setUp();
-})
 
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
 //MARK: Start of giving suggestions
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
-function automationSpeedSliderHelper(parent = mainPopUpContainer) {
-    parent.append(automationSpeedSlider);
-    automationSpeedSlider.on('change', () => {
-        onAutomationSpeedSliderChanged();
-    })
+function automationSpeedSliderHelper() {
     chrome.storage.sync.get(VALUES.STORAGE.AUTOMATION_SPEED, result => {
         automationSpeedSlider.val(result[VALUES.STORAGE.AUTOMATION_SPEED]);
     })
 }
 
 async function fetchSimpleTutorials() {
-    mainPopUpContainer.empty();
+    $('.not-following-tutorial-item').remove();
     automationSpeedSliderHelper();
     const domainName = "https://" + currentUrlObj.hostname + "/";
     const url_matches = [currentUrl, domainName];
@@ -80,63 +78,54 @@ async function fetchSimpleTutorials() {
     const simpleTutorialQuerySnapshot = await getDocs(simpleTutorialQuery);
 
     if (!simpleTutorialQuerySnapshot.empty) {
-        //create popup window
-        if (mainPopUpContainer.is(":hidden")) {
-            mainPopUpContainer.show();
-            mainPopUpContainer.append(mainDraggableArea);
-            makeElementDraggable(mainDraggableArea[0], mainPopUpContainer[0]);
-        }
+        mainPopUpContainer.show();
         //iterate query to add tutorial buttons
         simpleTutorialQuerySnapshot.forEach((tutorial) => {
-            mainPopUpContainer.append(`<a class=\"simple-tutorial-button\" id=\"${tutorial.id}\">${tutorial.data().name}</a>`);
+            mainPopUpContainer.append(`
+            <a class=\"simple-tutorial-button not-following-tutorial-item\" id=\"${tutorial.id}\">
+                ${tutorial.data().name}
+            </a>
+            `);
             const button = $(`#${tutorial.id}`).first();
-            button.css(CSS.MAIN_OPTIONS_POPUP_SIMPLE_TUTORIAL_BUTTON);
+            button.css(CSS.BUTTON);
+            button.hover(() => {
+                button.css(CSS.BUTTON_HOVER);
+            }, () => {
+                button.css(CSS.BUTTON);
+            })
             //button click function. store tutorial's steps to storage
             button.on('click', () => {
                 onFollowTutorialButtonClicked(tutorial);
             });
         });
+    } else {
+        mainPopUpContainer.hide();
     }
 };
 
-
-function createAndShowOptionsContainer() {
-    mainStopOptionsContainer.show();
-    mainStopOptionsContainer.append(optionsDraggableArea);
-    makeElementDraggable(optionsDraggableArea[0], mainStopOptionsContainer[0]);
-}
-
-function createAndShowMiddlePopupContainer() {
-    mainMiddlePopupContainer.show();
-    mainMiddlePopupContainer.append(middleDraggableArea);
-    makeElementDraggable(middleDraggableArea[0], mainMiddlePopupContainer[0]);
+function showFollowingTutorialItems() {
+    $('.follow-tutorial-options-item').hide();
+    $('.following-tutorial-item').show();
     popUpStepName.html('');
     popUpStepDescription.html('');
-    popUpNextStepButton.hide();
 }
 
 
-var startTutorialButtonClicked = false;
 async function onFollowTutorialButtonClicked(tutorial) {
     //toogle html elements
     globalCache.reHighlightAttempt = 0;
-    mainPopUpContainer.hide();
-    createAndShowOptionsContainer();
-    automationSpeedSliderHelper(mainStopOptionsContainer, true);
-    createAndShowMiddlePopupContainer();
+    $('.follow-tutorial-options-item').show();
+    $('.not-following-tutorial-item').remove();
+    popUpNextStepButton.hide();
+
+    automationSpeedSliderHelper();
 
     popUpAutomateButton.on('click', () => {
-        if (!startTutorialButtonClicked) {
-            startTutorialButtonClicked = true;
-            onPopUpAutomateButtonClicked(tutorial);
-        }
+        onPopUpAutomateButtonClicked(tutorial);
     })
 
     popUpManualButton.on('click', () => {
-        if (!startTutorialButtonClicked) {
-            startTutorialButtonClicked = true;
-            onPopUpManualButtonClicked(tutorial);
-        }
+        onPopUpManualButtonClicked(tutorial);
     })
 }
 
@@ -148,7 +137,7 @@ async function onPopUpAutomateButtonClicked(tutorial) {
         syncStorageSet(VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.FOLLOWING_TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL);
         globalCache.globalEventsHandler.setFollwingTutorialStatusCache(VALUES.FOLLOWING_TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL);
         showTutorialStepAuto();
-        popUpNextStepButton.show();
+        showFollowingTutorialItems();
     })
 }
 
@@ -160,7 +149,7 @@ async function onPopUpManualButtonClicked(tutorial) {
         syncStorageSet(VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL);
         globalCache.globalEventsHandler.setFollwingTutorialStatusCache(VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL);
         showTutorialStepManual();
-        popUpNextStepButton.show();
+        showFollowingTutorialItems();
     })
 }
 
@@ -218,9 +207,7 @@ async function onStopTutorialButtonClicked() {
     startTutorialButtonClicked = false;
 
     //UI
-    mainStopOptionsContainer.hide();
-    mainMiddlePopupContainer.hide();
-    popUpNextStepButton.hide();
+    $('.following-tutorial-item, .follow-tutorial-options-item').hide();
 
     const data = {};
     data[VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS] = VALUES.FOLLOWING_TUTORIAL_STATUS.NOT_FOLLOWING_TUTORIAL;
@@ -234,6 +221,7 @@ async function onStopTutorialButtonClicked() {
 }
 
 function prepareTutorialIfIsFollowing(recordingStatus, afterPrepare) {
+    mainPopUpContainer.show();
     //check if on right page
     chrome.storage.sync.get([VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID], result => {
         const tutorialObj = result[VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID];
@@ -243,15 +231,19 @@ function prepareTutorialIfIsFollowing(recordingStatus, afterPrepare) {
         globalCache.currentStep = currentStep;
 
         if (checkIfUrlMatch(currentStep.url, currentUrl)) {
-            createAndShowOptionsContainer();
-            createAndShowMiddlePopupContainer();
-            popUpNextStepButton.show();
+            $('.following-tutorial-item').show();
 
             globalCache.globalEventsHandler.setFollwingTutorialStatusCache(recordingStatus);
 
             afterPrepare();
         } else {
-            //TODO
+            globalCache.globalEventsHandler.setIsOnRightPage(false);
+            mainPopUpContainer.children().hide();
+            mainDraggableArea.show();
+            mainCloseButton.show();
+            $('.wrong-page-item').show();
+            wrongPageRedirectButton.html(`<p>You have an ongoing tutorial at</p> ${currentStep.url}`);
+            wrongPageRedirectButton.attr('href', currentStep.url);
         }
     });
 }
@@ -356,18 +348,7 @@ async function showTutorialStepManual() {
 
 var timer = null;
 
-popUpNextStepButton.on('click', event => {
-    //stop timers and animations
-    isNotNull(globalCache.currentJQScrollingParent) && globalCache.currentJQScrollingParent.stop();
-    isNotNull(timer) && clearTimeout(timer);
-    removeLastHighlight();
-    globalCache.currentJQScrollingParent = null;
-    timer = null;
-    globalCache.highlightedElementInterval = null;
-    //auto go to next step
-    globalCache.isAutomatingNextStep = true;
-    showTutorialStepAuto();
-})
+
 
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
@@ -382,8 +363,6 @@ function manualStep(showNext = true) {
     } else {
         highlightAndScollTo(click.path);
     }
-    //UI
-    updateStepInstructionUIHelper();
 }
 
 function manualRedirect(showNext = true) {
@@ -393,35 +372,30 @@ function manualRedirect(showNext = true) {
     } else {
         highlightAndScollTo(click.path);
     }
-    //UI
 }
 
 function manualInput(showNext = true) {
     const inputObj = globalCache.currentStep.actionObject;
     //const element = $(jqueryElementStringFromDomPath(inputObj.path)).first();
     highlightAndScollTo(inputObj.path);
-    //UI
-    updateStepInstructionUIHelper();
 }
 
 function manualSelect(showNext = true) {
     const click = globalCache.currentStep.actionObject.defaultClick;
-    //UI
 }
 
 function manualSideInstruction(showNext = true) {
     const sideInstructionObj = globalCache.currentStep.actionObject;
     highlightAndScollTo(sideInstructionObj.path);
     //UI
-    updateStepInstructionUIHelper();
     globalCache.sideInstructionAutoNextTimer = setTimeout(() => {
         incrementCurrentStepHelper(showNext, false);
     }, 3000);
 }
 
 function updateStepInstructionUIHelper() {
-    popUpStepName.html(globalCache.currentStep.name);
-    popUpStepDescription.html(globalCache.currentStep.description);
+    popUpStepName.html('globalCache.currentStep.name');
+    popUpStepDescription.html('globalCache.currentStep.description');
 }
 
 //------------------------------------------------------------------------------------------------------------
@@ -732,6 +706,7 @@ function highlightAndRemoveLastHighlight(jQElement, path = null, callback = null
             if (globalCache.reHighlightAttempt > 5) {
                 //stop refinding element
                 console.error("ELEMENT NOT FOUND");
+                timer = null;
                 //onStopTutorialButtonClicked();
                 return false;
             }
@@ -742,14 +717,23 @@ function highlightAndRemoveLastHighlight(jQElement, path = null, callback = null
             return false;
         }
         globalCache.reHighlightAttempt = 0;
+        isNotNull(timer) && clearTimeout(timer);
+        timer = null;
+        updateHighlightInstructionWindow(jQElement);
+        highlightAndRemoveLastHighlightHelper();
+        return true;
+    } else {
+        highlightAndRemoveLastHighlightHelper();
+        return false
     }
 
-    removeLastHighlight();
-    globalCache.lastHighlightedElement = jQElement;
-    globalCache.lastHighlightedElementCSS = jQElement.css(['box-shadow', 'padding', 'border', 'border-radius']);
-    jQElement.css(CSS.HIGHLIGHT_BOX);
-    alertElement(jQElement);
-    return true;
+    function highlightAndRemoveLastHighlightHelper() {
+        removeLastHighlight();
+        globalCache.lastHighlightedElement = jQElement;
+        globalCache.lastHighlightedElementCSS = jQElement.css(['box-shadow', 'padding', 'border', 'border-radius']);
+        jQElement.css(CSS.HIGHLIGHT_BOX);
+        alertElement(jQElement);
+    }
 }
 
 function removeLastHighlight() {
@@ -772,8 +756,7 @@ function alertElement(element) {
 
     function borderOut() {
         element.animate({
-            borderWidth: '8px',
-            color: "rgb( 255, 0, 0 )",
+            boxShadow: '0px 0px 30px 15px rgba(255, 0, 0, 1)',
         }, 200).promise().then(() => {
             borderIn();
         });
@@ -781,10 +764,9 @@ function alertElement(element) {
 
     function borderIn() {
         element.animate({
-            borderWidth: '2px',
-            color: "rgb( 255, 110, 20 )",
+            boxShadow: '0px 0px 20px 5px rgba(255, 200, 42, 1)',
         }, 200).promise().then(() => {
-            if (++perAnimationBorderLoopCount < 3) {
+            if (perAnimationBorderLoopCount++ < 3) {
                 borderOut();
             } else {
                 element.stop();
@@ -794,7 +776,20 @@ function alertElement(element) {
     }
 }
 
+function updateHighlightInstructionWindow(element) {
+    const stepName = globalCache.currentStep.name;
+    const stepDescription = globalCache.currentStep.description;
 
+    if (isNotNull(stepName) || isNotNull(stepDescription)) {
+        highlightInstructionWindow.show();
+        const layout = getInstructionWindowLayout(element);
+        console.log(layout);
+        highlightInstructionWindow.css(layout.css);
+        updateStepInstructionUIHelper();
+    } else {
+
+    }
+}
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
 //MARK: message handler
@@ -816,3 +811,8 @@ chrome.runtime.onMessage.addListener(
         }
     }
 );
+
+//Clean stuff
+window.onbeforeunload = () => {
+
+}

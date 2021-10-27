@@ -14,6 +14,9 @@
 
 //^(http|https):\/\/(\w*[.])?\w*[.]\w*(\/.*)?$
 //(http|https):\/\/(.*[.])+.*?\/courses/\d*/assignments\/\d*/outline/edit
-let regex = new RegExp('/https:\/\/www.gradescope.com\/courses\/[0-9]+?\/assignments\/[0-9]+?\/outline\/edit/')
+//https:\/\/www.gradescope.com\/courses\/322028\/assignments\/[0-9]+?\/outline\/edit\/
+var urlToMatch = '/https:\/\/www.gradescope.com\/courses\/322028\/assignments\/[0-9]+?\/outline\/edit\//'
+const regex1 = new RegExp(urlToMatch.substr(1, urlToMatch.length - 2));
+let regex = new RegExp('https:\/\/www.gradescope.com\/courses\/322028\/assignments\/[0-9]+?\/outline\/edit\/')
 console.log(regex instanceof RegExp)
-console.log(regex.test('https://www.gradescope.com/courses/322028/assignments/1547768/outline/edit'))
+console.log(regex.test('https://www.gradescope.com/courses/322028/assignments/1547768/outline/edit/'))
