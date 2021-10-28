@@ -8,99 +8,109 @@ const firebaseConfig = {
     measurementId: "G-LM6FVJF8S6"
 }
 
-const CLOSE_BUTTON_WIDTH = 30;
-const CLOSE_BUTTON_RADIUS = 15;
-const CLOSE_BUTTON_OFFSET = 6;
-
-const CSS = {
-    HIGHLIGHT_INSTRUCTION_WINDOW: {
-        "position": "fixed",
-        'max-width': '300px',
-        'display': 'inline-block',
-        'padding': '12px',
-        'background-color': 'rgba(255,165,0,0.4)',
-        'border-radius': '6px',
-        'z-index': 2147483647,
-    },
-    HIGHLIGHT_BOX: {
-        'box-shadow': '0px 0px 20px 10px rgba(255, 203, 42, 1)',
-        'padding': '3px',
-        'border': '2px solid rgba(246, 131, 11, 0.5)',
-        'border-radius': '5px'
-    },
-    MAIN_POPUP_START_POSITION: {
-        "top": '12px',
-        "left": '12px',
-    },
-    MAIN_POPUP: {
-        "position": "fixed",
-        'width': '200px',
-        'height': '300px',
-        'padding': '12px',
-        'background-color': 'rgba(255,165,0,0.7)',
-        'border-radius': '6px',
-        'z-index': 2147483647,
-    },
-    POPUP_COLLAPSED: {
-        'width': CLOSE_BUTTON_WIDTH + CLOSE_BUTTON_OFFSET * 2,
-        'height': CLOSE_BUTTON_WIDTH + CLOSE_BUTTON_OFFSET * 2,
-        'border-radius': CLOSE_BUTTON_RADIUS,
-    },
-    BUTTON: {
-        "box-shadow": "inset 0px 0px 0px 0px #cf866c",
-        'background-color': '#e74c3c',
-        "border-radius": "6px",
-        "display": "inline-block",
-        "cursor": "pointer",
-        "color": "#ffffff",
-        "font-family": "Arial",
-        "font-size": "14px",
-        "padding": "12px 18px",
-        "margin": '6px',
-        "text-decoration": "none",
-        "text-shadow": "0px 1px 0px #854629",
-    },
-    BUTTON_HOVER: {
-        'background-color': '#c0392b',
-    },
-    CLOSE_BUTTON: {
-        'cursor': 'pointer',
-        'position': 'absolute',
-        'top': CLOSE_BUTTON_OFFSET,
-        'right': CLOSE_BUTTON_OFFSET,
-        'font-size': '30px',
-        'width': CLOSE_BUTTON_WIDTH,
-        'height': CLOSE_BUTTON_WIDTH,
-        'text-align': 'center',
-        'border-radius': CLOSE_BUTTON_RADIUS
-    },
-    POPUP_DRAGGABLE: {
-        "position": "absolute",
-        'top': '0',
-        'left': '0',
-        'right': '0',
-        'bottom': '0',
-        'border-radius': '6px',
-        'z-index': -1,
-    },
-    AUTOMATION_SPEED_SLIDER: {
-        "-webkit-appearance": "none",
-        "width": "100%",
-        "height": "25px",
-        "background": "#d3d3d3",
-        "outline": "none",
-        "opacity": "0.7",
-        "-webkit-transition": ".2s",
-        "transition": "opacity .2s",
-    },
-    WRONG_PAGE_REDIRECT_BUTTON: {
-        'max-width': 260,
-        'overflow-wrap': 'break-word',
-        'color': 'black',
-        'margin-top': '20px',
-        'padding': '6px',
-    }
-}
+// const CSS = {
+//     HIGHLIGHT_INSTRUCTION_WINDOW: {
+//         "position": "fixed",
+//         'max-width': '300px',
+//         'padding': '12px',
+//         'background-color': 'rgba(255,165,0,0.4)',
+//         'border-radius': '6px',
+//         'z-index': 2147483647,
+//     },
+//     HIGHLIGHT_BOX: {
+//         'box-shadow': '0px 0px 20px 10px rgba(255, 203, 42, 1)',
+//         'padding': '3px',
+//         'border': '2px solid rgba(246, 131, 11, 0.5)',
+//         'border-radius': '5px'
+//     },
+//     MAIN_POPUP_START_POSITION: {
+//         "top": '12px',
+//         "left": '12px',
+//     },
+//     MAIN_POPUP: {
+//         'display': 'block',
+//         "position": "fixed",
+//         'width': '200px',
+//         'height': '300px',
+//         'padding': '12px',
+//         'background-color': 'rgba(255,165,0,0.7)',
+//         'border-radius': '6px',
+//         'z-index': 2147483647,
+//     },
+//     POPUP_COLLAPSED: {
+//         'width': CLOSE_BUTTON_WIDTH + CLOSE_BUTTON_OFFSET * 2,
+//         'height': CLOSE_BUTTON_WIDTH + CLOSE_BUTTON_OFFSET * 2,
+//         'border-radius': CLOSE_BUTTON_RADIUS,
+//     },
+//     BUTTON: {
+//         'display': 'block',
+//         "box-shadow": "inset 0px 0px 0px 0px #cf866c",
+//         'background-color': '#e74c3c',
+//         "border-radius": "6px",
+//         "cursor": "pointer",
+//         "color": "#ffffff",
+//         "font-family": "Arial",
+//         "font-size": "14px",
+//         "padding": "12px 18px",
+//         "margin": '6px',
+//         "text-decoration": "none",
+//         "text-shadow": "0px 1px 0px #854629",
+//     },
+//     BUTTON_HOVER: {
+//         'background-color': '#c0392b',
+//     },
+//     POPUP_HEADER: {
+//         'display': 'block',
+//         'width': '100%',
+//         'padding': '6px',
+//         'margin-bottom': '12px'
+//     },
+//     CLOSE_BUTTON: {
+//         'display': 'block',
+//         'cursor': 'pointer',
+//         'position': 'absolute',
+//         'top': CLOSE_BUTTON_OFFSET,
+//         'right': CLOSE_BUTTON_OFFSET,
+//         'font-size': '30px',
+//         'width': CLOSE_BUTTON_WIDTH,
+//         'height': CLOSE_BUTTON_WIDTH,
+//         'text-align': 'center',
+//         'border-radius': CLOSE_BUTTON_RADIUS
+//     },
+//     POPUP_DRAGGABLE: {
+//         "position": "relative",
+//         'top': '0px',
+//         'left': '0px',
+//         'right': '0px',
+//         'bottom': '0px',
+//         'border-radius': '6px',
+//         'z-index': -1,
+//     },
+//     AUTOMATION_SPEED_SLIDER: {
+//         'display': 'block',
+//         "position": "absolute",
+//         'bottom': '6px',
+//         'left': '6px',
+//         'right': '6px',
+//         'padding': '6px 6px 6px 6px',
+//         'width': '-moz-calc(100% - 24px)',
+//         'width': '-webkit-calc(100% - 24px)',
+//         'width': '-o-calc(100% - 24px)',
+//         'width': 'calc(100% - 24px)',
+//         "height": "25px",
+//         "background": "#d3d3d3",
+//         "outline": "none",
+//         "transition": "opacity .2s",
+//     },
+//     WRONG_PAGE_REDIRECT_BUTTON: {
+//         'display': 'block',
+//         'max-width': '260px',
+//         'overflow-wrap': 'break-word',
+//         'color': 'black',
+//         'margin-top': '20px',
+//         'padding': '6px',
+//     }
+// }
 
 const VALUES = {
     INPUT_TYPES: {
@@ -283,11 +293,14 @@ function getScrollParent(element, includeHidden) {
     return document.body;
 }
 
-function popupSendMessage(message) {
-    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-        chrome.tabs.sendMessage(tabs[0].id, message);
+function sendMessageToContentScript(message, active = true, currentWindow = true) {
+    chrome.tabs.query({ active, currentWindow }, function (tabs) {
+        for (var i = 0; i < tabs.length; ++i) {
+            chrome.tabs.sendMessage(tabs[i].id, message);
+        }
     });
 }
+
 
 function makeElementDraggable(elmnt, target = elmnt) {
     var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
@@ -387,12 +400,14 @@ function getInstructionWindowLayout(element) {
         },
     };
 
+    //calculate layout
     if ((topMargin + bottomMargin) > 100) {
         if (moreTop) {
             if (moreLeft) {
                 layout.type = LAYOUT_TYPE.TOP_LEFT;
                 layout.css.bottom = windowHeight - topMargin;
                 layout.css.right = rightMargin;
+                console.log(boundingRect)
             }
             else {
                 layout.type = LAYOUT_TYPE.TOP_RIGHT;
@@ -402,13 +417,12 @@ function getInstructionWindowLayout(element) {
         } else {
             if (moreLeft) {
                 layout.type = LAYOUT_TYPE.BOTTOM_LEFT;
-                layout.css.top = windowHeight - bottomMargin;
+                layout.css.top = windowHeight - bottomMargin + 4;
                 layout.css.right = rightMargin;
             }
             else {
                 layout.type = LAYOUT_TYPE.BOTTOM_RIGHT;
-                console.log('aa')
-                layout.css.top = windowHeight - bottomMargin;
+                layout.css.top = windowHeight - bottomMargin + 4;
                 layout.css.left = leftMargin;
             }
         }
@@ -446,6 +460,18 @@ function getInstructionWindowLayout(element) {
     return layout;
 }
 
+function movePopupIfOverlap() {
+    const mainPopupRect = mainPopUpContainer[0].getBoundingClientRect();
+    const instructionWindow = highlightInstructionWindow[0].getBoundingClientRect();
+    const overlap = !(mainPopupRect.right < instructionWindow.left ||
+        mainPopupRect.left > instructionWindow.right ||
+        mainPopupRect.bottom < instructionWindow.top ||
+        mainPopupRect.top > instructionWindow.bottom)
+
+    if (overlap) {
+        simulateClick(mainCloseButton[0]);
+    }
+}
 
 
 
@@ -481,6 +507,15 @@ function isSubArray(a, b) {
         if (a[i] !== b[i]) return false;
     }
     return true;
+}
+
+/**
+ * true if a contains b
+ */
+function arrayContains(a, b) {
+    var contains = true;
+    b.forEach((val) => { if (!a.includes(val)) contains = false; });
+    return contains;
 }
 
 function min(a, b) {

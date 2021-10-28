@@ -1,14 +1,177 @@
-.button {
+:root {
+    --close-button-transition-duration-opacity: 0.3s;
+    --close-button-transition-duration-rotation: 0.6s;
+    --close-button-transition-property: transform var(--close-button-transition-duration-rotation) ease, opacity var(--close-button-transition-duration-opacity) linear;
+}
+
+.w-button-normal {
+    display: block;
+    box-shadow: inset 0.1em 0.1em 1em 0.1em #c92d1c;
+    background-color: #e74c3c;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #ffffff;
+    font-family: Arial;
+    font-size: 14px;
+    padding: 12px 18px;
+    margin: 6px;
+    text-decoration: none;
+    text-shadow: 0px 1px 0px #854629;
+}
+
+.w-button-normal:hover {
+    display: block;
+    box-shadow: inset 0.1em 0.1em 1em 0.1em #c92d1c;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #ffffff;
+    font-family: Arial;
+    font-size: 14px;
+    padding: 12px 18px;
+    margin: 6px;
+    text-decoration: none;
+    text-shadow: 0px 1px 0px #854629;
+    background-color: #c0392b;
+}
+
+.w-highlight-instruction-window {
+    position: fixed;
+    max-width: 300px;
+    padding: 12px;
+    background-color: rgba(255,165,0,0.4);
+    border-radius: 6px;
+    z-index: 2147483647;
+}
+
+.w-highlight-box.w-highlight-box-specifier {
+    box-shadow: 0px 0px 3px 6px rgba(255, 203, 42, 1);
+    border: 2px solid rgba(246, 131, 11, 0.5);
+}
+
+.w-main-popup {
+    top: 12px;
+    left: 12px;
+    display: block;
+    position: fixed;
+    width: 200px;
+    height: 300px;
+    padding: 8px;
+    background-color: rgba(255,165,0,0.7);
+    border-radius: 6px;
+    z-index: 2147483647;
+}
+
+.w-popup-collapsed {
+    top: 12px;
+    left: 12px;
+    width: 200px;
+    height: 44px;
+    display: block;
+    position: fixed;
+    padding: 8px;
+    background-color: rgba(255,165,0,0.7);
+    border-radius: 6px;
+    z-index: 2147483647;
+}
+
+#w-popup-header {
     position: relative;
     display: block;
-    margin: 30px auto;
-    padding: 0;
-    overflow: hidden;
-    border-width: 0;
+    width: 100%;
+    height: 36px;
+}
+
+.w-close-button {
+    position: absolute;
+    right: 0px;
+    width: 32px;
+    height: 32px;
+    opacity: 0.3;
+    cursor: pointer;
+    transition: var(--close-button-transition-property);
+  }
+  
+  .w-close-button:before, .w-close-button:after {
+    position: absolute;
+    left: 16px;
+    content: ' ';
+    height: 32px;
+    width: 2px;
+    background-color: #333;
+    transition: var(--close-button-transition-property);
+  }
+  .w-close-button:before {
+    transform: rotate(45deg);
+  }
+  .w-close-button:after {
+    transform: rotate(-45deg);
+  }
+  .w-close-button:hover {
+      opacity: 0.7;
+  }
+
+
+  .w-close-button-collapsed {
+    position: absolute;
+    right: 0px;
+    width: 32px;
+    height: 32px;
+    opacity: 0.3;
+    cursor: pointer;
+    transition: var(--close-button-transition-property);
+  }
+  .w-close-button-collapsed:before, .w-close-button-collapsed:after {
+    position: absolute;
+    left: 16px;
+    content: ' ';
+    height: 32px;
+    width: 2px;
+    background-color: #333;
+    transition: var(--close-button-transition-property);
+  }
+  .w-close-button-collapsed:before {
+    transform: rotate(90deg);
+  }
+  .w-close-button-collapsed:after {
+    transform: rotate(0deg);
+  }
+  .w-close-button-collapsed:hover {
+    opacity: 0.7;
+}
+
+  
+.w-popup-draggable {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    bottom: 0px;
+    border-radius: 6px;
+    z-index: -1;
+}
+
+#w-automation-speed-slider {
+    display: block;
+    position: absolute;
+    bottom: 6px;
+    left: 6px;
+    right: 6px;
+    padding: 6px 6px 6px 6px;
+    width: -moz-calc(100% - 24px);
+    width: -webkit-calc(100% - 24px);
+    width: -o-calc(100% - 24px);
+    width: calc(100% - 24px);
+    height: 25px;
+    background: #d3d3d3;
     outline: none;
-    border-radius: 2px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, .6);
-    background-color: '#e74c3c';
-    color: #ecf0f1;
-    transition: background-color .3s;
+    transition: opacity .2s;
+}
+
+.w-wrong-page-redirect-button {
+    display: block;
+    max-width: 260px;
+    overflow-wrap: break-word;
+    color: black;
+    margin-top: 20px;
+    padding: 6px;
 }

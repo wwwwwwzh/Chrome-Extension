@@ -4,12 +4,13 @@ let automationSpeedSlider;
 let stopOptionsStopButton;
 let popUpAutomateButton;
 let popUpManualButton;
-let followTutorialOptionsCancelButton;
+let popUpCancelButton;
 let popUpStepName;
 let popUpStepDescription;
 let popUpNextStepButton;
 let wrongPageRedirectButton;
 let mainCloseButton;
+let popUpHeader;
 
 let highlightInstructionWindow;
 
@@ -17,151 +18,105 @@ $(() => {
     //tutorial menu
     $('body').append(
         `
-        <div id=\"main-popup-container\">
-            <div id=\"main-draggable-area\"  class=\"draggable-area common-item\"></div>
-            <input type=\"range\" min=\"1\" max=\"100\" value=\"50\" id=\"automation-speed-slider\" class=\"common-item\">
-            <span class=\"close common-item\" id=\"main-close-button\">&times;</span>
+        <div id=\"w-main-popup-container\" class=\"w-main-popup\">
+            <div id=\"w-main-draggable-area\"  class=\"w-common-item w-popup-draggable\"></div>
 
-            <button id=\"pop-up-automate-button\" class=\"follow-tutorial-options-item\">Automate</button>
-            <button id=\"pop-up-manual-button\" class=\"follow-tutorial-options-item\">Walk Me Through</button>
-            <button id=\"pop-up-cancel-button\" class=\"follow-tutorial-options-item\">Cancel</button>
+            <div id=\"w-popup-header\" class=\"w-common-item\">
+                <div class=\"w-common-item w-close-button\" id=\"w-main-close-button\"></div>
+            </div>
 
-            <button id=\"pop-up-next-step-button\" class=\"following-tutorial-item\">Next</button>
-            <button id=\"stop-options-stop-button\" class=\"following-tutorial-item\">Stop</button>
+            <button id=\"w-popup-automate-button\" class=\"w-follow-tutorial-options-item w-button-normal\">Automate</button>
+            <button id=\"w-popup-manual-button\" class=\"w-follow-tutorial-options-item w-button-normal\">Walk Me Through</button>
+            <button id=\"w-popup-cancel-button\" class=\"w-follow-tutorial-options-item w-button-normal\">Cancel</button>
+
+            <button id=\"w-popup-next-step-button\" class=\"w-following-tutorial-item w-button-normal\">Next</button>
+            <button id=\"w-stop-options-stop-button\" class=\"w-following-tutorial-item w-button-normal\">Stop</button>
             
-            <a href="/" id=\"wrong-page-redirect-button\" class=\"wrong-page-item\">You have an ongoing tutorial on [website address]</a>
+            <input type=\"range\" min=\"1\" max=\"100\" value=\"50\" id=\"w-automation-speed-slider\" class=\"w-common-item\">
+
+            <a href="/" id=\"w-wrong-page-redirect-button\" class=\"w-wrong-page-item w-wrong-page-redirect-button\">You have an ongoing tutorial on [website address]</a>
+        </div>
+        <div id=\"w-highlight-instruction-window\" class=\"w-highlight-instruction-window\">
+            <h3 id=\"w-popup-step-name\" class=\"w-following-tutorial-item\"></h3>
+            <p id=\"w-popup-step-description\" class=\"w-following-tutorial-item\"></p>
         </div>
         `
     );
-    mainPopUpContainer = $('#main-popup-container');
-    mainPopUpContainer.css(CSS.MAIN_POPUP);
-    mainPopUpContainer.css(CSS.MAIN_POPUP_START_POSITION);
+    mainPopUpContainer = $('#w-main-popup-container');
 
-
-    mainDraggableArea = $('#main-draggable-area');
-    mainDraggableArea.css(CSS.POPUP_DRAGGABLE);
+    mainDraggableArea = $('#w-main-draggable-area');
     makeElementDraggable(mainDraggableArea[0], mainPopUpContainer[0]);
 
-    automationSpeedSlider = $('#automation-speed-slider');
+    automationSpeedSlider = $('#w-automation-speed-slider');
     automationSpeedSlider.on('change', () => {
         onAutomationSpeedSliderChanged();
     })
 
-    followTutorialOptionsCancelButton = $('#pop-up-cancel-button');
-    followTutorialOptionsCancelButton.css(CSS.BUTTON);
-    followTutorialOptionsCancelButton.hover(() => {
-        followTutorialOptionsCancelButton.css(CSS.BUTTON_HOVER);
-    }, () => {
-        followTutorialOptionsCancelButton.css(CSS.BUTTON);
-    })
-
-    mainCloseButton = $('#main-close-button')
-    mainCloseButton.css(CSS.CLOSE_BUTTON);
-    mainCloseButton.hover(() => {
-        mainCloseButton.css({ 'background': '#d38600' });
-    }, () => {
-        mainCloseButton.css({ 'background': 'rgba(0,0,0,0)' });
-    })
+    popUpHeader = $('#w-popup-header');
+    mainCloseButton = $('#w-main-close-button');
 
     mainCloseButton.on("click", () => {
         if (globalCache.isMainPopUpCollapsed) {
-            mainPopUpContainer.css(CSS.MAIN_POPUP);
-            mainCloseButton.html('&times;');
-            mainPopUpContainer.find('.should-reopen').show();
-            mainPopUpContainer.find('.should-reopen').removeClass('should-reopen');
+            mainPopUpContainer.removeClass('w-popup-collapsed');
+            mainPopUpContainer.addClass('w-main-popup');
+            mainCloseButton.removeClass('w-close-button-collapsed');
+            mainCloseButton.addClass('w-close-button');
+            mainPopUpContainer.find('.w-should-reopen').show();
+            mainPopUpContainer.find('.w-should-reopen').removeClass('w-should-reopen');
 
             globalCache.isMainPopUpCollapsed = false;
         } else {
             mainPopUpContainer.find(':visible').each((i, element) => {
-                $(element).addClass('should-reopen');
+                $(element).addClass('w-should-reopen');
             })
-            mainPopUpContainer.css(CSS.POPUP_COLLAPSED);
+            mainPopUpContainer.removeClass('w-main-popup');
+            mainPopUpContainer.addClass('w-popup-collapsed');
             mainPopUpContainer.children().hide();
-            mainCloseButton.html('&plus;');
-            mainCloseButton.show();
+            mainCloseButton.removeClass('w-close-button');
+            mainCloseButton.addClass('w-close-button-collapsed');
+            popUpHeader.show();
             mainDraggableArea.show();
             globalCache.isMainPopUpCollapsed = true;
         }
     })
 
-    //stop tutorial options
 
-    stopOptionsStopButton = $('#stop-options-stop-button');
-    stopOptionsStopButton.css(CSS.BUTTON);
-    stopOptionsStopButton.hover(() => {
-        stopOptionsStopButton.css(CSS.BUTTON_HOVER);
-    }, () => {
-        stopOptionsStopButton.css(CSS.BUTTON);
+    //choose options before start
+    popUpAutomateButton = $("#w-popup-automate-button");
+    popUpManualButton = $("#w-popup-manual-button");
+    popUpCancelButton = $('#w-popup-cancel-button');
+    popUpCancelButton.on('click', () => {
+        $('.w-follow-tutorial-options-item').hide();
+        fetchSimpleTutorials();
     })
-    stopOptionsStopButton.on('click', () => {
-        onStopTutorialButtonClicked();
-    });
-
-
-    //middle popup
-    //automate and walk through buttons
-    popUpAutomateButton = $("#pop-up-automate-button");
-    popUpAutomateButton.css(CSS.BUTTON);
-    popUpAutomateButton.hover(() => {
-        popUpAutomateButton.css(CSS.BUTTON_HOVER);
-    }, () => {
-        popUpAutomateButton.css(CSS.BUTTON);
-    });
-    popUpManualButton = $("#pop-up-manual-button");
-    popUpManualButton.css(CSS.BUTTON);
-    popUpManualButton.hover(() => {
-        popUpManualButton.css(CSS.BUTTON_HOVER);
-    }, () => {
-        popUpManualButton.css(CSS.BUTTON);
-    });
 
     //guides during tutorial
-
-    popUpNextStepButton = $("#pop-up-next-step-button");
-    popUpNextStepButton.css(CSS.BUTTON);
-    popUpNextStepButton.hover(() => {
-        popUpNextStepButton.css(CSS.BUTTON_HOVER);
-    }, () => {
-        popUpNextStepButton.css(CSS.BUTTON);
-    });
+    popUpNextStepButton = $("#w-popup-next-step-button");
     popUpNextStepButton.hide();
     popUpNextStepButton.on('click', event => {
-        //stop timers and animations
-        isNotNull(globalCache.currentJQScrollingParent) && globalCache.currentJQScrollingParent.stop();
-        isNotNull(timer) && clearTimeout(timer);
-        removeLastHighlight();
-        globalCache.currentJQScrollingParent = null;
-        timer = null;
-        globalCache.highlightedElementInterval = null;
         //auto go to next step
         globalCache.isAutomatingNextStep = true;
         showTutorialStepAuto();
     })
 
+    stopOptionsStopButton = $('#w-stop-options-stop-button');
+    stopOptionsStopButton.on('click', () => {
+        onStopTutorialButtonClicked();
+    });
+
+    wrongPageRedirectButton = $('#w-wrong-page-redirect-button');
+
     mainPopUpContainer.hide();
     mainPopUpContainer.children().hide();
-    $('.common-item').show();
-
-    wrongPageRedirectButton = $('#wrong-page-redirect-button');
-    wrongPageRedirectButton.css(CSS.WRONG_PAGE_REDIRECT_BUTTON);
+    $('.w-common-item').show();
 
     //Highlight instruction window
-    $('body').append(
-        `
-        <div id=\"highlight-instruction-window\">
-            <h3 id=\"pop-up-step-name\" class=\"following-tutorial-item\"></h3>
-            <p id=\"pop-up-step-description\" class=\"following-tutorial-item\"></p>
-        </div>
-        `
-    );
-
-    highlightInstructionWindow = $('#highlight-instruction-window');
-    highlightInstructionWindow.css(CSS.HIGHLIGHT_INSTRUCTION_WINDOW);
+    highlightInstructionWindow = $('#w-highlight-instruction-window');
     highlightInstructionWindow.hide();
 
-    popUpStepName = $("#pop-up-step-name");
+    popUpStepName = $("#w-popup-step-name");
     popUpStepName.css({ 'overflow-wrap': 'break-word', });
-    popUpStepDescription = $("#pop-up-step-description");
+    popUpStepDescription = $("#w-popup-step-description");
     popUpStepDescription.css({ 'overflow-wrap': 'break-word', });
 
 })

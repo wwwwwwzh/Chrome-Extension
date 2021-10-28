@@ -223,7 +223,6 @@ class GlobalCache {
         tutorialObj = null,
         currentStep = null,
         interval = 2000,
-        reHighlightTimer = null,
         isSimulatingClick = false,
         globalEventsHandler = new GlobalEventsHandler(),
         domPath = null,
@@ -236,7 +235,6 @@ class GlobalCache {
         this.tutorialObj = tutorialObj;
         this.currentStep = currentStep;
         this.interval = interval;
-        this.reHighlightTimer = reHighlightTimer;
         this.isSimulatingClick = isSimulatingClick;
         this.globalEventsHandler = globalEventsHandler;
         this.domPath = domPath;
@@ -245,9 +243,10 @@ class GlobalCache {
         this.lastHighlightedElement = lastSelectedElement;
         this.lastHighlightedElementCSS = lastSelectedElementCSS;
         this.currentJQScrollingParent = currentJQScrollingParent;
-        this.highlightedElementInterval = null;
+        this.alertElementInterval = null;
         this.isAutomatingNextStep = false;
         this.sideInstructionAutoNextTimer = null;
         this.isMainPopUpCollapsed = false;
+        this.reHighlightTimer = null;
     }
 }

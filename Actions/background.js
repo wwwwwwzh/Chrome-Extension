@@ -17,3 +17,10 @@ chrome.runtime.onInstalled.addListener(() => {
     syncStorageSet('REVISIT_PAGE_COUNT', 0);
     syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, null)
 });
+
+
+chrome.tabs.onActivated.addListener(() => {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+        chrome.tabs.sendMessage(tabs[0].id, { onActivated: true }, function (response) { });
+    });
+})

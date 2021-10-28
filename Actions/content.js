@@ -63,7 +63,7 @@ function automationSpeedSliderHelper() {
 }
 
 async function fetchSimpleTutorials() {
-    $('.not-following-tutorial-item').remove();
+    $('.w-not-following-tutorial-item').remove();
     automationSpeedSliderHelper();
     const domainName = "https://" + currentUrlObj.hostname + "/";
     const url_matches = [currentUrl, domainName];
@@ -82,17 +82,12 @@ async function fetchSimpleTutorials() {
         //iterate query to add tutorial buttons
         simpleTutorialQuerySnapshot.forEach((tutorial) => {
             mainPopUpContainer.append(`
-            <a class=\"simple-tutorial-button not-following-tutorial-item\" id=\"${tutorial.id}\">
+            <a class=\"w-simple-tutorial-button w-not-following-tutorial-item w-button-normal\" id=\"${tutorial.id}\">
                 ${tutorial.data().name}
             </a>
             `);
             const button = $(`#${tutorial.id}`).first();
-            button.css(CSS.BUTTON);
-            button.hover(() => {
-                button.css(CSS.BUTTON_HOVER);
-            }, () => {
-                button.css(CSS.BUTTON);
-            })
+
             //button click function. store tutorial's steps to storage
             button.on('click', () => {
                 onFollowTutorialButtonClicked(tutorial);
@@ -104,8 +99,9 @@ async function fetchSimpleTutorials() {
 };
 
 function showFollowingTutorialItems() {
-    $('.follow-tutorial-options-item').hide();
-    $('.following-tutorial-item').show();
+    $('.w-follow-tutorial-options-item').hide();
+    $('.w-following-tutorial-item').show();
+
     popUpStepName.html('');
     popUpStepDescription.html('');
 }
@@ -114,8 +110,8 @@ function showFollowingTutorialItems() {
 async function onFollowTutorialButtonClicked(tutorial) {
     //toogle html elements
     globalCache.reHighlightAttempt = 0;
-    $('.follow-tutorial-options-item').show();
-    $('.not-following-tutorial-item').remove();
+    $('.w-follow-tutorial-options-item').show();
+    $('.w-not-following-tutorial-item').remove();
     popUpNextStepButton.hide();
 
     automationSpeedSliderHelper();
@@ -198,16 +194,18 @@ async function loadTutorialToStorage(tutorial) {
     globalCache.tutorialObj = tutorialObj;
 }
 
+function clearUIOnNextStep() {
+    removeLastHighlight();
+}
+
 async function onStopTutorialButtonClicked() {
     //clear stuff
-    clearInterval(globalCache.highlightedElementInterval);
-    isNotNull(globalCache.lastHighlightedElement) && globalCache.lastHighlightedElement.stop();
-    removeLastHighlight();
+    clearUIOnNextStep();
 
     startTutorialButtonClicked = false;
 
     //UI
-    $('.following-tutorial-item, .follow-tutorial-options-item').hide();
+    $('.w-following-tutorial-item, .w-follow-tutorial-options-item, .w-highlight-instruction-window').hide();
 
     const data = {};
     data[VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS] = VALUES.FOLLOWING_TUTORIAL_STATUS.NOT_FOLLOWING_TUTORIAL;
@@ -231,7 +229,7 @@ function prepareTutorialIfIsFollowing(recordingStatus, afterPrepare) {
         globalCache.currentStep = currentStep;
 
         if (checkIfUrlMatch(currentStep.url, currentUrl)) {
-            $('.following-tutorial-item').show();
+            $('.w-following-tutorial-item').show();
 
             globalCache.globalEventsHandler.setFollwingTutorialStatusCache(recordingStatus);
 
@@ -240,8 +238,9 @@ function prepareTutorialIfIsFollowing(recordingStatus, afterPrepare) {
             globalCache.globalEventsHandler.setIsOnRightPage(false);
             mainPopUpContainer.children().hide();
             mainDraggableArea.show();
-            mainCloseButton.show();
-            $('.wrong-page-item').show();
+            popUpHeader.show();
+            $('.w-wrong-page-item').show();
+            stopOptionsStopButton.show();
             wrongPageRedirectButton.html(`<p>You have an ongoing tutorial at</p> ${currentStep.url}`);
             wrongPageRedirectButton.attr('href', currentStep.url);
         }
@@ -260,10 +259,10 @@ async function checkFollowingTutorialStatus() {
                 prepareTutorialIfIsFollowing(recordingStatus, showTutorialStepAuto);
                 break;
             case VALUES.FOLLOWING_TUTORIAL_STATUS.NOT_FOLLOWING_TUTORIAL:
-                fetchSimpleTutorials();
+                onStopTutorialButtonClicked();
                 break;
             default:
-                fetchSimpleTutorials();
+                onStopTutorialButtonClicked();
                 break;
         }
     })
@@ -346,10 +345,6 @@ async function showTutorialStepManual() {
     callFunctionOnSwitchStepType(manualStep, manualStep, manualRedirect, manualInput, manualSelect, manualSideInstruction);
 }
 
-var timer = null;
-
-
-
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
 //MARK: Walk me through screen actions
@@ -394,8 +389,14 @@ function manualSideInstruction(showNext = true) {
 }
 
 function updateStepInstructionUIHelper() {
-    popUpStepName.html('globalCache.currentStep.name');
-    popUpStepDescription.html('globalCache.currentStep.description');
+    if (isEmpty(globalCache.currentStep.name)) {
+        globalCache.currentStep.name = `Step ${globalCache.currentStep.index}`;
+    }
+    if (isEmpty(globalCache.currentStep.description)) {
+        globalCache.currentStep.description = `Select the highlighted box`;
+    }
+    popUpStepName.html(globalCache.currentStep.name);
+    popUpStepDescription.html(globalCache.currentStep.description);
 }
 
 //------------------------------------------------------------------------------------------------------------
@@ -416,10 +417,16 @@ function autoClick(showNext = true) {
         return;
     }
     const element = $(jqueryElementStringFromDomPath(step.path))[0];
-    highlightAndScollTo(step.path, () => {
+    if (globalCache.isAutomatingNextStep) {
         simulateClick(element);
-        incrementCurrentStepHelper(showNext);
-    });
+        incrementCurrentStepHelper(showNext, false);
+        globalCache.isAutomatingNextStep = false;
+    } else {
+        highlightAndScollTo(step.path, () => {
+            simulateClick(element);
+            incrementCurrentStepHelper(showNext);
+        });
+    }
 }
 
 
@@ -498,6 +505,7 @@ function incrementCurrentStepHelper(showNext = true, auto = true) {
         } else if (auto) {
             showNext && showTutorialStepManual();
         } else {
+            globalCache.isSimulatingClick = false;
             showNext && showTutorialStepManual();
         }
     });
@@ -538,10 +546,10 @@ function removeGlobalEventListenersWhenFollowing() {
 function onClickHelper(event) {
     preventDefaultHelper(event);
     if (event.target !== globalCache.currentElement) {
+        console.log(globalCache.isSimulatingClick)
         if (!globalCache.isSimulatingClick) {
             processEventHelper(event.target);
         }
-        globalCache.isSimulatingClick = false;
     }
 }
 
@@ -679,10 +687,13 @@ function highlightAndScollTo(path, callback = () => { }) {
     const jQElement = $(jqueryElementStringFromDomPath(path));
     const htmlElement = jQElement[0];
 
+    //TODO: bug
+    if (isNotNull(jQElement.attr("class")) && arrayContains(jQElement.attr("class").split(/\s+/), ['w-highlight-box', 'w-highlight-box-specifier'])) {
+        return;
+    }
+
     if (highlightAndRemoveLastHighlight(jQElement, path, callback)) {
         //Scroll
-        const interval = globalCache.isAutomatingNextStep ? 0 : globalCache.interval;
-        globalCache.isAutomatingNextStep = false;
         globalCache.currentJQScrollingParent = $(getScrollParent(htmlElement, false));
         var offset = 0;
         const eleOffset = jQElement.offset();
@@ -692,10 +703,15 @@ function highlightAndScollTo(path, callback = () => { }) {
         }
         globalCache.currentJQScrollingParent.animate({
             scrollTop: `+=${offset}px`
-        }, interval).promise().then(() => {
+        }, globalCache.interval).promise().then(() => {
             callback();
         })
     }
+}
+
+function clearReHighlightTimer() {
+    isNotNull(globalCache.reHighlightTimer) && clearTimeout(globalCache.reHighlightTimer);
+    globalCache.reHighlightTimer = null;
 }
 
 function highlightAndRemoveLastHighlight(jQElement, path = null, callback = null) {
@@ -706,19 +722,20 @@ function highlightAndRemoveLastHighlight(jQElement, path = null, callback = null
             if (globalCache.reHighlightAttempt > 5) {
                 //stop refinding element
                 console.error("ELEMENT NOT FOUND");
-                timer = null;
+                globalCache.reHighlightTimer = null;
                 //onStopTutorialButtonClicked();
+                highlightInstructionWindow.hide();
                 return false;
             }
             globalCache.reHighlightAttempt++;
             setTimeout(() => {
-                timer = highlightAndScollTo(path, callback);
+                globalCache.reHighlightTimer = highlightAndScollTo(path, callback);
             }, 300);
             return false;
         }
         globalCache.reHighlightAttempt = 0;
-        isNotNull(timer) && clearTimeout(timer);
-        timer = null;
+        clearReHighlightTimer();
+        console.trace();
         updateHighlightInstructionWindow(jQElement);
         highlightAndRemoveLastHighlightHelper();
         return true;
@@ -729,53 +746,62 @@ function highlightAndRemoveLastHighlight(jQElement, path = null, callback = null
 
     function highlightAndRemoveLastHighlightHelper() {
         removeLastHighlight();
-        globalCache.lastHighlightedElement = jQElement;
-        globalCache.lastHighlightedElementCSS = jQElement.css(['box-shadow', 'padding', 'border', 'border-radius']);
-        jQElement.css(CSS.HIGHLIGHT_BOX);
+        jQElement.addClass('w-highlight-box w-highlight-box-specifier');
         alertElement(jQElement);
+
+        function alertElement(element) {
+            var perAnimationBorderLoopCount = 0;
+
+            borderOut();
+
+            globalCache.alertElementInterval = setInterval(() => {
+                element.stop();
+                element.removeAttr('style');
+                borderOut();
+            }, 3500);
+
+            function borderOut() {
+                element.animate({
+                    boxShadow: '0px 0px 3px 6px rgba(255, 60, 43, 1)',
+                }, 300).promise().then(() => {
+                    borderIn();
+                });
+            }
+
+            function borderIn() {
+                element.animate({
+                    boxShadow: '0px 0px 3px 6px rgba(255, 200, 42, 1)',
+                }, 300).promise().then(() => {
+                    if (perAnimationBorderLoopCount++ < 2) {
+                        borderOut();
+                    } else {
+                        element.stop();
+                        element.removeAttr('style');
+                        perAnimationBorderLoopCount = 0;
+                    }
+                });
+            }
+        }
     }
 }
 
 function removeLastHighlight() {
-    if (isNotNull(globalCache.lastHighlightedElement)) {
-        globalCache.lastHighlightedElement.stop();
-        clearInterval(globalCache.highlightedElementInterval)
-        globalCache.lastHighlightedElement.css(globalCache.lastHighlightedElementCSS);
-    }
+    //stop timers and animations
+    clearReHighlightTimer()
+    isNotNull(globalCache.currentJQScrollingParent) && globalCache.currentJQScrollingParent.stop();
+    globalCache.currentJQScrollingParent = null;
+    clearInterval(globalCache.alertElementInterval);
+    globalCache.alertElementInterval = null;
+
+    const highlightedElements = $('.w-highlight-box.w-highlight-box-specifier');
+    highlightedElements.stop(true);
+    highlightedElements.removeAttr('style');
+    highlightedElements.removeClass('w-highlight-box w-highlight-box-specifier');
 }
 
-function alertElement(element) {
-    var perAnimationBorderLoopCount = 0;
 
-    borderOut();
 
-    globalCache.highlightedElementInterval = setInterval(() => {
-        element.stop();
-        borderOut();
-    }, 3000);
-
-    function borderOut() {
-        element.animate({
-            boxShadow: '0px 0px 30px 15px rgba(255, 0, 0, 1)',
-        }, 200).promise().then(() => {
-            borderIn();
-        });
-    }
-
-    function borderIn() {
-        element.animate({
-            boxShadow: '0px 0px 20px 5px rgba(255, 200, 42, 1)',
-        }, 200).promise().then(() => {
-            if (perAnimationBorderLoopCount++ < 3) {
-                borderOut();
-            } else {
-                element.stop();
-                perAnimationBorderLoopCount = 0;
-            }
-        });
-    }
-}
-
+var updateCount = 0;
 function updateHighlightInstructionWindow(element) {
     const stepName = globalCache.currentStep.name;
     const stepDescription = globalCache.currentStep.description;
@@ -783,9 +809,18 @@ function updateHighlightInstructionWindow(element) {
     if (isNotNull(stepName) || isNotNull(stepDescription)) {
         highlightInstructionWindow.show();
         const layout = getInstructionWindowLayout(element);
-        console.log(layout);
+        //console.log(layout);
         highlightInstructionWindow.css(layout.css);
+        movePopupIfOverlap();
         updateStepInstructionUIHelper();
+        if (updateCount === 0) {
+            setTimeout(() => {
+                updateHighlightInstructionWindow(element);
+            }, 200);
+            updateCount++;
+        } else {
+            updateCount = 0;
+        }
     } else {
 
     }
@@ -808,6 +843,9 @@ chrome.runtime.onMessage.addListener(
         }
         if (isNotNull(request.removeHighlight) && request.removeHighlight) {
             removeLastHighlight()
+        }
+        if (isNotNull(request.onActivated) && request.onActivated) {
+            setUp();
         }
     }
 );
