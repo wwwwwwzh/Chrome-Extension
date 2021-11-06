@@ -1,10 +1,16 @@
 :root {
+    --popup-padding: 8px;
+    --popup-width: 200px;
+    --popup-innerWidth: calc(var(--popup-width) - 2 * var(var(--popup-padding)));
+    --popup-header-padding: 3px;
+    --popup-header-height: 32px;
     --close-button-transition-duration-opacity: 0.3s;
     --close-button-transition-duration-rotation: 0.6s;
-    --close-button-transition-property: transform var(--close-button-transition-duration-rotation) ease, opacity var(--close-button-transition-duration-opacity) linear;
+    --close-button-transition: transform var(--close-button-transition-duration-rotation) ease, opacity var(--close-button-transition-duration-opacity) linear;
 }
 
 .w-button-normal {
+    all: initial;
     display: block;
     box-shadow: inset 0.1em 0.1em 1em 0.1em #c92d1c;
     background-color: #e74c3c;
@@ -17,9 +23,11 @@
     margin: 6px;
     text-decoration: none;
     text-shadow: 0px 1px 0px #854629;
+    max-width: var(--popup-innerWidth);
 }
 
 .w-button-normal:hover {
+    all: initial;
     display: block;
     box-shadow: inset 0.1em 0.1em 1em 0.1em #c92d1c;
     border-radius: 6px;
@@ -35,12 +43,15 @@
 }
 
 .w-highlight-instruction-window {
+    all: initial;
     position: fixed;
     max-width: 300px;
     padding: 12px;
     background-color: rgba(255,165,0,0.4);
     border-radius: 6px;
     z-index: 2147483647;
+    font-family: sans-serif;
+
 }
 
 .w-highlight-box.w-highlight-box-specifier {
@@ -49,98 +60,106 @@
 }
 
 .w-main-popup {
+    all: initial;
     top: 12px;
     left: 12px;
     display: block;
     position: fixed;
-    width: 200px;
+    width: var(--popup-width);
     height: 300px;
-    padding: 8px;
+    padding: var(--popup-padding);
     background-color: rgba(255,165,0,0.7);
     border-radius: 6px;
     z-index: 2147483647;
 }
 
 .w-popup-collapsed {
+    all: initial;
     top: 12px;
     left: 12px;
-    width: 200px;
-    height: 44px;
+    width: var(--popup-width);
+    height: calc(var(--popup-header-height) + 2 * var(--popup-padding));
     display: block;
     position: fixed;
-    padding: 8px;
+    padding: var(--popup-padding);
     background-color: rgba(255,165,0,0.7);
     border-radius: 6px;
     z-index: 2147483647;
 }
 
-#w-popup-header {
+.w-header {
+    all: initial;
     position: relative;
     display: block;
-    width: 100%;
-    height: 36px;
+    width: var(--popup-innerWidth);
+    height: var(--popup-header-height);
+    padding: var(--popup-header-padding);
 }
 
 .w-close-button {
+    all: initial;
     position: absolute;
     right: 0px;
-    width: 32px;
-    height: 32px;
+    width: calc(var(--popup-header-height) - 2* var(--popup-header-padding));
+    height: calc(var(--popup-header-height) - 2* var(--popup-header-padding));
     opacity: 0.3;
     cursor: pointer;
-    transition: var(--close-button-transition-property);
-  }
+    transition: var(--close-button-transition);
+}
   
-  .w-close-button:before, .w-close-button:after {
+.w-close-button:before, .w-close-button:after {
+    all: initial;
     position: absolute;
-    left: 16px;
+    left: calc((var(--popup-header-height) - 2* var(--popup-header-padding)) / 2);
     content: ' ';
-    height: 32px;
+    height: calc(var(--popup-header-height) - 2* var(--popup-header-padding));
     width: 2px;
     background-color: #333;
-    transition: var(--close-button-transition-property);
-  }
-  .w-close-button:before {
+    transition: var(--close-button-transition);
+}
+.w-close-button:before {
     transform: rotate(45deg);
-  }
-  .w-close-button:after {
+}
+.w-close-button:after {
     transform: rotate(-45deg);
-  }
-  .w-close-button:hover {
-      opacity: 0.7;
-  }
+}
+.w-close-button:hover {
+    opacity: 0.7;
+}
 
 
-  .w-close-button-collapsed {
+.w-close-button-collapsed {
+    all: initial;
     position: absolute;
     right: 0px;
-    width: 32px;
-    height: 32px;
+    width: calc(var(--popup-header-height) - 2* var(--popup-header-padding));
+    height: calc(var(--popup-header-height) - 2* var(--popup-header-padding));
     opacity: 0.3;
     cursor: pointer;
-    transition: var(--close-button-transition-property);
-  }
-  .w-close-button-collapsed:before, .w-close-button-collapsed:after {
+    transition: var(--close-button-transition);
+}
+.w-close-button-collapsed:before, .w-close-button-collapsed:after {
     position: absolute;
-    left: 16px;
+    left: calc((var(--popup-header-height) - 2* var(--popup-header-padding)) / 2);
     content: ' ';
-    height: 32px;
+    height: calc(var(--popup-header-height) - 2* var(--popup-header-padding));
     width: 2px;
     background-color: #333;
-    transition: var(--close-button-transition-property);
-  }
-  .w-close-button-collapsed:before {
+    transition: var(--close-button-transition);
+}
+.w-close-button-collapsed:before {
     transform: rotate(90deg);
-  }
-  .w-close-button-collapsed:after {
+}
+.w-close-button-collapsed:after {
     transform: rotate(0deg);
-  }
-  .w-close-button-collapsed:hover {
+}
+.w-close-button-collapsed:hover {
     opacity: 0.7;
 }
 
   
 .w-popup-draggable {
+    all: initial;
     position: absolute;
     top: 0px;
     left: 0px;
@@ -157,10 +176,7 @@
     left: 6px;
     right: 6px;
     padding: 6px 6px 6px 6px;
-    width: -moz-calc(100% - 24px);
-    width: -webkit-calc(100% - 24px);
-    width: -o-calc(100% - 24px);
-    width: calc(100% - 24px);
+    width: var(--popup-innerWidth);
     height: 25px;
     background: #d3d3d3;
     outline: none;
@@ -168,10 +184,137 @@
 }
 
 .w-wrong-page-redirect-button {
+    all: initial;
     display: block;
-    max-width: 260px;
+    max-width: var(--popup-innerWidth);
     overflow-wrap: break-word;
     color: black;
     margin-top: 20px;
     padding: 6px;
+    line-height: normal;
+}
+
+/* recording --------------------------------------------------------------*/
+
+#w-recording-menu-container {
+    all: initial;
+    top: 12px;
+    right: 12px;
+    display: block;
+    position: fixed;
+    width: var(--popup-width);
+    height: 300px;
+    padding: var(--popup-padding);
+    background-color: rgba(255,165,0,0.7);
+    border-radius: 6px;
+    z-index: 2147483647;
+    overflow: auto;
+}
+
+#new-tutorial-container {
+    display: flex;
+  justify-content: space-between;
+
+}
+
+.element-container {
+    all: initial;
+    position: relative;
+    width: 90%;
+    margin: 6px;
+    margin-top: 6px;
+}
+
+.w-button-small {
+    all: initial;
+    display: block;
+    box-shadow: inset 0.1em 0.1em 1em 0.1em #c92d1c;
+    background-color: #e74c3c;
+    border-radius: 3px;
+    cursor: pointer;
+    color: #ffffff;
+    font-family: Arial;
+    font-size: 11px;
+    padding: 4px 12px;
+    text-decoration: none;
+    text-shadow: 0px 1px 0px #854629;
+    max-width: var(--popup-innerWidth);
+}
+
+.w-button-small:hover {
+    background-color: #c0392b;
+}
+  
+#select-action-type-select {
+    position: relative;
+    width: 90%;
+}
+  
+.textarea{
+    all: initial;
+    height: 50px;
+    padding: 5px;
+    font-size: 16px;
+    border-width: 1px;
+    border-color: #c0392b;
+    background-color: #FFFFFF;
+    color: #000000;
+    box-shadow: 0px 0px 2px rgba(255, 27, 27, 0.75);
+}
+
+#is-recording-switch-label {
+    all: initial;
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+  }
+  
+#is-recording-switch-label input { 
+    all: initial;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  
+#is-recording-switch-slider {
+    all: initial;
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    -webkit-transition: .4s;
+    transition: .4s;
+    border-radius: 34px;
+}
+  
+#is-recording-switch-slider:before {
+    all: initial;
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    -webkit-transition: .4s;
+    transition: .4s;
+    border-radius: 50%;
+}
+  
+#record-tutorial-switch:checked + #is-recording-switch-slider {
+    background-color: #2196F3;
+  }
+  
+#record-tutorial-switch:focus + #is-recording-switch-slider {
+    box-shadow: 0 0 1px #2196F3;
+  }
+  
+#record-tutorial-switch:checked + #is-recording-switch-slider:before {
+    -webkit-transform: translateX(26px);
+    -ms-transform: translateX(26px);
+    transform: translateX(26px);
 }

@@ -270,6 +270,16 @@ function jqueryElementStringFromDomPath(pathStack) {
     return jqueryString
 }
 
+function isSelectedOnRightElement(shouldSelect, isSelecting) {
+    var isSelectedOnRightElement = true;
+    shouldSelect.each((i, element) => {
+        if (!($.contains(isSelecting, element) || element === isSelecting)) {
+            isSelectedOnRightElement = false;
+        }
+    })
+    return isSelectedOnRightElement;
+}
+
 /**
  * Javascript implementation of the JQuery UI scrollParent() function.
  * @param {HTML Element} element 

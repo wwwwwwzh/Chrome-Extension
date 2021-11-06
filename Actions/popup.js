@@ -81,7 +81,8 @@ $(() => {
 
     //MARK: new tutorial button set up
     newTutorialButton.on('click', async () => {
-        onNewTutorialButtonClicked();
+        sendMessageToContentScript({ newTutorial: true });
+        //onNewTutorialButtonClicked();
     })
 
     function onNewTutorialButtonClicked() {
@@ -122,40 +123,39 @@ $(() => {
 
     var currentStepObj = null;
 
+    if (false)
+        chrome.storage.sync.get([VALUES.RECORDING_STATUS.STATUS, VALUES.STORAGE.IS_RECORDING_ACTIONS, VALUES.STORAGE.CURRENT_STEP_OBJ, VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, VALUES.STORAGE.CURRENT_URL], (result) => {
+            switch (result[VALUES.RECORDING_STATUS.STATUS]) {
+                case VALUES.RECORDING_STATUS.RECORDING: case VALUES.RECORDING_STATUS.BEGAN_RECORDING:
+                    recordTutorialSwitch.prop('checked', result[VALUES.STORAGE.IS_RECORDING_ACTIONS]);
+                    //TODO: get h3 element
+                    $('h3').html(result[VALUES.STORAGE.IS_RECORDING_ACTIONS] ? "Recording" : "Not Recording");
+                    currentStepObj = result[VALUES.STORAGE.CURRENT_STEP_OBJ];
+                    loadMenuFromStorage(currentStepObj);
 
+                    const selectedElementPath = result[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT];
+                    if (isNotNull(selectedElementPath)) {
+                        selectedElementIndicator.html(`Selected Element: ${selectedElementPath.slice(max(selectedElementPath.length - 2, 0), selectedElementPath.length)}`)
+                    } else {
+                        selectedElementIndicator.html('Selected Element: None')
+                    }
+                    if (isNotNull(result[VALUES.STORAGE.CURRENT_URL])) {
+                        customStepUrlInput.val(result[VALUES.STORAGE.CURRENT_URL]);
+                    }
 
-    chrome.storage.sync.get([VALUES.RECORDING_STATUS.STATUS, VALUES.STORAGE.IS_RECORDING_ACTIONS, VALUES.STORAGE.CURRENT_STEP_OBJ, VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, VALUES.STORAGE.CURRENT_URL], (result) => {
-        switch (result[VALUES.RECORDING_STATUS.STATUS]) {
-            case VALUES.RECORDING_STATUS.RECORDING: case VALUES.RECORDING_STATUS.BEGAN_RECORDING:
-                recordTutorialSwitch.prop('checked', result[VALUES.STORAGE.IS_RECORDING_ACTIONS]);
-                //TODO: get h3 element
-                $('h3').html(result[VALUES.STORAGE.IS_RECORDING_ACTIONS] ? "Recording" : "Not Recording");
-                currentStepObj = result[VALUES.STORAGE.CURRENT_STEP_OBJ];
-                loadMenuFromStorage(currentStepObj);
-
-                const selectedElementPath = result[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT];
-                if (isNotNull(selectedElementPath)) {
-                    selectedElementIndicator.html(`Selected Element: ${selectedElementPath.slice(max(selectedElementPath.length - 2, 0), selectedElementPath.length)}`)
-                } else {
-                    selectedElementIndicator.html('Selected Element: None')
-                }
-                if (isNotNull(result[VALUES.STORAGE.CURRENT_URL])) {
-                    customStepUrlInput.val(result[VALUES.STORAGE.CURRENT_URL]);
-                }
-
-                showStepContainer();
-                break;
-            case VALUES.RECORDING_STATUS.NOT_RECORDING:
-                syncStorageSet(VALUES.STORAGE.IS_RECORDING_ACTIONS, false);
-                popupSendMessage({ isRecordingStatus: false });
-                showNewRecordingContainer();
-                break;
-            default:
-                onStopNewTutorialRecording()
-                showNewRecordingContainer();
-                break;
-        };
-    });
+                    showStepContainer();
+                    break;
+                case VALUES.RECORDING_STATUS.NOT_RECORDING:
+                    syncStorageSet(VALUES.STORAGE.IS_RECORDING_ACTIONS, false);
+                    sendMessageToContentScript({ isRecordingStatus: false });
+                    showNewRecordingContainer();
+                    break;
+                default:
+                    onStopNewTutorialRecording()
+                    showNewRecordingContainer();
+                    break;
+            };
+        });
 
     function loadMenuFromStorage(currentStepObj) {
         if (isNotNull(currentStepObj)) {
@@ -459,7 +459,7 @@ $(() => {
         const checked = recordTutorialSwitch.prop('checked');
         syncStorageSet(VALUES.STORAGE.IS_RECORDING_ACTIONS, checked, () => {
             $('h3').html(checked ? "Recording" : "Not Recording");
-            popupSendMessage({ isRecordingStatus: checked });
+            sendMessageToContentScript({ isRecordingStatus: checked });
         })
     })
 
@@ -534,7 +534,7 @@ $(() => {
                         loadMenuFromStorage(null);
 
                         //auto click the recorded element
-                        popupSendMessage({ clickPath: path, isRecordingStatus: false, removeHighlight: true });
+                        sendMessageToContentScript({ clickPath: path, isRecordingStatus: false, removeHighlight: true });
                     });
                 })
             } else {
@@ -564,7 +564,7 @@ $(() => {
         data[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE] = null;
         data[VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID] = null;
         data[VALUES.STORAGE.STEP_ACTION_TYPE] = VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL;
-        popupSendMessage({ isRecordingStatus: false });
+        sendMessageToContentScript({ isRecordingStatus: false });
         syncStorageSetBatch(data);
         showNewRecordingContainer();
 
