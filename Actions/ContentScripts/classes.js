@@ -15,8 +15,9 @@ class Step {
      * @param {number} index 
      * @param {string} actionType 
      * @param {RedirectAction | ClickAction | InputAction | SelectAction | SideInstructionAction | NullAction} actionObject 
+     * @param {[string]} possibleReasonsForElementNotFound
      */
-    constructor(index, actionType, actionObject, name, description, url, automationInterrupt = false) {
+    constructor(index, actionType, actionObject, name, description, url, automationInterrupt = false, possibleReasonsForElementNotFound = []) {
         this.index = index;
         this.actionType = actionType;
         this.actionObject = actionObject;
@@ -24,6 +25,7 @@ class Step {
         this.description = description;
         this.url = url;
         this.automationInterrupt = automationInterrupt;
+        this.possibleReasonsForElementNotFound = possibleReasonsForElementNotFound;
     }
 }
 

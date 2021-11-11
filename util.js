@@ -20,3 +20,16 @@ const regex1 = new RegExp(urlToMatch.substr(1, urlToMatch.length - 2));
 let regex = new RegExp('https:\/\/www.gradescope.com\/courses\/322028\/assignments\/[0-9]+?\/outline\/edit\/')
 console.log(regex instanceof RegExp)
 console.log(regex.test('https://www.gradescope.com/courses/322028/assignments/1547768/outline/edit/'))
+
+
+function getMedian(array) {
+    array.sort();
+    const middleIndex = Math.floor(array.length / 2);
+    if (array.length % 2 === 0) {
+        return (array[middleIndex - 1] + array[middleIndex]) / 2;
+    } else {
+        return array[middleIndex];
+    }
+}
+
+console.log(getMedian([3,2,5,7,4,2,7,5]))

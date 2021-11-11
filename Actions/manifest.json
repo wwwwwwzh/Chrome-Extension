@@ -35,10 +35,12 @@
                 "./packages/jquery-3.6.0.min.js",
                 "./packages/jquery.box-shadow-animator.min.js",
                 "./packages/firebase.js",
-                "constants.js",
-                "classes.js",
-                "contentScriptUI.js",
-                "content.js"
+                "./ContentScripts/constants.js",
+                "./ContentScripts/classes.js",
+                "./ContentScripts/contentScriptUI.js",
+                "./ContentScripts/content.js",
+                "./ContentScripts/followTutorial.js",
+                "./ContentScripts/recording.js"
             ]
         }
     ],

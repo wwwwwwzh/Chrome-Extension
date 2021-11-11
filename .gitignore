@@ -1,6 +1,4 @@
-/random.js
-/random.c
-/random.s
+/randomFiles/
 /CS50/
 /HelloWorld/
 /TestExtension/
@@ -8,3 +6,4 @@
 /VEGA/
 /Experiments/
 /FOLLOWME-0.1/
+/.DS_Store
