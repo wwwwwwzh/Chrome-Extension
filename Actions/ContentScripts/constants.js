@@ -8,109 +8,6 @@ const firebaseConfig = {
     measurementId: "G-LM6FVJF8S6"
 }
 
-// const CSS = {
-//     HIGHLIGHT_INSTRUCTION_WINDOW: {
-//         "position": "fixed",
-//         'max-width': '300px',
-//         'padding': '12px',
-//         'background-color': 'rgba(255,165,0,0.4)',
-//         'border-radius': '6px',
-//         'z-index': 2147483647,
-//     },
-//     HIGHLIGHT_BOX: {
-//         'box-shadow': '0px 0px 20px 10px rgba(255, 203, 42, 1)',
-//         'padding': '3px',
-//         'border': '2px solid rgba(246, 131, 11, 0.5)',
-//         'border-radius': '5px'
-//     },
-//     MAIN_POPUP_START_POSITION: {
-//         "top": '12px',
-//         "left": '12px',
-//     },
-//     MAIN_POPUP: {
-//         'display': 'block',
-//         "position": "fixed",
-//         'width': '200px',
-//         'height': '300px',
-//         'padding': '12px',
-//         'background-color': 'rgba(255,165,0,0.7)',
-//         'border-radius': '6px',
-//         'z-index': 2147483647,
-//     },
-//     POPUP_COLLAPSED: {
-//         'width': CLOSE_BUTTON_WIDTH + CLOSE_BUTTON_OFFSET * 2,
-//         'height': CLOSE_BUTTON_WIDTH + CLOSE_BUTTON_OFFSET * 2,
-//         'border-radius': CLOSE_BUTTON_RADIUS,
-//     },
-//     BUTTON: {
-//         'display': 'block',
-//         "box-shadow": "inset 0px 0px 0px 0px #cf866c",
-//         'background-color': '#e74c3c',
-//         "border-radius": "6px",
-//         "cursor": "pointer",
-//         "color": "#ffffff",
-//         "font-family": "Arial",
-//         "font-size": "14px",
-//         "padding": "12px 18px",
-//         "margin": '6px',
-//         "text-decoration": "none",
-//         "text-shadow": "0px 1px 0px #854629",
-//     },
-//     BUTTON_HOVER: {
-//         'background-color': '#c0392b',
-//     },
-//     POPUP_HEADER: {
-//         'display': 'block',
-//         'width': '100%',
-//         'padding': '6px',
-//         'margin-bottom': '12px'
-//     },
-//     CLOSE_BUTTON: {
-//         'display': 'block',
-//         'cursor': 'pointer',
-//         'position': 'absolute',
-//         'top': CLOSE_BUTTON_OFFSET,
-//         'right': CLOSE_BUTTON_OFFSET,
-//         'font-size': '30px',
-//         'width': CLOSE_BUTTON_WIDTH,
-//         'height': CLOSE_BUTTON_WIDTH,
-//         'text-align': 'center',
-//         'border-radius': CLOSE_BUTTON_RADIUS
-//     },
-//     POPUP_DRAGGABLE: {
-//         "position": "relative",
-//         'top': '0px',
-//         'left': '0px',
-//         'right': '0px',
-//         'bottom': '0px',
-//         'border-radius': '6px',
-//         'z-index': -1,
-//     },
-//     AUTOMATION_SPEED_SLIDER: {
-//         'display': 'block',
-//         "position": "absolute",
-//         'bottom': '6px',
-//         'left': '6px',
-//         'right': '6px',
-//         'padding': '6px 6px 6px 6px',
-//         'width': '-moz-calc(100% - 24px)',
-//         'width': '-webkit-calc(100% - 24px)',
-//         'width': '-o-calc(100% - 24px)',
-//         'width': 'calc(100% - 24px)',
-//         "height": "25px",
-//         "background": "#d3d3d3",
-//         "outline": "none",
-//         "transition": "opacity .2s",
-//     },
-//     WRONG_PAGE_REDIRECT_BUTTON: {
-//         'display': 'block',
-//         'max-width': '260px',
-//         'overflow-wrap': 'break-word',
-//         'color': 'black',
-//         'margin-top': '20px',
-//         'padding': '6px',
-//     }
-// }
 
 const VALUES = {
     INPUT_TYPES: {
@@ -120,28 +17,30 @@ const VALUES = {
     },
     STORAGE: {
         CURRENT_RECORDING_TUTORIAL_NAME: 'CURRENT_RECORDING_TUTORIAL_NAME',
-        IS_RECORDING_TUTORIAL: 'IS_RECORDING_TUTORIAL',
-        IS_RECORDING_ACTIONS: 'IS_RECORDING_ACTIONS',
+
         CURRENT_URL: "CURRENT_URL",
         UNSENT_DOM_PATH: "UNSENT_DOM_PATH",
         UNSENT_DOM_PATH_URL: "UNSENT_DOM_PATH_URL",
         //DESCRIPTION_FOR_NEXT_STEP: "DESCRIPTION_FOR_NEXT_STEP",
         STEP_ACTION_TYPE: "STEP_ACTION_TYPE",
         //STEP_ACTION_INPUT_VALUE: "STEP_ACTION_INPUT_VALUE",
-        AUTOMATION_SPEED: "AUTOMATION_SPEED",
-        CURRENT_STEP_OBJ: "CURRENT_STEP_OBJ",
-        CURRENT_SELECTED_ELEMENT: "CURRENT_SELECTED_ELEMENT",
-        CURRENT_SELECTED_ELEMENT_PARENT_TABLE: "CURRENT_SELECTED_ELEMENT_PARENT_TABLE",
+        // CURRENT_STEP_OBJ: "CURRENT_STEP_OBJ",
+        // CURRENT_SELECTED_ELEMENT: "CURRENT_SELECTED_ELEMENT",
+        // CURRENT_SELECTED_ELEMENT_PARENT_TABLE: "CURRENT_SELECTED_ELEMENT_PARENT_TABLE",
         REVISIT_PAGE_COUNT: "REVISIT_PAGE_COUNT",
         MAX_REVISIT_PAGE_COUNT: 3,
+
+        CURRENT_ACTIVE_TUTORIAL: 'CURRENT_ACTIVE_TUTORIAL',
+        ALL_OTHER_TUTORIALS: 'ALL_OTHER_TUTORIALS',
+
     },
-    RECORDING_STATUS: {
-        STATUS: "RECORDING_STATUS",
-        NOT_RECORDING: "NOT_RECORDING",
-        BEGAN_RECORDING: "BEGAN_RECORDING",
-        RECORDING: "RECORDING",
-        FINISHED_RECORDING: "FINISHED_RECORDING"
-    },
+    // RECORDING_STATUS: {
+    //     STATUS: "RECORDING_STATUS",
+    //     NOT_RECORDING: "NOT_RECORDING",
+    //     BEGAN_RECORDING: "BEGAN_RECORDING",
+    //     RECORDING: "RECORDING",
+    //     FINISHED_RECORDING: "FINISHED_RECORDING"
+    // },
     RECORDING_ID: {
         CURRENT_RECORDING_TUTORIAL_ID: "CURRENT_RECORDING_TUTORIAL_ID",
         CURRENT_RECORDING_TUTORIAL_STEP_INDEX: "CURRENT_RECORDING_TUTORIAL_STEP_INDEX",
@@ -165,14 +64,15 @@ const VALUES = {
         EQUAL_TO: "=="
     },
 
-    FOLLOWING_TUTORIAL_STATUS: {
+    TUTORIAL_STATUS: {
         STATUS: "FOLLOWING_TUTORIAL_STATUS",
-        IS_MANUALLY_FOLLOWING_TUTORIAL: "IS_MANUALLY_FOLLOWING_TUTORIAL",
-        PAUSE_FOLLOWING_TUTORIAL: "PAUSE_FOLLOWING_TUTORIAL",
-        IS_REQUIRING_OPTIONAL_INFO: "IS_REQUIRING_OPTIONAL_INFO",
-        IS_REQUIRING_MANDATORY_INFO: "IS_REQUIRING_MANDATORY_INFO",
-        IS_AUTO_FOLLOWING_TUTORIAL: "IS_AUTO_FOLLOWING_TUTORIAL",
-        NOT_FOLLOWING_TUTORIAL: "NOT_FOLLOWING_TUTORIAL",
+        IS_RECORDING: 1,
+        IS_MANUALLY_FOLLOWING_TUTORIAL: 2,
+        IS_PAUSING_FOLLOWING_TUTORIAL: 8,
+        IS_REQUIRING_OPTIONAL_INFO: 9,
+        IS_REQUIRING_MANDATORY_INFO: 10,
+        IS_AUTO_FOLLOWING_TUTORIAL: 3,
+        IDLE: 0,
     },
     TUTORIAL_ID: {
         CURRENT_FOLLOWING_TUTORIAL_ID: "CURRENT_FOLLOWING_TUTORIAL_ID",
@@ -534,4 +434,24 @@ function min(a, b) {
 
 function max(a, b) {
     return a > b ? a : b;
+}
+
+function arrayRemoveFirst(arr, value) {
+    var index = arr.indexOf(value);
+    if (index > -1) {
+        arr.splice(index, 1);
+    }
+    return arr;
+}
+
+function arrayRemoveAll(arr, value) {
+    var i = 0;
+    while (i < arr.length) {
+        if (arr[i] === value) {
+            arr.splice(i, 1);
+        } else {
+            ++i;
+        }
+    }
+    return arr;
 }

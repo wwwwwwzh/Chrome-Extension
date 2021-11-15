@@ -1,13 +1,230 @@
-class SimpleTutorial {
-    /**
-     * 
-     * @param {Step} steps 
-     */
-    constructor(steps) {
-        this.steps = steps;
-        this.currentStep = 0;
+class UIManager {
+    constructor() {
+
     }
-};
+
+    loadSingleTutorialButton(tutorialData, tutorialID) {
+        mainPopUpContainer.append(`
+        <a class=\"w-simple-tutorial-button w-not-following-tutorial-item w-button-normal\" id=\"${tutorialID}\">
+            ${tutorialData.name}
+        </a> 
+        `);
+        const button = $(`#${tutorialID}`).first();
+
+        //button click function. store tutorial's steps to storage
+        button.on('click', () => {
+            onFollowTutorialButtonClicked(tutorialID);
+        });
+    }
+
+    loadTutorialButtonsFromCache() {
+        tutorialsManager.tutorials.forEach((tutorial) => {
+            const tutorialID = tutorial.id;
+            const tutorialData = tutorial;
+            this.loadSingleTutorialButton(tutorialData, tutorialID);
+        })
+
+    }
+}
+/**
+ * Singleton extension manager for all tutorial related tasks. Can be initiated from
+ * firestore or storage. The active tutorial being editted or followed is always at 
+ * the front
+ */
+class TutorialsManager {
+    /**
+     * Should be called ONLY ONCE when creating the global variable.
+     * @param {[TutorialObject]} tutorials 
+     */
+    constructor() {
+        this.tutorials = [];
+    }
+
+    getCurrentTutorial() {
+        return this.tutorials[0];
+    }
+
+    getCurrentStep() {
+        const currentTutorial = this.tutorials[0];
+        return currentTutorial.steps[currentTutorial.currentStepIndex];
+    }
+
+    async initiateFtomFirestore(tutorialsQuerySnapshot, callback = () => { }) {
+        await tutorialsQuerySnapshot.forEach(async (tutorial) => {
+            const tutorialID = tutorial.id;
+            const tutorialData = tutorial.data();
+
+            uiManager.loadSingleTutorialButton(tutorialData, tutorialID);
+
+            //get all information about the tutorial from firebase
+            const stepsQuery = query(collection(firestoreRef,
+                VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL,
+                tutorialID,
+                VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL_STEPS
+            ), orderBy(VALUES.FIRESTORE_CONSTANTS.STEP_INDEX));
+            const stepsQuerySnapshot = await getDocs(stepsQuery);
+            //construct steps array from query
+            var steps = [];
+            //TODO!: solve url problem (possibly using regex)
+            var isFirstStepReached = false;
+            stepsQuerySnapshot.forEach((step) => {
+                const data = step.data();
+                data.id = step.id;
+                //remove steps used prior to accessing this page
+                if (isFirstStepReached) {
+                    steps.push(data);
+                } else {
+
+                    if (checkIfUrlMatch(data.url, currentUrl)) {
+                        isFirstStepReached = true;
+                        steps.push(data);
+                    }
+                }
+            })
+
+            this.tutorials.push(new TutorialObject(tutorialData.name, '', [], steps, tutorialData.all_urls, tutorialID));
+        });
+        callback();
+    }
+
+    loadFromStorage(callback = () => { }) {
+        chrome.storage.sync.get([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL, VALUES.STORAGE.ALL_OTHER_TUTORIALS], (result) => {
+            const currentTutorial = result[VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL];
+            const allOtherTutorials = result[VALUES.STORAGE.ALL_OTHER_TUTORIALS];
+            this.tutorials = [currentTutorial, ...allOtherTutorials];
+            callback();
+        });
+    }
+
+    loadCurrentTutorialFromStorage(callback = () => { }) {
+        chrome.storage.sync.get([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL], (result) => {
+            const currentTutorial = result[VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL];
+            console.log(JSON.stringify(currentTutorial))
+            this.tutorials = [currentTutorial];
+            callback();
+        });
+    }
+
+    saveToStorage(callback = () => { }) {
+        syncStorageSetBatch({
+            [VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL]: this.tutorials[0],
+            [VALUES.STORAGE.ALL_OTHER_TUTORIALS]: this.tutorials.slice(1),
+        }, callback);
+    }
+
+    saveCurrentTutorialToStorage(callback = () => { }) {
+        syncStorageSet([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL], this.tutorials[0], callback);
+    }
+
+    //recording methods
+    saveCurrentTutorialWhenRecording() {
+        if (!globalCache.globalEventsHandler.isRecording) return;
+        //copy elements from ui
+        //save current step to sync
+        this.saveCurrentTutorialToStorage();
+    }
+
+    updateUIWhenRecording() {
+        if (!globalCache.globalEventsHandler.isRecording) return;
+        //elements to ui
+    }
+
+    onCurrentStepChangedWhenRecording(newStepIndex) {
+        if (!globalCache.globalEventsHandler.isRecording) return;
+        this.saveCurrentTutorialWhenRecording();
+        this.tutorials[0].currentStepIndex = newStepIndex;
+        this.updateUIWhenRecording();
+    }
+
+    uploadToFirestoreOnFinishRecording() {
+        if (!globalCache.globalEventsHandler.isRecording) return;
+    }
+
+    //following tutorial functions
+    onFollowingStep(stepIndex) {
+        if (globalCache.globalEventsHandler.followingTutorialStatusCache === VALUES.TUTORIAL_STATUS.IDLE) return;
+        //elements to ui
+
+    }
+
+    onFollowingNewTutorial(tutorialID) {
+        if (globalCache.globalEventsHandler.followingTutorialStatusCache === VALUES.TUTORIAL_STATUS.IDLE) return;
+
+        //move selected tutorial to index 0
+        if (this.tutorials.length > 1) {
+            var tutorialToFollowIndex;
+            this.tutorials.forEach((tutorial, index) => {
+                if (tutorial.id === tutorialID) {
+                    tutorialToFollowIndex = index;
+                }
+            });
+            const temp = this.tutorials[0];
+            this.tutorials[0] = this.tutorials[tutorialToFollowIndex];
+            this.tutorials[tutorialToFollowIndex] = temp;
+        }
+
+        const type = globalCache.globalEventsHandler.tutorialStatusCache;
+        if (type === VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL) {
+            showTutorialStepManual();
+        }
+        if (type === VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL) {
+            showTutorialStepAuto();
+        }
+
+        this.onFollowingStep(0)
+    }
+
+    showCurrentStep() {
+        mainPopUpContainer.show();
+        //check if on right page
+        const currentStep = tutorialsManager.getCurrentStep();
+
+        if (checkIfUrlMatch(currentStep.url, currentUrl)) {
+            $('.w-following-tutorial-item').show();
+            const type = globalCache.globalEventsHandler.tutorialStatusCache;
+
+            if (type === VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL) {
+                showTutorialStepManual();
+            }
+            if (type === VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL) {
+                showTutorialStepAuto();
+            }
+
+        } else {
+            globalCache.globalEventsHandler.setIsOnRightPage(false);
+            mainPopUpContainer.children().hide();
+            mainDraggableArea.show();
+            popUpHeader.show();
+            $('.w-wrong-page-item').show();
+            stopOptionsStopButton.show();
+            wrongPageRedirectButton.html(`<p>You have an ongoing tutorial at</p> ${currentStep.url}`);
+            wrongPageRedirectButton.attr('href', currentStep.url);
+        }
+    }
+
+    onFollowingNextStep() {
+        this.onFollowingStep(++this.getCurrentTutorial().currentStepIndex);
+        this.saveCurrentTutorialToStorage();
+    }
+
+    revertCurrentTutorialToInitialState() {
+        this.tutorials[0].currentStepIndex = 0;
+        this.saveCurrentTutorialToStorage();
+    }
+
+}
+
+class TutorialObject {
+    constructor(name = '', description = '', snapshot = [], steps = [], urls = [], id = null) {
+        this.name = name;
+        this.description = description;
+        this.snapshot = snapshot;
+        this.steps = steps;
+        this.urls = urls;
+        this.currentStepIndex = 0;
+        this.id = id;
+    }
+}
 
 class Step {
     /**
@@ -17,7 +234,7 @@ class Step {
      * @param {RedirectAction | ClickAction | InputAction | SelectAction | SideInstructionAction | NullAction} actionObject 
      * @param {[string]} possibleReasonsForElementNotFound
      */
-    constructor(index, actionType, actionObject, name, description, url, automationInterrupt = false, possibleReasonsForElementNotFound = []) {
+    constructor(index, actionType, actionObject, name, description, url, automationInterrupt = false, possibleReasonsForElementNotFound = [], id = null) {
         this.index = index;
         this.actionType = actionType;
         this.actionObject = actionObject;
@@ -26,6 +243,7 @@ class Step {
         this.url = url;
         this.automationInterrupt = automationInterrupt;
         this.possibleReasonsForElementNotFound = possibleReasonsForElementNotFound;
+        this.id = id;
     }
 }
 
@@ -164,8 +382,7 @@ class GlobalEventsHandler {
     constructor() {
         removeGlobalEventListenersWhenFollowing();
         removeGlobalEventListenersWhenRecording();
-        this.isRecordingCache = false;
-        this.followingTutorialStatusCache = VALUES.FOLLOWING_TUTORIAL_STATUS.NOT_FOLLOWING_TUTORIAL;
+        this.tutorialStatusCache = VALUES.TUTORIAL_STATUS.IDLE;
         this.isLisentingRecording = false;
         this.isLisentingFollowing = false;
         this.isAutomationInterrupt = false;
@@ -174,7 +391,7 @@ class GlobalEventsHandler {
 
     onChange() {
         //add or remove when recording or not recording
-        if (this.isRecordingCache) {
+        if (this.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_RECORDING) {
             if (!this.isLisentingRecording) {
                 addGlobalEventListenersWhenRecording();
                 this.isLisentingRecording = true;
@@ -186,7 +403,7 @@ class GlobalEventsHandler {
             }
         }
 
-        if (this.isOnRightPage && (this.isAutomationInterrupt || (this.followingTutorialStatusCache === VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL))) {
+        if (this.isOnRightPage && (this.isAutomationInterrupt || (this.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL))) {
             if (!this.isLisentingFollowing) {
                 addGlobalEventListenersWhenFollowing();
                 this.isLisentingFollowing = true;
@@ -199,13 +416,8 @@ class GlobalEventsHandler {
         }
     }
 
-    setIsRecordingCache(isRecording) {
-        this.isRecordingCache = isRecording;
-        this.onChange();
-    }
-
-    setFollwingTutorialStatusCache(followingTutorialStatusCache) {
-        this.followingTutorialStatusCache = followingTutorialStatusCache;
+    setTutorialStatusCache(tutorialStatusCache) {
+        this.tutorialStatusCache = tutorialStatusCache;
         this.onChange();
     }
 
@@ -225,19 +437,17 @@ class GlobalCache {
         tutorialObj = null,
         currentStep = null,
         interval = 2000,
-        isSimulatingClick = false,
         globalEventsHandler = new GlobalEventsHandler(),
         domPath = null,
         currentElement = null,
         reHighlightAttempt = 0,
         lastSelectedElement = null,
         lastSelectedElementCSS = null,
-        currentJQScrollingParent = null
+        currentJQScrollingParent = null,
     ) {
         this.tutorialObj = tutorialObj;
         this.currentStep = currentStep;
         this.interval = interval;
-        this.isSimulatingClick = isSimulatingClick;
         this.globalEventsHandler = globalEventsHandler;
         this.domPath = domPath;
         this.currentElement = currentElement;
@@ -250,5 +460,7 @@ class GlobalCache {
         this.sideInstructionAutoNextTimer = null;
         this.isMainPopUpCollapsed = false;
         this.reHighlightTimer = null;
+        this.isRecordingButtonOn = false;
+        this.speedBarValue = 50;
     }
 }

@@ -1,13 +1,16 @@
-// Initialize Firebase
 var app = initializeApp(firebaseConfig);
 // initializeFirestore(app, { useFetchStreams: false });
-// const analytics = getAnalytics(app);
 var firestoreRef = getFirestore(app);
 
-//cache
 var currentUrl;
 var currentUrlObj;
 var globalCache = new GlobalCache();
+var uiManager = new UIManager();
+var tutorialsManager = new TutorialsManager();
+
+$(() => {
+    setUp();
+})
 
 //set up functions
 async function setUp() {
@@ -15,20 +18,9 @@ async function setUp() {
     syncStorageSet(VALUES.STORAGE.CURRENT_URL, currentUrl);
     currentUrlObj = new URL(currentUrl);
 
-    chrome.storage.sync.get(VALUES.STORAGE.IS_RECORDING_ACTIONS, result => {
-        const isRecording = result[VALUES.STORAGE.IS_RECORDING_ACTIONS];
-        globalCache.globalEventsHandler.setIsRecordingCache(isRecording);
-        if (!isRecording) {
-            checkFollowingTutorialStatus();
-        }
-    })
     //setUpIframeListner();
-
+    checkStatus();
 }
-
-$(() => {
-    setUp();
-})
 
 function setUpIframeListner() {
     getFrameContents();
@@ -52,50 +44,71 @@ function setUpIframeListner() {
     }
 }
 
-//------------------------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------------------------
-//MARK: Start of giving suggestions
-//------------------------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------------------------
-function automationSpeedSliderHelper() {
-    chrome.storage.sync.get(VALUES.STORAGE.AUTOMATION_SPEED, result => {
-        automationSpeedSlider.val(result[VALUES.STORAGE.AUTOMATION_SPEED]);
+/**
+ * Entry point for all behaviors
+ */
+async function checkStatus() {
+    chrome.storage.sync.get(VALUES.TUTORIAL_STATUS.STATUS, (result) => {
+        const recordingStatus = result[VALUES.TUTORIAL_STATUS.STATUS];
+        globalCache.globalEventsHandler.setTutorialStatusCache(recordingStatus);
+        switch (recordingStatus) {
+            case VALUES.TUTORIAL_STATUS.IS_RECORDING:
+                tutorialsManager.loadFromStorage(tutorialsManager.updateUIWhenRecording);
+
+                break;
+            case VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
+                tutorialsManager.loadCurrentTutorialFromStorage(tutorialsManager.showCurrentStep);
+                globalCache.globalEventsHandler.setTutorialStatusCache(recordingStatus);
+                break;
+            case VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL:
+                tutorialsManager.loadCurrentTutorialFromStorage(tutorialsManager.showCurrentStep);
+                globalCache.globalEventsHandler.setTutorialStatusCache(recordingStatus);
+                break;
+            case VALUES.TUTORIAL_STATUS.IDLE:
+                fetchTutorialsFromCloud();
+                break;
+            default:
+                onStopTutorialButtonClicked();
+                break;
+        }
+        console.log('checkStatus() -> Status: ' + recordingStatus);
     })
 }
 
-async function fetchSimpleTutorials() {
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+//MARK: Fetch tutorial on the current page
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+function automationSpeedSliderHelper() {
+    automationSpeedSlider.val(globalCache.speedBarValue);
+}
+
+async function fetchTutorialsFromCloud() {
     $('.w-not-following-tutorial-item').remove();
     automationSpeedSliderHelper();
-    const domainName = "https://" + currentUrlObj.hostname + "/";
-    const url_matches = [currentUrl, domainName];
-    const simpleTutorialQuery = query(collection(firestoreRef,
-        VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL),
-        where(
-            VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL_ALL_URLS,
-            VALUES.FIRESTORE_QUERY_TYPES.ARRAY_CONTAINS_ANY,
-            url_matches
-        ));
 
-    const simpleTutorialQuerySnapshot = await getDocs(simpleTutorialQuery);
+    const tutorialsQuerySnapshot = await getDocs(getMatchedTutorialsQuery());
 
-    if (!simpleTutorialQuerySnapshot.empty) {
+    if (!tutorialsQuerySnapshot.empty) {
+        console.log('fetchTutorialsFromCloud() -> query not empty')
         mainPopUpContainer.show();
-        //iterate query to add tutorial buttons
-        simpleTutorialQuerySnapshot.forEach((tutorial) => {
-            mainPopUpContainer.append(`
-            <a class=\"w-simple-tutorial-button w-not-following-tutorial-item w-button-normal\" id=\"${tutorial.id}\">
-                ${tutorial.data().name}
-            </a>
-            `);
-            const button = $(`#${tutorial.id}`).first();
-
-            //button click function. store tutorial's steps to storage
-            button.on('click', () => {
-                onFollowTutorialButtonClicked(tutorial);
-            });
-        });
+        tutorialsManager.initiateFtomFirestore(tutorialsQuerySnapshot);
     } else {
         mainPopUpContainer.hide();
+    }
+
+    function getMatchedTutorialsQuery() {
+        const domainName = "https://" + currentUrlObj.hostname + "/";
+        const url_matches = [currentUrl, domainName];
+        return query(collection(firestoreRef,
+            VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL),
+            where(
+                VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL_ALL_URLS,
+                VALUES.FIRESTORE_QUERY_TYPES.ARRAY_CONTAINS_ANY,
+                url_matches
+            )
+        );
     }
 };
 
@@ -108,124 +121,13 @@ function showFollowingTutorialItems() {
 }
 
 
-async function onFollowTutorialButtonClicked(tutorial) {
-    //toogle html elements
-    globalCache.reHighlightAttempt = 0;
-    $('.w-follow-tutorial-options-item').show();
-    $('.w-not-following-tutorial-item').remove();
-    popUpNextStepButton.hide();
-
-    automationSpeedSliderHelper();
-
-    popUpAutomateButton.on('click', () => {
-        onPopUpAutomateButtonClicked(tutorial);
-    })
-
-    popUpManualButton.on('click', () => {
-        onPopUpManualButtonClicked(tutorial);
-    })
-}
-
-async function onPopUpAutomateButtonClicked(tutorial) {
-    if (globalCache.tutorialObj !== null) {
-        return;
-    }
-    loadTutorialToStorage(tutorial).then(() => {
-        syncStorageSet(VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.FOLLOWING_TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL);
-        globalCache.globalEventsHandler.setFollwingTutorialStatusCache(VALUES.FOLLOWING_TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL);
-        showTutorialStepAuto();
-        showFollowingTutorialItems();
-    })
-}
-
-async function onPopUpManualButtonClicked(tutorial) {
-    if (globalCache.tutorialObj !== null) {
-        return;
-    }
-    loadTutorialToStorage(tutorial).then(() => {
-        syncStorageSet(VALUES.FOLLOWING_TUTORIAL_STATUS.STATUS, VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL);
-        globalCache.globalEventsHandler.setFollwingTutorialStatusCache(VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL);
-        showTutorialStepManual();
-        showFollowingTutorialItems();
-    })
-}
-
-async function loadTutorialToStorage(tutorial) {
-    syncStorageSet(VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_ID, tutorial.id);
-    //get all information about the tutorial from firebase
-    const stepsQuery = query(collection(firestoreRef,
-        VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL,
-        tutorial.id,
-        VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL_STEPS
-    ), orderBy(VALUES.FIRESTORE_CONSTANTS.STEP_INDEX));
-    const stepsQuerySnapshot = await getDocs(stepsQuery);
-    //construct steps array from query
-    var steps = [];
-    //TODO!: solve url problem (possibly using regex)
-    var isFirstStepReached = false;
-    stepsQuerySnapshot.forEach((step) => {
-        const data = step.data();
-        //remove steps used prior to accessing this page
-        if (isFirstStepReached) {
-            steps.push(data);
-        } else {
-            // if (url[0] === '/') {
-            //     //regex
-            //     const regex = new RegExp(url.substr(1, url.length - 2));
-            //     if (regex.test(currentUrl)) {
-            //         isFirstStepReached = true;
-            //         steps.push(data);
-            //     }
-            // } else {
-            //     if (url === currentUrl) {
-            //         isFirstStepReached = true;
-            //         steps.push(data);
-            //     }
-            // }
-            if (checkIfUrlMatch(data.url, currentUrl)) {
-                isFirstStepReached = true;
-                steps.push(data);
-            }
-        }
-    })
-
-    //construct tutorial object
-    const tutorialObj = new SimpleTutorial(steps)
-    syncStorageSet(VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, tutorialObj);
-    globalCache.tutorialObj = tutorialObj;
-}
-
 function clearUIOnNextStep() {
     removeLastHighlight();
 }
 
-
-
-/**
- * Stimulate any type of click using javascript's dispatch event. Covers cases where jquery.click() or 
- * .trigger('click') don't work
- * @param {HTML Element} element 
- */
-function simulateClick(element, eventType = 'click') {
-    if (isNotNull(element)) {
-        console.log(`simulating click on ${element}`)
-        globalCache.isSimulatingClick = true;
-        const evt = new MouseEvent(eventType, {
-            view: window,
-            bubbles: true,
-            cancelable: true
-        });
-        element.dispatchEvent(evt);
-    } else {
-        console.log('simulateClick: element not found')
-    }
-}
-
-
-
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
-//MARK: Start of recording events
+//MARK: Event Handling
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
 function addGlobalEventListenersWhenRecording() {
@@ -254,11 +156,7 @@ function removeGlobalEventListenersWhenFollowing() {
 function onClickHelper(event) {
     preventDefaultHelper(event);
     if (event.target !== globalCache.currentElement) {
-        console.log(globalCache.isSimulatingClick)
-        if (!globalCache.isSimulatingClick) {
-            processEventHelper(event.target);
-        }
-        globalCache.isSimulatingClick = false;
+        processEventHelper(event.target);
     }
 }
 
@@ -273,7 +171,7 @@ function processEventHelper(target) {
 }
 
 function preventDefaultHelper(event) {
-    if (!globalCache.isSimulatingClick && globalCache.globalEventsHandler.isLisentingRecording) {
+    if (globalCache.globalEventsHandler.isLisentingRecording) {
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
@@ -285,8 +183,8 @@ async function onClickUniversalHandler() {
     if (globalCache.globalEventsHandler.isLisentingRecording) {
         onClickWhenRecording();
     } else if (globalCache.globalEventsHandler.isLisentingFollowing) {
-        switch (globalCache.globalEventsHandler.followingTutorialStatusCache) {
-            case VALUES.FOLLOWING_TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
+        switch (globalCache.globalEventsHandler.tutorialStatusCache) {
+            case VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
                 onClickWhenFollowingTutorial();
                 break;
             default:
@@ -298,31 +196,25 @@ async function onClickUniversalHandler() {
     }
 }
 
-async function onClickWhenRecording() {
-    //get element
-    const jQElement = $(globalCache.currentElement);
 
-    syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, globalCache.domPath);
-
-    //get table if it exists for tutorial
-    const nearestTable = getNearestTableOrList(jQElement[0]);
-    if (!isNotNull(nearestTable)) {
-        syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, null);
+/**
+ * Stimulate any type of click using javascript's dispatch event. Covers cases where jquery.click() or 
+ * .trigger('click') don't work
+ * @param {HTML Element} element 
+ */
+function simulateClick(element, eventType = 'click') {
+    if (isNotNull(element)) {
+        console.log(`simulating click on ${element}`)
+        const evt = new MouseEvent(eventType, {
+            view: window,
+            bubbles: true,
+            cancelable: true
+        });
+        element.dispatchEvent(evt);
     } else {
-        var nearestTablePath = getShortDomPathStack(nearestTable)
-        if ($(jqueryElementStringFromDomPath(nearestTablePath)).length > 1) {
-            nearestTablePath = getCompleteDomPathStack(nearestTable);
-        }
-        syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, nearestTablePath);
-    }
-    //Highlight
-    if (jQElement.is('a')) {
-        highlightAndRemoveLastHighlight(jQElement.parent());
-    } else {
-        highlightAndRemoveLastHighlight(jQElement);
+        console.log('simulateClick: element not found')
     }
 }
-
 
 
 
@@ -363,7 +255,7 @@ function clearReHighlightTimer() {
 }
 
 function elementNotFoundHandler() {
-    if (globalCache.currentStep.possibleReasonsForElementNotFound.length > 0) {
+    if (tutorialsManager.getCurrentStep().possibleReasonsForElementNotFound.length > 0) {
         //show in highlight instruction window why might the cause of error be
     }
 }
@@ -458,8 +350,8 @@ function removeLastHighlight() {
 
 var updateCount = 0;
 function updateHighlightInstructionWindow(element) {
-    const stepName = globalCache.currentStep.name;
-    const stepDescription = globalCache.currentStep.description;
+    const stepName = tutorialsManager.getCurrentStep().name;
+    const stepDescription = tutorialsManager.getCurrentStep().description;
 
     if (isNotNull(stepName) || isNotNull(stepDescription)) {
         highlightInstructionWindow.show();
@@ -497,9 +389,6 @@ chrome.runtime.onMessage.addListener(
         if (isNotNull(request.redirect)) {
             location.replace(request.redirect)
         }
-        if (isNotNull(request.isRecordingStatus)) {
-            globalCache.globalEventsHandler.setIsRecordingCache(request.isRecordingStatus);
-        }
         if (isNotNull(request.clickPath)) {
             simulateClick($(jqueryElementStringFromDomPath(request.clickPath))[0]);
         }
@@ -514,8 +403,3 @@ chrome.runtime.onMessage.addListener(
         }
     }
 );
-
-//Clean stuff
-window.onbeforeunload = () => {
-
-}

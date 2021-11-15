@@ -124,12 +124,12 @@ $(() => {
     var currentStepObj = null;
 
     if (false)
-        chrome.storage.sync.get([VALUES.RECORDING_STATUS.STATUS, VALUES.STORAGE.IS_RECORDING_ACTIONS, VALUES.STORAGE.CURRENT_STEP_OBJ, VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, VALUES.STORAGE.CURRENT_URL], (result) => {
+        chrome.storage.sync.get([VALUES.RECORDING_STATUS.STATUS, VALUES.STORAGE.IS_RECORDING, VALUES.STORAGE.CURRENT_STEP_OBJ, VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, VALUES.STORAGE.CURRENT_URL], (result) => {
             switch (result[VALUES.RECORDING_STATUS.STATUS]) {
                 case VALUES.RECORDING_STATUS.RECORDING: case VALUES.RECORDING_STATUS.BEGAN_RECORDING:
-                    recordTutorialSwitch.prop('checked', result[VALUES.STORAGE.IS_RECORDING_ACTIONS]);
+                    recordTutorialSwitch.prop('checked', result[VALUES.STORAGE.IS_RECORDING]);
                     //TODO: get h3 element
-                    $('h3').html(result[VALUES.STORAGE.IS_RECORDING_ACTIONS] ? "Recording" : "Not Recording");
+                    $('h3').html(result[VALUES.STORAGE.IS_RECORDING] ? "Recording" : "Not Recording");
                     currentStepObj = result[VALUES.STORAGE.CURRENT_STEP_OBJ];
                     loadMenuFromStorage(currentStepObj);
 
@@ -146,7 +146,7 @@ $(() => {
                     showStepContainer();
                     break;
                 case VALUES.RECORDING_STATUS.NOT_RECORDING:
-                    syncStorageSet(VALUES.STORAGE.IS_RECORDING_ACTIONS, false);
+                    syncStorageSet(VALUES.STORAGE.IS_RECORDING, false);
                     sendMessageToContentScript({ isRecordingStatus: false });
                     showNewRecordingContainer();
                     break;
@@ -457,7 +457,7 @@ $(() => {
     //------------------------------------------------------------------------------------------------------------
     recordTutorialSwitch.on('change', () => {
         const checked = recordTutorialSwitch.prop('checked');
-        syncStorageSet(VALUES.STORAGE.IS_RECORDING_ACTIONS, checked, () => {
+        syncStorageSet(VALUES.STORAGE.IS_RECORDING, checked, () => {
             $('h3').html(checked ? "Recording" : "Not Recording");
             sendMessageToContentScript({ isRecordingStatus: checked });
         })
@@ -523,7 +523,7 @@ $(() => {
                     var data = {};
                     data[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT] = null;
                     data[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE] = null;
-                    data[VALUES.STORAGE.IS_RECORDING_ACTIONS] = false;
+                    data[VALUES.STORAGE.IS_RECORDING] = false;
 
                     syncStorageSetBatch(data, () => {
                         useAnyElementInTableInput.val('');
@@ -557,7 +557,7 @@ $(() => {
     function endRecordingHelper() {
         var data = {};
         data[VALUES.RECORDING_STATUS.STATUS] = VALUES.RECORDING_STATUS.NOT_RECORDING;
-        data[VALUES.STORAGE.IS_RECORDING_ACTIONS] = false;
+        data[VALUES.STORAGE.IS_RECORDING] = false;
         data[VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME] = null;
         data[VALUES.STORAGE.CURRENT_STEP_OBJ] = null;
         data[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT] = null;

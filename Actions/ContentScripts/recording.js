@@ -1,3 +1,29 @@
+
+async function onClickWhenRecording() {
+    //get element
+    const jQElement = $(globalCache.currentElement);
+
+    syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, globalCache.domPath);
+
+    //get table if it exists for tutorial
+    const nearestTable = getNearestTableOrList(jQElement[0]);
+    if (!isNotNull(nearestTable)) {
+        syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, null);
+    } else {
+        var nearestTablePath = getShortDomPathStack(nearestTable)
+        if ($(jqueryElementStringFromDomPath(nearestTablePath)).length > 1) {
+            nearestTablePath = getCompleteDomPathStack(nearestTable);
+        }
+        syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, nearestTablePath);
+    }
+    //Highlight
+    if (jQElement.is('a')) {
+        highlightAndRemoveLastHighlight(jQElement.parent());
+    } else {
+        highlightAndRemoveLastHighlight(jQElement);
+    }
+}
+
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
 //MARK: recording menu
@@ -29,80 +55,53 @@ function showNewRecordingContainer() {
     newTutorialContainer.show();
 }
 
+if (false)
+    chrome.storage.sync.get([VALUES.TUTORIAL_STATUS.STATUS], (result) => {
+        switch (result[VALUES.TUTORIAL_STATUS.STATUS]) {
+            case VALUES.TUTORIAL_STATUS.IS_RECORDING:
+                recordTutorialSwitch.prop('checked', globalCache.isRecordingButtonOn);
+                currentTutorialObj = result[VALUES.STORAGE.CURRENT_TUTORIAL_OBJECT];
+                loadMenuFromStorage(currentTutorialObj);
 
-var currentStepObj = null;
+                // const selectedElementPath = result[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT];
+                // if (isNotNull(selectedElementPath)) {
+                //     selectedElementIndicator.html(`Selected Element: ${selectedElementPath.slice(max(selectedElementPath.length - 2, 0), selectedElementPath.length)}`)
+                // } else {
+                //     selectedElementIndicator.html('Selected Element: None')
+                // }
+                // if (isNotNull(result[VALUES.STORAGE.CURRENT_URL])) {
+                //     customStepUrlInput.val(result[VALUES.STORAGE.CURRENT_URL]);
+                // }
 
-// chrome.storage.sync.get([VALUES.RECORDING_STATUS.STATUS, VALUES.STORAGE.IS_RECORDING_ACTIONS, VALUES.STORAGE.CURRENT_STEP_OBJ, VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, VALUES.STORAGE.CURRENT_URL], (result) => {
-//     switch (result[VALUES.RECORDING_STATUS.STATUS]) {
-//         case VALUES.RECORDING_STATUS.RECORDING: case VALUES.RECORDING_STATUS.BEGAN_RECORDING:
-//             recordTutorialSwitch.prop('checked', result[VALUES.STORAGE.IS_RECORDING_ACTIONS]);
-//             //TODO: get h3 element
-//             $('h3').html(result[VALUES.STORAGE.IS_RECORDING_ACTIONS] ? "Recording" : "Not Recording");
-//             currentStepObj = result[VALUES.STORAGE.CURRENT_STEP_OBJ];
-//             loadMenuFromStorage(currentStepObj);
+                // showStepContainer();
+                break;
+            case VALUES.RECORDING_STATUS.NOT_RECORDING:
+                syncStorageSet(VALUES.STORAGE.IS_RECORDING, false);
+                globalCache.globalEventsHandler.setIsRecordingCache(request.isRecordingStatus);
+                //showNewRecordingContainer();
+                break;
+            default:
+                //onStopNewTutorialRecording()
+                globalCache.globalEventsHandler.setIsRecordingCache(request.isRecordingStatus);
+                //showNewRecordingContainer();
+                break;
+        };
+    });
 
-//             const selectedElementPath = result[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT];
-//             if (isNotNull(selectedElementPath)) {
-//                 selectedElementIndicator.html(`Selected Element: ${selectedElementPath.slice(max(selectedElementPath.length - 2, 0), selectedElementPath.length)}`)
-//             } else {
-//                 selectedElementIndicator.html('Selected Element: None')
-//             }
-//             if (isNotNull(result[VALUES.STORAGE.CURRENT_URL])) {
-//                 customStepUrlInput.val(result[VALUES.STORAGE.CURRENT_URL]);
-//             }
-
-//             showStepContainer();
-//             break;
-//         case VALUES.RECORDING_STATUS.NOT_RECORDING:
-//             syncStorageSet(VALUES.STORAGE.IS_RECORDING_ACTIONS, false);
-//             sendMessageToContentScript({ isRecordingStatus: false });
-//             showNewRecordingContainer();
-//             break;
-//         default:
-//             onStopNewTutorialRecording()
-//             showNewRecordingContainer();
-//             break;
-//     };
-// });
-
-function loadMenuFromStorage(currentStepObj) {
-    if (isNotNull(currentStepObj)) {
-        switchMenu(currentStepObj.actionType);
-        selectActionTypeSelect.val(currentStepObj.actionType);
-        if (isNotNull(currentStepObj.url)) {
-            useCustomStepUrlCheckbox.prop('checked', true);
-            customStepUrlContainer.show();
-            customStepUrlInput.val(currentStepObj.url);
-        }
+function loadMenuFromStorage(currentTutorialObj) {
+    if (isNotNull(currentTutorialObj)) {
+        //switchMenu(currentTutorialObj.steps[currentTutorialObj.cu].actionType);
+        //selectActionTypeSelect.val(currentStepObj.actionType);
+        // if (isNotNull(currentStepObj.url)) {
+        //     useCustomStepUrlCheckbox.prop('checked', true);
+        //     customStepUrlContainer.show();
+        //     customStepUrlInput.val(currentStepObj.url);
+        // }
+        currentTutorialObj.updateUIForCurrentStep();
     } else {
         switchMenu(VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL);
         selectActionTypeSelect.val(VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL);
     }
-}
-
-//MARK: Helper functions to retrieve and update step object 
-function storeCurrentStep() {
-    syncStorageSet(VALUES.STORAGE.CURRENT_STEP_OBJ, currentStepObj);
-}
-
-function prepareCurrentStep(callback = () => { }) {
-    //check if step exists
-    if (!isNotNull(currentStepObj)) {
-        const indexKey = VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX;
-        chrome.storage.sync.get([indexKey], result => {
-            currentStepObj = new Step(result[indexKey], VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL, new NullAction(), "", "");
-            callback();
-        })
-    } else {
-        callback();
-    }
-}
-
-function updateCurrentStep(update) {
-    prepareCurrentStep(() => {
-        update();
-        storeCurrentStep();
-    });
 }
 
 
@@ -248,7 +247,7 @@ function showSideInstructionMenu() {
 function endRecordingHelper() {
     var data = {};
     data[VALUES.RECORDING_STATUS.STATUS] = VALUES.RECORDING_STATUS.NOT_RECORDING;
-    data[VALUES.STORAGE.IS_RECORDING_ACTIONS] = false;
+    data[VALUES.STORAGE.IS_RECORDING] = false;
     data[VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME] = null;
     data[VALUES.STORAGE.CURRENT_STEP_OBJ] = null;
     data[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT] = null;
