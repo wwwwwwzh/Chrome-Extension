@@ -122,7 +122,7 @@ $(() => {
     popUpCancelButton = $('#w-popup-cancel-button');
     popUpCancelButton.on('click', () => {
         $('.w-follow-tutorial-options-item').hide();
-        fetchTutorialsFromCloud();
+        fetchTutorialsFromStorage();
     })
 
     //guides during tutorial
@@ -130,7 +130,6 @@ $(() => {
     popUpNextStepButton.hide();
     popUpNextStepButton.on('click', event => {
         //auto go to next step
-        //globalCache.isAutomatingNextStep = true;
         onPopUpNextStepButtonClicked();
     })
 

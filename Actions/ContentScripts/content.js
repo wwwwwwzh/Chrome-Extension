@@ -2,11 +2,9 @@ var app = initializeApp(firebaseConfig);
 // initializeFirestore(app, { useFetchStreams: false });
 var firestoreRef = getFirestore(app);
 
-var currentUrl;
-var currentUrlObj;
-var globalCache = new GlobalCache();
-var uiManager = new UIManager();
-var tutorialsManager = new TutorialsManager();
+var globalCache;
+var uiManager;
+var tutorialsManager;
 
 $(() => {
     setUp();
@@ -14,10 +12,9 @@ $(() => {
 
 //set up functions
 async function setUp() {
-    currentUrl = $(location).attr('href');
-    syncStorageSet(VALUES.STORAGE.CURRENT_URL, currentUrl);
-    currentUrlObj = new URL(currentUrl);
-
+    globalCache = new GlobalCache();
+    uiManager = new UIManager();
+    tutorialsManager = new TutorialsManager();
     //setUpIframeListner();
     checkStatus();
 }
@@ -49,29 +46,45 @@ function setUpIframeListner() {
  */
 async function checkStatus() {
     chrome.storage.sync.get(VALUES.TUTORIAL_STATUS.STATUS, (result) => {
-        const recordingStatus = result[VALUES.TUTORIAL_STATUS.STATUS];
-        globalCache.globalEventsHandler.setTutorialStatusCache(recordingStatus);
-        switch (recordingStatus) {
-            case VALUES.TUTORIAL_STATUS.IS_RECORDING:
-                tutorialsManager.loadFromStorage(tutorialsManager.updateUIWhenRecording);
-
-                break;
-            case VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
-                tutorialsManager.loadCurrentTutorialFromStorage(tutorialsManager.showCurrentStep);
-                globalCache.globalEventsHandler.setTutorialStatusCache(recordingStatus);
-                break;
-            case VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL:
-                tutorialsManager.loadCurrentTutorialFromStorage(tutorialsManager.showCurrentStep);
-                globalCache.globalEventsHandler.setTutorialStatusCache(recordingStatus);
-                break;
-            case VALUES.TUTORIAL_STATUS.IDLE:
+        const savedStatus = result[VALUES.TUTORIAL_STATUS.STATUS];
+        const cacheStatus = globalCache.globalEventsHandler.tutorialStatusCache;
+        console.log('status cache: ' + cacheStatus + '| saved status: ' + savedStatus)
+        if (cacheStatus !== savedStatus) {
+            //status not in sync. either changed from another page or a page reload happened
+            if (cacheStatus === VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL) {
+                //page reload
+            }
+        } else {
+            //no change. 1) back to page, do nothing. 2) both are before init, fetch tutorials
+            if (cacheStatus !== VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL) {
+                return;
+            }
+        }
+        globalCache.globalEventsHandler.setTutorialStatusCache(savedStatus);
+        switch (cacheStatus) {
+            case VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL:
                 fetchTutorialsFromCloud();
+                globalCache.globalEventsHandler.setTutorialStatusCache(VALUES.TUTORIAL_STATUS.LOADED);
                 break;
-            default:
+            case VALUES.TUTORIAL_STATUS.STOPPED_FROM_OTHER_PAGE:
                 onStopTutorialButtonClicked();
                 break;
+            case VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
+                mainPopUpContainer.show();
+                tutorialsManager.loadCurrentTutorialFromStorage(tutorialsManager.showCurrentStep);
+                break;
+            case VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL:
+                mainPopUpContainer.show();
+                tutorialsManager.loadCurrentTutorialFromStorage(tutorialsManager.showCurrentStep);
+                break;
+            case VALUES.TUTORIAL_STATUS.IS_RECORDING:
+                tutorialsManager.loadFromStorage(tutorialsManager.updateUIWhenRecording);
+                break;
+            default:
+
+                break;
         }
-        console.log('checkStatus() -> Status: ' + recordingStatus);
+        console.log('checkStatus() -> Status: ' + savedStatus);
     })
 }
 
@@ -84,9 +97,18 @@ function automationSpeedSliderHelper() {
     automationSpeedSlider.val(globalCache.speedBarValue);
 }
 
+function fetchTutorialsFromStorage() {
+    uiManager.onFetchingTutorialsFromCloud();
+    tutorialsManager.loadFromStorage(() => {
+        tutorialsManager.tutorials.forEach((tutorial) => {
+            const tutorialID = tutorial.id;
+            uiManager.loadSingleTutorialButton(tutorial, tutorialID);
+        });
+    });
+}
+
 async function fetchTutorialsFromCloud() {
-    $('.w-not-following-tutorial-item').remove();
-    automationSpeedSliderHelper();
+    uiManager.onFetchingTutorialsFromCloud();
 
     const tutorialsQuerySnapshot = await getDocs(getMatchedTutorialsQuery());
 
@@ -99,8 +121,8 @@ async function fetchTutorialsFromCloud() {
     }
 
     function getMatchedTutorialsQuery() {
-        const domainName = "https://" + currentUrlObj.hostname + "/";
-        const url_matches = [currentUrl, domainName];
+        const domainName = "https://" + globalCache.currentURLObj.hostname + "/";
+        const url_matches = [globalCache.currentUrl, domainName];
         return query(collection(firestoreRef,
             VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL),
             where(
@@ -112,18 +134,7 @@ async function fetchTutorialsFromCloud() {
     }
 };
 
-function showFollowingTutorialItems() {
-    $('.w-follow-tutorial-options-item').hide();
-    $('.w-following-tutorial-item').show();
 
-    popUpStepName.html('');
-    popUpStepDescription.html('');
-}
-
-
-function clearUIOnNextStep() {
-    removeLastHighlight();
-}
 
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
@@ -155,7 +166,7 @@ function removeGlobalEventListenersWhenFollowing() {
 
 function onClickHelper(event) {
     preventDefaultHelper(event);
-    if (event.target !== globalCache.currentElement) {
+    if (event.target !== globalCache.currentElement && event.target !== stopOptionsStopButton[0]) {
         processEventHelper(event.target);
     }
 }
@@ -255,8 +266,12 @@ function clearReHighlightTimer() {
 }
 
 function elementNotFoundHandler() {
-    if (tutorialsManager.getCurrentStep().possibleReasonsForElementNotFound.length > 0) {
-        //show in highlight instruction window why might the cause of error be
+    const firstStepOnPageIndex = tutorialsManager.getFirstStepIndexOnCurrentPage();
+    if (firstStepOnPageIndex > -1) {
+        tutorialsManager.onFollowingStep(firstStepOnPageIndex);
+        // if (tutorialsManager.getCurrentStep().possibleReasonsForElementNotFound.length > 0) {
+        //     //show in highlight instruction window why might the cause of error be
+        // }
     }
 }
 
@@ -396,10 +411,15 @@ chrome.runtime.onMessage.addListener(
             removeLastHighlight()
         }
         if (isNotNull(request.onActivated) && request.onActivated) {
-            setUp();
+            checkStatus();
         }
         if (isNotNull(request.newTutorial) && request.newTutorial) {
             recordingContainer.show();
         }
     }
 );
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+    //console.log(JSON.stringify(changes))
+})
+

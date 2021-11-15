@@ -6,7 +6,7 @@ try {
 
 chrome.runtime.onInstalled.addListener(() => {
     //initialize storage to avoid error caused by null variables
-    syncStorageSet(VALUES.TUTORIAL_STATUS.STATUS, VALUES.TUTORIAL_STATUS.IDLE);
+    syncStorageSet(VALUES.TUTORIAL_STATUS.STATUS, VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL);
     // syncStorageSet("RECORDING_STATUS", "NOT_RECORDING")
     // syncStorageSet("IS_RECORDING_ACTIONS", false)
     syncStorageSet("CURRENT_URL", "")
@@ -18,8 +18,8 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 
-// chrome.tabs.onActivated.addListener(() => {
-//     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-//         chrome.tabs.sendMessage(tabs[0].id, { onActivated: true }, function (response) { });
-//     });
-// })
+chrome.tabs.onActivated.addListener(() => {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+        chrome.tabs.sendMessage(tabs[0].id, { onActivated: true }, function (response) { });
+    });
+})
