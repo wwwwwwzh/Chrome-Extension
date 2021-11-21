@@ -17,36 +17,29 @@ let highlightInstructionWindow;
 let recordingContainer;
 let recordingMenuDraggableArea;
 
-let newTutorialContainer;
-let newTutorialNameInput;
-let newTutorialNameButton;
-let stepDetailsContainer;
-let recordTutorialSwitchContainer;
 let recordTutorialSwitch;
-let selectActionTypeContainer;
-let selectActionTypeSelect;
+let actionTypeSelector;
+
+let recordUpperContainer;
+
 let stepNameInput;
 let stepDescriptionInput;
-let selectedElementIndicator;
-let clickActionNameInput;
-let clickActionDescriptionInput;
-let useAnyElementInTableContainer;
-let useAnyElementInTableCheckbox;
-let useAnyElementInTableInput;
-let addAlternativeActionButtonContainer;
-let addAlternativeActionButton;
-let inputActionDefaultInputContainer;
-let inputActionDefaultInput;
-let inputActionInputOptionTemplate;
-let urlInputContainer;
-let urlInput;
-let useCustomStepUrlContainer;
-let useCustomStepUrlCheckbox;
-let customStepUrlContainer;
-let customStepUrlInput;
-let nextButton;
-let finishButton;
-let cancelButton;
+let stepCustomURLInput;
+let stepAltClickInput;
+let stepRedirectURLInput;
+
+
+let selectedElementContainer;
+let selectedTableContainer;
+
+let stepsContainer;
+let addNewStepRoundButton;
+
+let createNewStepButton;
+
+let toogleAdvancedRecordingButton;
+let recordingAdvancedSectionContainer;
+
 
 $(() => {
     const body = $('body');
@@ -155,71 +148,72 @@ $(() => {
 
     //recording menu
     body.append(`
-    <div id="w-recording-panel-container">
-        <div id="w-recording-panel-basic-container">
+    <div class="w-recording-panel-container">
+        <div id="w-recording-menu-draggable-area" class="w-common-item w-popup-draggable"></div>
+        <div class="w-recording-panel-main-container">
             <!-- basic panel -->
             <section id="w-recording-panel-basic-upper-container">
                 <!-- upper panel -->
-                <div id="w-recording-panel-basic-upper-header" class="two-columns-container">
+                <div class="w-horizontal-scroll-container" id="w-recording-panel-basic-upper-header">
                     <!-- header --> 
-                    <div id="select-action-type-container" class="">
+                    <div id="select-action-type-container" class="w-horizontal-scroll-item-container">
                         <select name="action-type" id="select-action-type-select">
-                            <option value="STEP_ACTION_TYPE_NULL">Select Step Type</option>
-                            <option value="STEP_ACTION_TYPE_REDIRECT">Redirect (Open another page directly)</option>
-                            <!-- <option value="STEP_ACTION_TYPE_CLICK_REDIRECT">Click and redirect (Open another page by clicking)</option> -->
-                            <option value="STEP_ACTION_TYPE_CLICK">Click</option>
-                            <option value="STEP_ACTION_TYPE_INPUT">Input</option>
-                            <!-- <option value="STEP_ACTION_TYPE_SELECT">Select</option> -->
-                            <option value="STEP_ACTION_TYPE_SIDE_INSTRUCTION">Instruction</option>
+                            <option value="${VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL}">Select Step Type</option>
+                            <option value="${VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_REDIRECT}">Redirect (Open another page directly)</option>
+                            <!-- <option value="${VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK_REDIRECT}">Click and redirect (Open another page by clicking)</option> -->
+                            <option value="${VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK}">Click</option>
+                            <option value="${VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_INPUT}">Input</option>
+                            <!-- <option value="${VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SELECT}">Select</option> -->
+                            <option value="${VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SIDE_INSTRUCTION}">Instruction</option>
                         </select>
                     </div>
-                    <div id="w-recording-panel-is-recording-switch-container" class="two-columns-container">
-                        <p>Is Recording</p>
-                        <label id="is-recording-switch-label">
+                    <div id="w-recording-panel-is-recording-switch-container" class="w-horizontal-scroll-item-container w-horizontal-scroll-container">
+                        <p id="is-recording-indicator" class="w-horizontal-scroll-item-container">Not Recording</p>
+                        <label id="is-recording-switch-label" class="w-horizontal-scroll-item-container">
                             <input type="checkbox" id="record-tutorial-switch">
                             <span id="is-recording-switch-slider"></span>
                         </label>
                     </div>
                 </div>
-                <div id="w-recording-panel-basic-upper-content-container" class="two-columns-container">
+                <div id="w-recording-panel-basic-upper-content-container" class="w-horizontal-scroll-container">
                     <!-- content -->
-                    <div id="w-recording-panel-basic-upper-left" class="w-column">
+                    <div id="w-recording-panel-basic-upper-left" class="w-horizontal-scroll-item-container">
                         <!-- left -->
-                        <div class="w-material-input-container">
-                            <input class="w-material-input" type="text" autocomplete="off" value="">
+                        <div class="w-material-input-container common-action-container">
+                            <input class="w-material-input" id="step-name-input" type="text" autocomplete="off" value="">
                             <label class="w-material-input-placeholder-text">
                                 <div class="w-material-input-text">Step Name</div>
                             </label>
                         </div>
-                        <div class="w-material-input-container">
-                            <input class="w-material-input" type="text" autocomplete="off" value="">
+                        <div class="w-material-input-container common-action-container">
+                            <input class="w-material-input" id="step-description-input" type="text" autocomplete="off" value="">
                             <label class="w-material-input-placeholder-text">
                                 <div class="w-material-input-text">Step Description</div>
                             </label>
                         </div>
-                        <div class="w-material-input-container">
-                            <input class="w-material-input" type="text" autocomplete="off" value="">
+                        <div class="w-material-input-container common-action-container">
+                            <input class="w-material-input" id="step-custom-url-input" type="text" autocomplete="off" value="">
                             <label class="w-material-input-placeholder-text">
                                 <div class="w-material-input-text">Custom URL</div>
                             </label>
                         </div>
                     </div>
-                    <div id="w-recording-panel-basic-upper-right">
+                    <div id="w-recording-panel-basic-upper-right" class="w-horizontal-scroll-item-container">
                         <!-- right -->
-                        <div class="w-material-input-container">
-                            <input class="w-material-input" type="text" autocomplete="off" value="">
+                        <div class="w-material-input-container redirect-action-container">
+                            <input class="w-material-input" id="step-redirect-url-input" type="text" autocomplete="off" value="">
                             <label class="w-material-input-placeholder-text">
                                 <div class="w-material-input-text">Redirect URL</div>
                             </label>
                         </div>
-                        <div class="w-material-input-container">
-                            <input class="w-material-input" type="text" autocomplete="off" value="">
+                        <div class="w-material-input-container click-action-container">
+                            <input class="w-material-input" id="step-alt-click-description-input" type="text" autocomplete="off" value="">
                             <label class="w-material-input-placeholder-text">
-                                <div class="w-material-input-text">Click ID</div>
+                                <div class="w-material-input-text">Alternative Click Description</div>
                             </label>
                         </div>
-                        <div class="w-material-input-container">
-                            <input class="w-material-input" type="text" autocomplete="off" value="">
+                        <div class="w-material-input-container select-action-container">
+                            <input class="w-material-input" id="step-xxx-input" type="text" autocomplete="off" value="">
                             <label class="w-material-input-placeholder-text">
                                 <div class="w-material-input-text">...</div>
                             </label>
@@ -227,276 +221,124 @@ $(() => {
                     </div>
                 </div>
             </section>
-            <section id="w-recording-panel-basic-selected-container" class="w-horizontal-scroll-container">
+            <section id="w-recording-panel-basic-selected-container" class="w-horizontal-scroll-container click-action-container">
                 <!-- selected element -->
-                <div class="selected-item-path-container w-horizontal-scroll-item-container">
-                    <input class="selected-item-path-input" type="text" id="selected-item-path-1">
-                    <button class="selected-item-path-delete" id="selected-item-path-delete-1">x</button>
-                    <div class="selected-item-path-next-indicator w-horizontal-scroll-item-next-indicator"></div>
-                </div>
-                <div class="selected-item-path-container w-horizontal-scroll-item-container">
-                    <input class="selected-item-path-input" type="text" id="selected-item-path-1">
-                    <button class="selected-item-path-delete" id="selected-item-path-delete-1">x</button>
-                    <div class="selected-item-path-next-indicator w-horizontal-scroll-item-next-indicator"></div>
-                </div>
-                <div class="selected-item-path-container w-horizontal-scroll-item-container">
-                    <input class="selected-item-path-input" type="text" id="selected-item-path-1">
-                    <button class="selected-item-path-delete" id="selected-item-path-delete-1">x</button>
-                </div>
-                <div class="selected-item-path-container w-horizontal-scroll-item-container">
-                    <input class="selected-item-path-input" type="text" id="selected-item-path-1">
-                    <button class="selected-item-path-delete" id="selected-item-path-delete-1">x</button>
-                </div>
-                <div class="selected-item-path-container w-horizontal-scroll-item-container">
-                    <input class="selected-item-path-input" type="text" id="selected-item-path-1">
-                    <button class="selected-item-path-delete" id="selected-item-path-delete-1">x</button>
-                </div>
-                <div class="selected-item-path-container w-horizontal-scroll-item-container">
-                    <input class="selected-item-path-input" type="text" id="selected-item-path-1">
-                    <button class="selected-item-path-delete" id="selected-item-path-delete-1">x</button>
-                </div>
                 
             </section>
-            <section id="w-recording-panel-basic-table-container" class="w-horizontal-scroll-container">
+            <section id="w-recording-panel-basic-table-container" class="w-horizontal-scroll-container click-action-container">
                 <!-- parent table -->
             </section>
-            <section id="w-recording-panel-basic-steps-container" class="w-horizontal-scroll-container">
+            <section id="w-recording-panel-basic-steps-container" class="w-horizontal-scroll-container common-action-container">
                 <!-- step selector -->
-                <div id="w-recording-panel-steps-step-indicator-container" class="">
-                    
-                    <div class="recording-panel-individual-step-container w-horizontal-scroll-item-container">
-                        <div id="w-recording-panel-steps-page-indicator-container" class="">
-                            xxx.com
-                        </div>
-                        <div class="step-snapshot-container">
-                            <!-- snapshot -->
-                            <label for="">Step 1</label>
-                            <label for="">Name</label>
-                        </div>
-                        <div class="selected-item-path-next-indicator w-horizontal-scroll-item-next-indicator"></div>
-                    </div>
-
-                    <div class="recording-panel-individual-step-container w-horizontal-scroll-item-container">
-                        <div id="w-recording-panel-steps-page-indicator-container" class="">
-                            xxx.com
-                        </div>
-                        <div class="step-snapshot-container">
-                            <!-- snapshot -->
-                            <label for="">Step 1</label>
-                            <label for="">Name</label>
-                        </div>
-                        <div class="selected-item-path-next-indicator w-horizontal-scroll-item-next-indicator"></div>
-                    </div>
-
-                    <div class="recording-panel-individual-step-container w-horizontal-scroll-item-container">
-                        <div id="w-recording-panel-steps-page-indicator-container" class="">
-                            xxx.com
-                        </div>
-                        <div class="step-snapshot-container">
-                            <!-- snapshot -->
-                            <label for="">Step 1</label>
-                            <label for="">Name</label>
-                        </div>
-                        <div class="selected-item-path-next-indicator w-horizontal-scroll-item-next-indicator"></div>
-                    </div>
+                <div class="next-step-button-round-container w-horizontal-scroll-item-container">
+                    <button id="add-new-step-round-button" class="w-round-button">+</button>
                 </div>
             </section>
-            <section id="w-recording-panel-basic-buttons-container">
+            <section id="w-recording-panel-basic-buttons-container common-action-container">
                 <!-- buttons -->
+                <button id="create-new-step-button">New Step</button>
             </section>
         </div>
-        <div>
+        <section class="recording-panel-advanced-section-container">
             <!-- advanced operations -->
-        </div>
+        </section>
+        <button class="recording-panel-toogle-advanced-button">
+            <p class="verticle-text">Advanced</p>
+        </button>
     </div>
     `);
 
 
 
-    recordingContainer = $('#w-recording-panel-container');
+    recordingContainer = $('.w-recording-panel-container').first();
+
+
+    recordingMenuDraggableArea = $('#w-recording-menu-draggable-area');
+    makeElementDraggable(recordingMenuDraggableArea[0], recordingContainer[0]);
     recordingContainer.hide();
 
-    // recordingMenuDraggableArea = $('#w-recording-menu-draggable-area');
-    // makeElementDraggable(recordingMenuDraggableArea[0], recordingContainer[0]);
 
-    // newTutorialContainer = $('#new-tutorial-container');
-
-    // newTutorialNameInput = $('#new-tutorial-name-input');
-    // newTutorialNameButton = $('#new-tutorial-name-button');
-
-    // stepDetailsContainer = $('#step-details-container');
-
-    recordTutorialSwitchContainer = $('#w-recording-panel-is-recording-switch-container');
     recordTutorialSwitch = $('#record-tutorial-switch');
+    recordTutorialSwitch.on('change', () => {
+        const checked = recordTutorialSwitch.prop('checked');
+        if (checked) {
+            globalCache.globalEventsHandler.setTutorialStatusCache(VALUES.TUTORIAL_STATUS.IS_RECORDING);
+        } else {
+            globalCache.globalEventsHandler.setTutorialStatusCache(VALUES.TUTORIAL_STATUS.LOADED);
+        }
+    })
+
+    actionTypeSelector = $('#select-action-type-select');
+    actionTypeSelector.on('change', () => {
+        const selection = parseInt(actionTypeSelector.val());
+        switchMenu(selection);
+    })
+
+    recordUpperContainer = $('#w-recording-panel-basic-upper-content-container');
+
+    stepNameInput = $('#step-name-input');
+    stepDescriptionInput = $('#step-description-input');
+    stepCustomURLInput = $('#step-custom-url-input');
+    stepRedirectURLInput = $('#step-redirect-url-input');
+    stepAltClickInput = $('#step-alt-click-description-input');
+
+    stepNameInput.on("keyup", () => {
+        stepNameInput.attr("value", stepNameInput.val());
+    });
+
+    stepDescriptionInput.on("keyup", () => {
+        stepDescriptionInput.attr("value", stepDescriptionInput.val());
+    });
+
+    stepCustomURLInput.on("keyup", () => {
+        stepCustomURLInput.attr("value", stepCustomURLInput.val());
+    });
+
+    stepRedirectURLInput.on("keyup", () => {
+        stepRedirectURLInput.attr("value", stepRedirectURLInput.val());
+    });
+
+    stepAltClickInput.on("keyup", () => {
+        stepAltClickInput.attr("value", stepAltClickInput.val());
+    });
 
 
-    // selectActionTypeContainer = $('#select-action-type-container');
-    // selectActionTypeSelect = $('#select-action-type-select');
+    selectedElementContainer = $('#w-recording-panel-basic-selected-container');
+    selectedTableContainer = $('#w-recording-panel-basic-table-container');
+
+    createNewStepButton = $('#create-new-step-button');
+    createNewStepButton.on('click', () => {
+        tutorialsManager.onCreatingNewStep();
+    })
+
+    stepsContainer = $('#w-recording-panel-basic-steps-container');
+    addNewStepRoundButton = $('#add-new-step-round-button');
 
 
-    // stepNameInput = $("#step-name-input");
-    // stepDescriptionInput = $("#step-description-input");
-    // selectedElementIndicator = $('#selected-element-indicator');
+    //advanced
+    toogleAdvancedRecordingButton = $('.recording-panel-toogle-advanced-button');
+    toogleAdvancedRecordingButton.on('click', () => {
+        if (!globalCache.isUsingAdvancedRecordingPanel) {
+            recordingContainer.removeClass('w-recording-panel-container');
+            recordingContainer.addClass('w-recording-panel-advanced-container');
+            toogleAdvancedRecordingButton.removeClass('recording-panel-toogle-advanced-button');
+            toogleAdvancedRecordingButton.addClass('recording-panel-toogle-advanced-button-advanced');
+            globalCache.isUsingAdvancedRecordingPanel = true;
+        } else {
+            recordingContainer.removeClass('w-recording-panel-advanced-container');
+            recordingContainer.addClass('w-recording-panel-container');
+            toogleAdvancedRecordingButton.removeClass('recording-panel-toogle-advanced-button-advanced');
+            toogleAdvancedRecordingButton.addClass('recording-panel-toogle-advanced-button');
+            globalCache.isUsingAdvancedRecordingPanel = false;
+        }
+    })
 
-    // clickActionNameInput = $('#click-action-name-input');
-    // clickActionDescriptionInput = $('#click-action-description-input');
-
-    // useAnyElementInTableContainer = $('#use-any-element-in-table-container');
-    // useAnyElementInTableCheckbox = $('#use-any-element-in-table-checkbox');
-    // useAnyElementInTableInput = $('#use-any-element-in-table-input');
-
-    // addAlternativeActionButtonContainer = $('#add-alternative-action-button-container');
-    // addAlternativeActionButton = $('#add-alternative-action-button');
-
-    // inputActionDefaultInputContainer = $('#input-action-default-input-container');
-    // inputActionDefaultInput = $('#input-action-default-input');
-
-    // inputActionInputOptionTemplate = $('#input-action-input-option-container-template');
-
-    // urlInputContainer = $('#url-input-container');
-    // urlInput = $('#url-input');
-
-    // useCustomStepUrlContainer = $('#use-custom-step-url-container');
-    // useCustomStepUrlCheckbox = $('#use-custom-step-url-checkbox');
-
-    // customStepUrlContainer = $('#custom-step-url-container');
-    // customStepUrlInput = $('#custom-step-url-input');
+    recordingAdvancedSectionContainer = $('.recording-panel-advanced-section-container').first();
 
 
-    // nextButton = $('#next-button');
-    // finishButton = $('#finish-button');
-    // cancelButton = $('#cancel-button');
-
-    // $('.common-action .input-action .click-action').hide();
-    // newTutorialNameInput.show();
-    // newTutorialNameButton.show();
-    // newTutorialNameButton.on('click', async () => {
-    //     onNewTutorialNameButtonClicked();
-    // });
+    clearCurrentMenu();
 
 
-
-
-
-    // //------------------------------------------------------------------------------------------------------------
-    // //MARK: attach listener to inputs------------------------------------------------------
-    // //------------------------------------------------------------------------------------------------------------
-    // selectActionTypeSelect.on('change', () => {
-    //     swistchMenu(selectActionTypeSelect.val());
-    // })
-
-    // stepNameInput.on('input', () => {
-    //     updateCurrentStep(() => {
-    //         currentStepObj.name = stepNameInput.val();
-    //     })
-    // })
-
-    // stepDescriptionInput.on('input', () => {
-    //     updateCurrentStep(() => {
-    //         currentStepObj.description = stepDescriptionInput.val();
-    //     })
-    // })
-
-    // urlInput.on('input', () => {
-    //     const value = urlInput.val();
-    //     updateCurrentStep(() => {
-    //         callFunctionOnActionType(
-    //             currentStepObj.actionType, null, () => {
-    //                 //click & redirect
-    //                 currentStepObj.actionObject.defaultClick.url = value;
-    //             }, null, () => {
-    //                 //redirect
-    //                 currentStepObj.actionObject.url = value;
-    //             }, null, null);
-    //     })
-    // })
-
-    // inputActionDefaultInput.on('input', () => {
-    //     const value = inputActionDefaultInput.val();
-    //     updateCurrentStep(() => {
-    //         callFunctionOnActionType(currentStepObj.actionType, null, null, () => {
-    //             currentStepObj.actionObject.defaultText = value;
-    //         }, null, null, null);
-    //     })
-    // })
-
-    // clickActionNameInput.on('input', () => {
-    //     const value = clickActionNameInput.val();
-    //     updateCurrentStep(() => {
-    //         callFunctionOnActionType(
-    //             currentStepObj.actionType, () => {
-    //                 //click
-    //                 currentStepObj.actionObject.defaultClick.name = value;
-    //             }, null, null, null, null, null);
-    //     })
-    // })
-
-    // clickActionDescriptionInput.on('input', () => {
-    //     const value = clickActionDescriptionInput.val();
-    //     updateCurrentStep(() => {
-    //         callFunctionOnActionType(
-    //             currentStepObj.actionType, () => {
-    //                 //click
-    //                 currentStepObj.actionObject.defaultClick.description = value;
-    //             }, null, null, null, null, null);
-    //     })
-    // })
-
-    // useAnyElementInTableCheckbox.on('change', () => {
-    //     const checked = useAnyElementInTableCheckbox.prop('checked');
-    //     updateCurrentStep(() => {
-    //         callFunctionOnActionType(
-    //             currentStepObj.actionType, () => {
-    //                 //click
-    //                 currentStepObj.actionObject.defaultClick.useAnythingInTable = checked;
-    //                 if (checked) {
-    //                     currentStepObj.actionObject.defaultClick.table = useAnyElementInTableInput.val().split(',');
-    //                 } else {
-    //                     currentStepObj.actionObject.defaultClick.table = null;
-    //                 }
-    //             }, null, null, null, null, null);
-    //     })
-    // })
-
-    // useCustomStepUrlCheckbox.on('change', () => {
-    //     const checked = useCustomStepUrlCheckbox.prop('checked');
-    //     if (checked) {
-    //         customStepUrlContainer.show();
-    //         if (isNotNull(currentStepObj.url)) {
-    //             customStepUrlInput.val(currentStepObj.url);
-    //         } else {
-    //             chrome.storage.sync.get(VALUES.STORAGE.CURRENT_URL, result => {
-    //                 const currentUrl = result[VALUES.STORAGE.CURRENT_URL];
-    //                 if (isNotNull(currentUrl)) {
-    //                     customStepUrlInput.val(currentUrl);
-    //                     currentStepObj.url = currentUrl;
-    //                 }
-    //             })
-    //         }
-
-    //     } else {
-    //         customStepUrlContainer.hide();
-    //     }
-    // })
-
-    // customStepUrlInput.on('input', () => {
-    //     const value = customStepUrlInput.val();
-    //     updateCurrentStep(() => {
-    //         currentStepObj.url = value;
-    //     })
-    // })
-
-    // useAnyElementInTableInput.on('input', () => {
-    //     const value = useAnyElementInTableInput.val();
-    //     updateCurrentStep(() => {
-    //         callFunctionOnActionType(
-    //             currentStepObj.actionType, () => {
-    //                 //click
-    //                 currentStepObj.actionObject.defaultClick.table = value.split(',');
-    //                 syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, value.split(','));
-    //             }, null, null, null, null, null);
-    //     })
-    // })
     // //------------------------------------------------------------------------------------------------------------
     // //MARK: button events------------------------------------------------------------------------------------------------------------
     // //------------------------------------------------------------------------------------------------------------

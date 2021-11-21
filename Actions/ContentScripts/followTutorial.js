@@ -22,8 +22,15 @@ async function onStopTutorialButtonClicked() {
     uiManager.onTutorialStopped();
     const data = {};
     data[VALUES.STORAGE.REVISIT_PAGE_COUNT] = 0;
-    if (checkIfUrlMatch(tutorialsManager.getCurrentStep().url, globalCache.currentUrl)) {
+    if (!isNotNull(tutorialsManager.tutorials[0])) {
         data[VALUES.TUTORIAL_STATUS.STATUS] = VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL;
+        syncStorageSetBatch(data, () => {
+            fetchTutorialsFromStorage();
+            globalCache = new GlobalCache();
+        });
+    }
+    if (tutorialsManager.checkIfCurrentURLMatchesPageURL()) {
+        data[VALUES.TUTORIAL_STATUS.STATUS] = VALUES.TUTORIAL_STATUS.LOADED;
         syncStorageSetBatch(data, () => {
             tutorialsManager.revertCurrentTutorialToInitialState();
             fetchTutorialsFromStorage();
@@ -69,39 +76,35 @@ async function chooseFunctionAccordingToCurrentStepType(onStepActionClick, onSte
 
     globalCache.interval = interval;
 
-    if (tutorialObj.currentStepIndex >= tutorialObj.steps.length) {
-        onStopTutorialButtonClicked();
-    }
+
     // else if (currentUrl !== currentStep.url) {
     //     //onEnteredWrongPage(tutorialObj, currentStep.url);
     // } 
-    else {
-        //syncStorageSet(VALUES.STORAGE.REVISIT_PAGE_COUNT, 0);
-        switch (currentStep.actionType) {
-            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK: case "STEP_ACTION_TYPE_CLICK":
-                //alert('bingo')
-                isNotNull(onStepActionClick) && onStepActionClick();
-                break;
-            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK_REDIRECT:
-                isNotNull(onStepActionClickRedirect) && onStepActionClickRedirect();
-                break;
-            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_REDIRECT:
-                isNotNull(onStepActionRedirect) && onStepActionRedirect();
-                break;
-            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_INPUT: case "STEP_ACTION_TYPE_INPUT":
-                isNotNull(onStepActionInput) && onStepActionInput();
-                break;
-            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SELECT:
-                isNotNull(onStepActionSelect) && onStepActionSelect();
-                break;
-            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SIDE_INSTRUCTION: case "STEP_ACTION_TYPE_SIDE_INSTRUCTION":
-                isNotNull(onStepSideInstruction) && onStepSideInstruction();
-                break;
-            default:
-                alert("Error: Illegal action type")
-                console.error("Illegal action type");
-                break;
-        }
+    //syncStorageSet(VALUES.STORAGE.REVISIT_PAGE_COUNT, 0);
+    switch (currentStep.actionType) {
+        case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK: case "STEP_ACTION_TYPE_CLICK":
+            //alert('bingo')
+            isNotNull(onStepActionClick) && onStepActionClick();
+            break;
+        case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK_REDIRECT:
+            isNotNull(onStepActionClickRedirect) && onStepActionClickRedirect();
+            break;
+        case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_REDIRECT:
+            isNotNull(onStepActionRedirect) && onStepActionRedirect();
+            break;
+        case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_INPUT: case "STEP_ACTION_TYPE_INPUT":
+            isNotNull(onStepActionInput) && onStepActionInput();
+            break;
+        case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SELECT:
+            isNotNull(onStepActionSelect) && onStepActionSelect();
+            break;
+        case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SIDE_INSTRUCTION: case "STEP_ACTION_TYPE_SIDE_INSTRUCTION":
+            isNotNull(onStepSideInstruction) && onStepSideInstruction();
+            break;
+        default:
+            alert("Error: Illegal action type")
+            console.error("Illegal action type");
+            break;
     }
 }
 
@@ -192,7 +195,7 @@ function autoClick() {
         return;
     }
     const element = $(jqueryElementStringFromDomPath(step.path))[0];
-    highlightAndScollTo(step.path, () => {
+    highlightAndScollTo(step.path, true, () => {
         simulateClick(element);
         incrementCurrentStepHelper();
     });
@@ -210,7 +213,7 @@ function autoInput() {
     //get and highlight input element
     const inputEle = $(jqueryElementStringFromDomPath(step.path)).first();
 
-    highlightAndScollTo(step.path, () => {
+    highlightAndScollTo(step.path, true, () => {
         //check if there is default input
         const defaultText = step.defaultText;
         // if (isNotNull(defaultText) && !isEmpty(defaultText)) {
@@ -230,7 +233,7 @@ function autoSelect() {
     const step = tutorialsManager.getCurrentStep().actionObject;
     //get and highlight input element
     const selectEle = $(jqueryElementStringFromDomPath(step.path)).first();
-    highlightAndScollTo(step.path, () => {
+    highlightAndScollTo(step.path, true, () => {
         //check if there is default input
         selectEle.val(step.defaultValue);
         //this step completed, go to next step
@@ -264,15 +267,16 @@ function onClickWhenFollowingTutorial() {
         const click = tutorialsManager.getCurrentStep().actionObject.defaultClick;
         if (click.useAnythingInTable) {
             const tablePath = click.table;
-            if (isSubArray(globalCache.domPath, tablePath)) {
+
+            if (isSelectedOnRightElement(globalCache.domPath, tablePath)) {
                 incrementCurrentStepHelper();
             } else {
                 onClickedOnWrongElement(tablePath);
             }
         } else {
             const clickPath = click.path;
-            console.log('should click' + clickPath)
-            if (isSubArray(globalCache.domPath, clickPath)) {
+            console.log('should click' + clickPath);
+            if (isSelectedOnRightElement(globalCache.domPath, clickPath)) {
                 incrementCurrentStepHelper();
                 return;
             } else {
@@ -283,7 +287,7 @@ function onClickWhenFollowingTutorial() {
 
     function onClickWithStepTypeInput() {
         const inputPath = tutorialsManager.getCurrentStep().actionObject.path;
-        if (isSubArray(globalCache.domPath, inputPath)) {
+        if (isSelectedOnRightElement(globalCache.domPath, inputPath)) {
             //TODO: record input and go to next step only when inputted one char
             incrementCurrentStepHelper();
             return;
@@ -298,7 +302,7 @@ function onClickWhenFollowingTutorial() {
 
     function onClickWithStepTypeSideInstruction() {
         const elementPath = tutorialsManager.getCurrentStep().actionObject.path;
-        if (isSubArray(globalCache.domPath, elementPath)) {
+        if (isSelectedOnRightElement(globalCache.domPath, elementPath)) {
             clearTimeout(globalCache.sideInstructionAutoNextTimer);
             globalCache.sideInstructionAutoNextTimer = null;
             incrementCurrentStepHelper();
@@ -310,6 +314,9 @@ function onClickWhenFollowingTutorial() {
 
     function onClickedOnWrongElement(path) {
         //simulateClick(globalCache.currentElement);
-        highlightAndScollTo(path);
+        console.log('wrong element')
+        setTimeout(() => {
+            highlightAndScollTo(path);
+        }, 100);
     }
 }

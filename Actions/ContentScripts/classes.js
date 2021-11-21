@@ -1,9 +1,10 @@
 class UIManager {
     constructor() {
-
     }
 
+    //------------------------------------------------------------------------------------------
     //general
+    //------------------------------------------------------------------------------------------
     onFetchingTutorialsFromCloud() {
         $('.w-not-following-tutorial-item').remove();
         automationSpeedSliderHelper();
@@ -11,9 +12,136 @@ class UIManager {
 
 
 
-    //recording
+    //------------------------------------------------------------------------------------------
+    //recording 
+    //------------------------------------------------------------------------------------------
 
+
+    /**
+     * 
+     * @param {*} atIndex 
+     * @param {*} snapshot {url, name, description, id}
+     */
+    createStepSnapshot(atIndex, snapshot) {
+        const steps = tutorialsManager.tutorials[0].steps;
+        const prevStep = steps[atIndex - 1] || null;
+        const nextStep = steps[atIndex] || null;
+        const trimmedURL = snapshot.url;
+
+        console.log(JSON.stringify(prevStep))
+        if (isNotNull(prevStep) && prevStep.url === snapshot.url) {
+            console.log('apending step snapshot')
+            const container = $(`#${prevStep.id}`).parent();
+            container.append(`
+            <div id="${snapshot.id}" class="step-snapshot-container w-horizontal-scroll-item-container">
+                <!-- snapshot -->
+                <label for="">${snapshot.name}</label>
+                <label for="">${snapshot.description}</label>
+            </div>
+            <div class="w-horizontal-scroll-item-next-indicator-container w-horizontal-scroll-item-container">
+                <div class="w-horizontal-scroll-item-next-indicator"></div>
+            </div>
+            `)
+        } else if (isNotNull(nextStep) && nextStep.url === snapshot.url) {
+            console.log('prepending step snapshot')
+            const container = $(`#${nextStep.id}`).parent();
+            container.prepend(`
+            <div id="${snapshot.id}" class="step-snapshot-container w-horizontal-scroll-item-container">
+                <!-- snapshot -->
+                <label for="">${snapshot.name}</label>
+                <label for="">${snapshot.description}</label>
+            </div>
+            <div class="w-horizontal-scroll-item-next-indicator-container w-horizontal-scroll-item-container">
+                <div class="w-horizontal-scroll-item-next-indicator"></div>
+            </div>
+            `)
+        } else {
+            console.log('appending page contaner')
+            addNewStepRoundButton.parent().before(`
+            <div class="w-recording-panel-steps-section-container w-horizontal-scroll-item-container">
+                <div class="w-recording-panel-steps-page-indicator-container">
+                ${trimmedURL}
+                </div>
+                <div class="w-horizontal-scroll-container w-recording-panel-steps-step-indicator-container">
+                    <div id="${snapshot.id}" class="step-snapshot-container w-horizontal-scroll-item-container">
+                        <!-- snapshot -->
+                        <label for="">${snapshot.name}</label>
+                        <label for="">${snapshot.description}</label>
+                    </div>
+                    <div class="w-horizontal-scroll-item-next-indicator-container w-horizontal-scroll-item-container">
+                        <div class="w-horizontal-scroll-item-next-indicator"></div>
+                    </div>
+                </div>
+            </div>
+            `);
+        }
+    }
+
+    updateStepSnapshot(id) {
+        console.log('updating' + id)
+    }
+
+    createTutorialStepsSnapshots(tutorialIndex = 0) {
+        const steps = tutorialsManager.tutorials[tutorialIndex].steps;
+        steps.forEach((step, index) => {
+            uiManager.createStepSnapshot(index, step)
+        })
+    }
+
+    createSnapshotsForAllTutorials() {
+        tutorialsManager.tutorials.forEach((tutorial, index) => {
+            tutorial.steps.forEach((step, index) => {
+                if (step.url === globalCache.currentUrl) {
+                    if (index !== 0) {
+                        const container = $(`#tutorial-recording-snapshot-${tutorial.id}`).parent().parent();
+                        container.append(`
+                        <div
+                            class="w-horizontal-scroll-item-container w-recording-advanced-panel-steps-section-container w-horizontal-scroll-container">
+                            <div id="${step.id}" class="step-snapshot-container w-horizontal-scroll-item-container">
+                                <!-- snapshot -->
+                                <label for="">${step.name}</label>
+                                <label for="">${step.description}</label>
+                            </div>
+                            <div class="w-horizontal-scroll-item-next-indicator-container w-horizontal-scroll-item-container">
+                                <div class="w-horizontal-scroll-item-next-indicator">
+                                </div>
+                            </div>
+                        </div>
+                        `)
+                    } else {
+                        recordingAdvancedSectionContainer.append(`
+                        <div class="w-horizontal-scroll-container w-recording-panel-advanced-steps-container">
+                            <div
+                                class="w-horizontal-scroll-item-container w-recording-advanced-panel-steps-section-container w-horizontal-scroll-container">
+                                <div id="tutorial-recording-snapshot-${tutorial.id}" class="step-snapshot-container w-horizontal-scroll-item-container">
+                                    <!-- snapshot -->
+                                    ${tutorial.name}
+                                </div>
+                            </div>
+                            <!-- step selector -->
+                            <div
+                                class="w-horizontal-scroll-item-container w-recording-advanced-panel-steps-section-container w-horizontal-scroll-container">
+                                <div id="${step.id}" class="step-snapshot-container w-horizontal-scroll-item-container">
+                                    <!-- snapshot -->
+                                    <label for="">${step.name}</label>
+                                    <label for="">${step.description}</label>
+                                </div>
+                                <div class="w-horizontal-scroll-item-next-indicator-container w-horizontal-scroll-item-container">
+                                    <div class="w-horizontal-scroll-item-next-indicator">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        `);
+                    }
+                }
+            })
+        })
+    }
+
+    //------------------------------------------------------------------------------------------
     //following
+    //------------------------------------------------------------------------------------------
     onOnWrongPage(currentStep) {
         globalCache.globalEventsHandler.setIsOnRightPage(false);
         mainPopUpContainer.children().hide();
@@ -85,17 +213,80 @@ class TutorialsManager {
         this.tutorials = [];
     }
 
+    compressTutorial(uncompressedTutorial) {
+        var compressedTutorial = {};
+        compressedTutorial['n'] = uncompressedTutorial.name;
+        compressedTutorial['d'] = uncompressedTutorial.description;
+        compressedTutorial['s'] = uncompressedTutorial.snapshot;
+        compressedTutorial['csi'] = uncompressedTutorial.currentStepIndex;
+        compressedTutorial['id'] = uncompressedTutorial.id;
+        compressedTutorial['u'] = uncompressedTutorial.urls;
+
+        var compressedSteps = [];
+        uncompressedTutorial.steps.forEach((step, indx) => {
+            compressedSteps.push({
+                i: step.index,
+                at: step.actionType,
+                ao: step.actionObject,
+                n: step.name,
+                d: step.description,
+                u: step.url,
+                ai: step.automationInterrupt,
+                rfnf: step.possibleReasonsForElementNotFound,
+                id: step.id,
+            })
+        })
+
+        compressedTutorial.steps = compressedSteps;
+
+        return compressedTutorial;
+    }
+
+    decompressTutorial(compressedTutorial) {
+        var decompressedTutorial = new TutorialObject();
+        decompressedTutorial.name = compressedTutorial['n'];
+        decompressedTutorial.description = compressedTutorial['d'];
+        decompressedTutorial.snapshot = compressedTutorial['s'];
+        decompressedTutorial.currentStepIndex = compressedTutorial['csi'];
+        decompressedTutorial.id = compressedTutorial['id'];
+        decompressedTutorial.urls = compressedTutorial['u'];
+
+        var decompressedSteps = []
+        compressedTutorial.steps.forEach((step, indx) => {
+            decompressedSteps.push(new Step(
+                step['i'],
+                step['at'],
+                step['ao'],
+                step['n'],
+                step['d'],
+                step['u'],
+                step['ai'],
+                step['rfnf'],
+                step['id'],
+            ))
+        })
+
+        decompressedTutorial.steps = decompressedSteps;
+
+        return decompressedTutorial;
+    }
+
     getCurrentTutorial() {
-        return this.tutorials[0];
+        return tutorialsManager.tutorials[0];
     }
 
     getCurrentStep() {
-        const currentTutorial = this.tutorials[0];
+        const currentTutorial = tutorialsManager.tutorials[0];
         return currentTutorial.steps[currentTutorial.currentStepIndex];
     }
 
+    checkIfCurrentURLMatchesPageURL() {
+        const currentURL = tutorialsManager.getCurrentStep()?.url;
+        return isNotNull(currentURL) && checkIfUrlMatch(currentURL, globalCache.currentUrl)
+    }
+
     async initiateFtomFirestore(tutorialsQuerySnapshot, callback = () => { }) {
-        this.tutorials = [];
+        tutorialsManager.tutorials = [];
         await Promise.all(tutorialsQuerySnapshot.docs.map(async (tutorial) => {
             const tutorialID = tutorial.id;
             const tutorialData = tutorial.data();
@@ -116,7 +307,7 @@ class TutorialsManager {
             stepsQuerySnapshot.forEach((step) => {
                 const data = step.data();
                 data.id = step.id;
-                //remove steps used prior to accessing this page
+                //remove steps used prior to accessing tutorialsManager page
                 if (isFirstStepReached) {
                     steps.push(data);
                 } else {
@@ -128,18 +319,19 @@ class TutorialsManager {
                 }
             })
 
-            this.tutorials.push(new TutorialObject(tutorialData.name, '', [], steps, tutorialData.all_urls, tutorialID));
+            tutorialsManager.tutorials.push(new TutorialObject(tutorialData.name, '', [], steps, tutorialData.all_urls, tutorialID));
         }));
-        this.saveToStorage(callback);
-
+        tutorialsManager.saveToStorage(callback);
+        //TODO: Change to better place for speed optimization
+        uiManager.createSnapshotsForAllTutorials();
     }
 
     loadFromStorage(callback = () => { }) {
         chrome.storage.sync.get([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL, VALUES.STORAGE.ALL_OTHER_TUTORIALS], (result) => {
             const currentTutorial = result[VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL];
             const allOtherTutorials = result[VALUES.STORAGE.ALL_OTHER_TUTORIALS];
-            this.tutorials = [currentTutorial, ...allOtherTutorials];
-            console.log('loading ' + this.tutorials.length + ' tutorials from storage')
+            tutorialsManager.tutorials = [currentTutorial, ...allOtherTutorials];
+            console.log('loading ' + tutorialsManager.tutorials.length + ' tutorials from storage')
             callback();
         });
     }
@@ -147,31 +339,39 @@ class TutorialsManager {
     loadCurrentTutorialFromStorage(callback = () => { }) {
         chrome.storage.sync.get([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL], (result) => {
             const currentTutorial = result[VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL];
-            if (this.tutorials.length > 0) {
-                this.tutorials[0] = currentTutorial;
+            if (tutorialsManager.tutorials.length > 0) {
+                tutorialsManager.tutorials[0] = currentTutorial;
             } else {
-                this.tutorials = [currentTutorial];
+                tutorialsManager.tutorials = [currentTutorial];
             }
             callback();
         });
     }
 
+    /**
+     * Save all tuutorials on page to storage.
+     * @param {*} callback 
+     */
     saveToStorage(callback = () => { }) {
-        console.log('saving ' + this.tutorials.length + ' tutorials to storage')
+        console.log('saving ' + tutorialsManager.tutorials.length + ' tutorials to storage')
         syncStorageSetBatch({
-            [VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL]: this.tutorials[0],
-            [VALUES.STORAGE.ALL_OTHER_TUTORIALS]: this.tutorials.slice(1),
+            [VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL]: tutorialsManager.tutorials[0],
+            [VALUES.STORAGE.ALL_OTHER_TUTORIALS]: tutorialsManager.tutorials.slice(1),
         }, callback);
     }
 
+    /**
+     * Save current active tutorial to storage
+     * @param {*} callback 
+     */
     saveCurrentTutorialToStorage(callback = () => { }) {
         console.log('saving current tutorials to storage')
-        syncStorageSet([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL], this.tutorials[0], callback);
+        syncStorageSet([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL], tutorialsManager.tutorials[0], callback);
     }
 
     getFirstStepIndexOnCurrentPage() {
         var firstStepIndexOnCurrentPage = -1;
-        this.tutorials[0].steps.some((step, index) => {
+        tutorialsManager.tutorials[0].steps.some((step, index) => {
             if (checkIfUrlMatch(step.url, globalCache.currentUrl)) {
                 firstStepIndexOnCurrentPage = index;
                 return true;
@@ -180,30 +380,144 @@ class TutorialsManager {
         return firstStepIndexOnCurrentPage;
     }
 
-    //recording methods
-    saveCurrentTutorialWhenRecording() {
-        //copy elements from ui
-        //save current step to sync
-        this.saveCurrentTutorialToStorage();
+    //------------------------------------------------------------------------------------------
+    //recording functions
+    //------------------------------------------------------------------------------------------
+
+    /**
+     * Create new tutorial object and insert at front of tutorials array.
+     * Then calls onCreatingNewStep() to create the first step.
+     * After all is done, save the whole tutorial array back
+     */
+    onCreatingNewRecording() {
+        tutorialsManager.tutorials.unshift(new TutorialObject());
+        tutorialsManager.onCreatingNewStep(true);
+        tutorialsManager.saveToStorage();
     }
 
-    updateUIWhenRecording() {
-        //elements to ui
+    onCreatingNewStep(firstStep = false) {
+        //create snapshot, save current inputs, push new step object and update step index and UI
+
+        //push to storage
+        const id = uuidv4();
+        const step = new Step();
+        step.id = id;
+        if (firstStep) {
+            uiManager.createStepSnapshot(0, {
+                url: globalCache.currentUrl,
+                name: '',
+                description: '',
+                id: id,
+            })
+
+            tutorialsManager.tutorials[0].steps.push(step);
+            tutorialsManager.syncFromCurrentStepStorageToUIWhenRecording();
+        } else {
+            //save inputs
+            tutorialsManager.syncFromUIToCurrentTutorialWhenRecording(() => {
+                tutorialsManager.tutorials[0].currentStepIndex = tutorialsManager.tutorials[0].steps.push(step) - 1;
+                //update
+                uiManager.updateStepSnapshot(tutorialsManager.tutorials[0].steps[tutorialsManager.tutorials[0].currentStepIndex - 1].id);
+
+                uiManager.createStepSnapshot(tutorialsManager.tutorials[0].currentStepIndex, {
+                    url: globalCache.currentUrl,
+                    name: '',
+                    description: '',
+                    id: id,
+                })
+            });
+            //update UI to new step
+            tutorialsManager.syncFromCurrentStepStorageToUIWhenRecording();
+        }
     }
 
     onCurrentStepChangedWhenRecording(newStepIndex) {
-        // this.saveCurrentTutorialWhenRecording();
-        // this.tutorials[0].currentStepIndex = newStepIndex;
-        // this.updateUIWhenRecording();
+        tutorialsManager.syncFromUIToCurrentTutorialWhenRecording();
+        tutorialsManager.tutorials[0].currentStepIndex = newStepIndex;
+        tutorialsManager.syncFromCurrentStepStorageToUIWhenRecording();
+    }
+
+    /**
+     * Sync from storage to UI
+     */
+    syncFromCurrentStepStorageToUIWhenRecording() {
+        //elements to ui
+        const currentStep = tutorialsManager.getCurrentStep();
+        stepNameInput.attr('value', currentStep.name);
+        stepNameInput.val('');
+        stepDescriptionInput.attr('value', currentStep.description);
+        stepDescriptionInput.val('');
+    }
+
+    /**
+     * Sync UI to storage
+     */
+    syncFromUIToCurrentTutorialWhenRecording(callback = () => { }) {
+        chrome.storage.sync.get([VALUES.STORAGE.CURRENT_SELECTED_ELEMENT], result => {
+            const path = result[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT];
+            if (!isNotNull(path) || isEmpty(path)) {
+                alert("Please complete required fields first");
+                return;
+            }
+
+            const stepIndex = tutorialsManager.tutorials[0].currentStepIndex;
+            const tempStep = tutorialsManager.tutorials[0].steps[stepIndex];
+            const actionType = parseInt(actionTypeSelector.val());
+            var step = new Step(
+                stepIndex,
+                actionType,
+                null,
+                stepNameInput.attr('value'),
+                stepDescriptionInput.attr('value'),
+                globalCache.currentUrl,
+                false,
+                [],
+                tempStep.id
+            );
+            console.log(stepNameInput.attr('value'))
+            console.log(step.name)
+            switch (actionType) {
+                case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK:
+                    step.actionObject = new ClickAction(new ClickGuide(path, null, null, false, null, false, null), []);
+                    break;
+                case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK_REDIRECT:
+                    step.actionObject = new ClickAction(new ClickGuide(path, null, null, true, null, false, null), []);
+                    break;
+                case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_INPUT:
+                    step.actionObject = new InputAction(path, "", [], false, VALUES.INPUT_TYPES.TEXT);
+                    break;
+                case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_REDIRECT:
+                    step.actionObject = new RedirectAction(stepRedirectURLInput);
+                    break;
+                case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SIDE_INSTRUCTION:
+                    step.actionObject = new SideInstructionAction(path);
+                    break;
+                default:
+                    break;
+            }
+
+            tutorialsManager.tutorials[0].steps[stepIndex] = step;
+            //save current step to sync
+            tutorialsManager.saveCurrentTutorialToStorage(callback);
+            console.log('saving current tutorial: ' + JSON.stringify(tutorialsManager.getCurrentTutorial()));
+        });
+
+
     }
 
     uploadToFirestoreOnFinishRecording() {
 
     }
 
+    //------------------------------------------------------------------------------------------
     //following tutorial functions
+    //------------------------------------------------------------------------------------------
     onFollowingStep(stepIndex) {
-        this.tutorials[0].currentStepIndex = stepIndex;
+        if (stepIndex >= tutorialsManager.tutorials[0].steps.length) {
+            onStopTutorialButtonClicked();
+            return;
+        }
+        tutorialsManager.tutorials[0].currentStepIndex = stepIndex;
         const type = globalCache.globalEventsHandler.tutorialStatusCache;
         if (type === VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL) {
             showTutorialStepManual();
@@ -215,18 +529,18 @@ class TutorialsManager {
 
     onFollowingNewTutorial(tutorialID) {
         //move selected tutorial to index 0
-        if (this.tutorials.length > 1) {
+        if (tutorialsManager.tutorials.length > 1) {
             var tutorialToFollowIndex;
-            this.tutorials.forEach((tutorial, index) => {
+            tutorialsManager.tutorials.forEach((tutorial, index) => {
                 if (tutorial.id === tutorialID) {
                     tutorialToFollowIndex = index;
                 }
             });
-            const temp = this.tutorials[0];
-            this.tutorials[0] = this.tutorials[tutorialToFollowIndex];
-            this.tutorials[tutorialToFollowIndex] = temp;
-            this.saveToStorage(() => {
-                this.onFollowingStep(0)
+            const temp = tutorialsManager.tutorials[0];
+            tutorialsManager.tutorials[0] = tutorialsManager.tutorials[tutorialToFollowIndex];
+            tutorialsManager.tutorials[tutorialToFollowIndex] = temp;
+            tutorialsManager.saveToStorage(() => {
+                tutorialsManager.onFollowingStep(0)
             });
         }
     }
@@ -234,9 +548,9 @@ class TutorialsManager {
     showCurrentStep() {
         const currentStep = tutorialsManager.getCurrentStep();
 
-        if (checkIfUrlMatch(currentStep.url, globalCache.currentUrl)) {
+        if (tutorialsManager.checkIfCurrentURLMatchesPageURL()) {
             $('.w-following-tutorial-item').show();
-            this.onFollowingStep(this.getCurrentTutorial().currentStepIndex);
+            tutorialsManager.onFollowingStep(tutorialsManager.getCurrentTutorial().currentStepIndex);
 
         } else {
             uiManager.onOnWrongPage(currentStep);
@@ -244,13 +558,13 @@ class TutorialsManager {
     }
 
     onFollowingNextStep() {
-        this.onFollowingStep(++this.getCurrentTutorial().currentStepIndex);
-        this.saveCurrentTutorialToStorage();
+        tutorialsManager.onFollowingStep(++tutorialsManager.getCurrentTutorial().currentStepIndex);
+        tutorialsManager.saveCurrentTutorialToStorage();
     }
 
     revertCurrentTutorialToInitialState() {
-        this.tutorials[0].currentStepIndex = 0;
-        this.saveCurrentTutorialToStorage();
+        tutorialsManager.tutorials[0].currentStepIndex = 0;
+        tutorialsManager.saveCurrentTutorialToStorage();
     }
 
 }
@@ -271,11 +585,20 @@ class Step {
     /**
      * 
      * @param {number} index 
-     * @param {string} actionType 
+     * @param {number} actionType 
      * @param {RedirectAction | ClickAction | InputAction | SelectAction | SideInstructionAction | NullAction} actionObject 
      * @param {[string]} possibleReasonsForElementNotFound
      */
-    constructor(index, actionType, actionObject, name, description, url, automationInterrupt = false, possibleReasonsForElementNotFound = [], id = null) {
+    constructor(
+        index = 0,
+        actionType = VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL,
+        actionObject = {},
+        name = '',
+        description = '',
+        url = globalCache.currentUrl,
+        automationInterrupt = false,
+        possibleReasonsForElementNotFound = [],
+        id = null) {
         this.index = index;
         this.actionType = actionType;
         this.actionObject = actionObject;
@@ -506,6 +829,7 @@ class GlobalCache {
         const currentUrl = $(location).attr('href');
         this.currentUrl = currentUrl;
         this.currentURLObj = new URL(currentUrl);
+        this.isUsingAdvancedRecordingPanel = false;
     }
 
 

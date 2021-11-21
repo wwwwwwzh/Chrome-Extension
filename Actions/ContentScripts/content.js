@@ -49,42 +49,39 @@ async function checkStatus() {
         const savedStatus = result[VALUES.TUTORIAL_STATUS.STATUS];
         const cacheStatus = globalCache.globalEventsHandler.tutorialStatusCache;
         console.log('status cache: ' + cacheStatus + '| saved status: ' + savedStatus)
-        if (cacheStatus !== savedStatus) {
-            //status not in sync. either changed from another page or a page reload happened
-            if (cacheStatus === VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL) {
-                //page reload
-            }
-        } else {
-            //no change. 1) back to page, do nothing. 2) both are before init, fetch tutorials
-            if (cacheStatus !== VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL) {
-                return;
+        if ((cacheStatus === savedStatus) && (savedStatus !== VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL)) return;
+        if (savedStatus === VALUES.TUTORIAL_STATUS.STOPPED_FROM_OTHER_PAGE) {
+            onStopTutorialButtonClicked();
+            return;
+        }
+        if (cacheStatus === VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL) {
+            globalCache.globalEventsHandler.setTutorialStatusCache(savedStatus);
+            switch (savedStatus) {
+                case VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL:
+                    fetchTutorialsFromCloud();
+                    globalCache.globalEventsHandler.setTutorialStatusCache(VALUES.TUTORIAL_STATUS.LOADED);
+                    break;
+                case VALUES.TUTORIAL_STATUS.LOADED:
+                    fetchTutorialsFromCloud();
+                    break;
+                case VALUES.TUTORIAL_STATUS.STOPPED_FROM_OTHER_PAGE:
+                    onStopTutorialButtonClicked();
+                    break;
+                case VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
+                    mainPopUpContainer.show();
+                    tutorialsManager.loadCurrentTutorialFromStorage(tutorialsManager.showCurrentStep);
+                    break;
+                case VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL:
+                    mainPopUpContainer.show();
+                    tutorialsManager.loadCurrentTutorialFromStorage(tutorialsManager.showCurrentStep);
+                    break;
+                case VALUES.TUTORIAL_STATUS.IS_RECORDING:
+                    tutorialsManager.loadFromStorage(tutorialsManager.updateUIWhenRecording);
+                    break;
+                default:
+                    break;
             }
         }
-        globalCache.globalEventsHandler.setTutorialStatusCache(savedStatus);
-        switch (cacheStatus) {
-            case VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL:
-                fetchTutorialsFromCloud();
-                globalCache.globalEventsHandler.setTutorialStatusCache(VALUES.TUTORIAL_STATUS.LOADED);
-                break;
-            case VALUES.TUTORIAL_STATUS.STOPPED_FROM_OTHER_PAGE:
-                onStopTutorialButtonClicked();
-                break;
-            case VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
-                mainPopUpContainer.show();
-                tutorialsManager.loadCurrentTutorialFromStorage(tutorialsManager.showCurrentStep);
-                break;
-            case VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL:
-                mainPopUpContainer.show();
-                tutorialsManager.loadCurrentTutorialFromStorage(tutorialsManager.showCurrentStep);
-                break;
-            case VALUES.TUTORIAL_STATUS.IS_RECORDING:
-                tutorialsManager.loadFromStorage(tutorialsManager.updateUIWhenRecording);
-                break;
-            default:
-
-                break;
-        }
-        console.log('checkStatus() -> Status: ' + savedStatus);
     })
 }
 
@@ -166,13 +163,16 @@ function removeGlobalEventListenersWhenFollowing() {
 
 function onClickHelper(event) {
     preventDefaultHelper(event);
-    if (event.target !== globalCache.currentElement && event.target !== stopOptionsStopButton[0]) {
+    if (event.target !== globalCache.currentElement &&
+        event.target !== stopOptionsStopButton[0] &&
+        !$.contains(recordingContainer[0], event.target)) {
         processEventHelper(event.target);
     }
 }
 
 function processEventHelper(target) {
     globalCache.domPath = getShortDomPathStack(target);
+    console.log(getShortDomPathStack(target))
     if ($(jqueryElementStringFromDomPath(globalCache.domPath)).length > 1) {
         globalCache.domPath = getCompleteDomPathStack(target);
     }
@@ -182,7 +182,7 @@ function processEventHelper(target) {
 }
 
 function preventDefaultHelper(event) {
-    if (globalCache.globalEventsHandler.isLisentingRecording) {
+    if (globalCache.globalEventsHandler.isLisentingRecording && !$.contains(recordingContainer[0], event.target)) {
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
@@ -225,6 +225,7 @@ function simulateClick(element, eventType = 'click') {
     } else {
         console.log('simulateClick: element not found')
     }
+    console.trace();
 }
 
 
@@ -234,20 +235,53 @@ function simulateClick(element, eventType = 'click') {
 //MARK: highlight functions
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
-function highlightAndScollTo(path, callback = () => { }) {
-    const jQElement = $(jqueryElementStringFromDomPath(path));
-    const htmlElement = jQElement[0];
+function highlightAndScollTo(path, isRemoveLastHighlight = true, callback = () => { }) {
+    isRemoveLastHighlight && removeLastHighlight();
+    const jQElementToHighlight = highlightElementNullCheck(path);
 
-    //TODO: bug
-    if (isNotNull(jQElement.attr("class")) && arrayContains(jQElement.attr("class").split(/\s+/), ['w-highlight-box', 'w-highlight-box-specifier'])) {
-        return;
+    function highlightElementNullCheck(path) {
+        //TODO: regex path may highlight multiple elements, show all or what
+        const jQElementToHighlight = $(jqueryElementStringFromDomPath(path));
+        console.log('jQElementToHighlight:' + JSON.stringify(jQElementToHighlight))
+        if (path !== null) {
+            if (!(isNotNull(jQElementToHighlight[0]) && jQElementToHighlight.css('display') !== 'none')) {
+                //element not found
+                highlightInstructionWindow.hide();
+
+                if (globalCache.reHighlightAttempt > 5) {
+                    //stop refinding element
+                    console.error("ELEMENT NOT FOUND");
+                    globalCache.reHighlightTimer = null;
+                    elementNotFoundHandler();
+                    return null;
+                }
+                globalCache.reHighlightAttempt++;
+                globalCache.reHighlightTimer = setTimeout(() => {
+                    highlightAndScollTo(path, callback);
+                }, 200);
+                return null;
+            }
+            globalCache.reHighlightAttempt = 0;
+            clearReHighlightTimer();
+            return jQElementToHighlight;
+        } else {
+            return null
+        }
     }
 
-    if (highlightAndRemoveLastHighlight(jQElement, path, callback)) {
-        //Scroll
-        globalCache.currentJQScrollingParent = $(getScrollParent(htmlElement, false));
+    if (!isNotNull(jQElementToHighlight)) return;
+    if (isNotNull(jQElementToHighlight.attr("class")) && arrayContains(jQElementToHighlight.attr("class").split(/\s+/), ['w-highlight-box', 'w-highlight-box-specifier'])) return;
+
+    highlight(jQElementToHighlight);
+    updateHighlightInstructionWindow(jQElementToHighlight);
+
+    //Scroll
+    scrollToElement()
+
+    function scrollToElement() {
+        globalCache.currentJQScrollingParent = $(getScrollParent(jQElementToHighlight[0], false));
         var offset = 0;
-        const eleOffset = jQElement.offset();
+        const eleOffset = jQElementToHighlight.offset();
         const scrollParentOffset = globalCache.currentJQScrollingParent.offset();
         if (isNotNull(eleOffset) && isNotNull(scrollParentOffset)) {
             offset = parseInt(eleOffset.top) - parseInt(scrollParentOffset.top) - window.innerHeight / 2
@@ -258,6 +292,7 @@ function highlightAndScollTo(path, callback = () => { }) {
             callback();
         })
     }
+
 }
 
 function clearReHighlightTimer() {
@@ -275,74 +310,41 @@ function elementNotFoundHandler() {
     }
 }
 
-function highlightAndRemoveLastHighlight(jQElement, path = null, callback = null) {
-    //if path is null, calling from recording highlight
-    if (path !== null) {
-        //Repeat if element not found, might not be handled here
-        if (!isNotNull(jQElement[0])) {
-            if (globalCache.reHighlightAttempt > 5) {
-                //stop refinding element
-                console.error("ELEMENT NOT FOUND");
-                globalCache.reHighlightTimer = null;
-                //onStopTutorialButtonClicked();
-                highlightInstructionWindow.hide();
-                elementNotFoundHandler();
-                return false;
-            }
-            globalCache.reHighlightAttempt++;
-            setTimeout(() => {
-                globalCache.reHighlightTimer = highlightAndScollTo(path, callback);
-            }, 300);
-            return false;
-        }
-        globalCache.reHighlightAttempt = 0;
-        clearReHighlightTimer();
-        console.trace();
-        updateHighlightInstructionWindow(jQElement);
-        highlightAndRemoveLastHighlightHelper();
-        return true;
-    } else {
-        highlightAndRemoveLastHighlightHelper();
-        return false
-    }
+function highlight(jQElement) {
+    jQElement.addClass('w-highlight-box w-highlight-box-specifier');
+    alertElement(jQElement);
 
-    function highlightAndRemoveLastHighlightHelper() {
-        removeLastHighlight();
-        jQElement.addClass('w-highlight-box w-highlight-box-specifier');
-        alertElement(jQElement);
+    function alertElement(element) {
+        var perAnimationBorderLoopCount = 0;
 
-        function alertElement(element) {
-            var perAnimationBorderLoopCount = 0;
+        borderOut();
 
+        globalCache.alertElementInterval = setInterval(() => {
+            element.stop();
+            element.removeAttr('style');
             borderOut();
+        }, 3500);
 
-            globalCache.alertElementInterval = setInterval(() => {
-                element.stop();
-                element.removeAttr('style');
-                borderOut();
-            }, 3500);
+        function borderOut() {
+            element.animate({
+                boxShadow: '0px 0px 3px 6px rgba(255, 60, 43, 1)',
+            }, 300).promise().then(() => {
+                borderIn();
+            });
+        }
 
-            function borderOut() {
-                element.animate({
-                    boxShadow: '0px 0px 3px 6px rgba(255, 60, 43, 1)',
-                }, 300).promise().then(() => {
-                    borderIn();
-                });
-            }
-
-            function borderIn() {
-                element.animate({
-                    boxShadow: '0px 0px 3px 6px rgba(255, 200, 42, 1)',
-                }, 300).promise().then(() => {
-                    if (perAnimationBorderLoopCount++ < 2) {
-                        borderOut();
-                    } else {
-                        element.stop();
-                        element.removeAttr('style');
-                        perAnimationBorderLoopCount = 0;
-                    }
-                });
-            }
+        function borderIn() {
+            element.animate({
+                boxShadow: '0px 0px 3px 6px rgba(255, 200, 42, 1)',
+            }, 300).promise().then(() => {
+                if (perAnimationBorderLoopCount++ < 2) {
+                    borderOut();
+                } else {
+                    element.stop();
+                    element.removeAttr('style');
+                    perAnimationBorderLoopCount = 0;
+                }
+            });
         }
     }
 }
@@ -359,6 +361,11 @@ function removeLastHighlight() {
     highlightedElements.stop(true);
     highlightedElements.removeAttr('style');
     highlightedElements.removeClass('w-highlight-box w-highlight-box-specifier');
+}
+
+function highlightAndRemoveLastHighlight(jQElement) {
+    removeLastHighlight()
+    highlight(jQElement);
 }
 
 
@@ -415,6 +422,7 @@ chrome.runtime.onMessage.addListener(
         }
         if (isNotNull(request.newTutorial) && request.newTutorial) {
             recordingContainer.show();
+            tutorialsManager.onCreatingNewRecording();
         }
     }
 );

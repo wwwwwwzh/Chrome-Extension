@@ -22,6 +22,38 @@ async function onClickWhenRecording() {
     } else {
         highlightAndRemoveLastHighlight(jQElement);
     }
+
+    //update recording panel
+    selectedElementContainer.empty();
+
+    globalCache.domPath.forEach((e, i) => {
+        selectedElementContainer.append(`
+        <div class="selected-item-path-container w-horizontal-scroll-item-container">
+            <input class="selected-item-path-input" type="text" id="selected-item-path-${i}" value="${e}">
+            <button class="selected-item-path-delete" id="selected-item-path-delete-${i}">x</button>
+        </div>
+        <div class="w-horizontal-scroll-item-next-indicator-container w-horizontal-scroll-item-container">
+            <div class="w-horizontal-scroll-item-next-indicator">
+            </div>
+        </div>
+        `);
+    })
+
+    selectedTableContainer.empty();
+    isNotNull(nearestTable) && nearestTablePath.forEach((e, i) => {
+        selectedTableContainer.append(`
+        <div class="selected-item-path-container w-horizontal-scroll-item-container">
+            <input class="selected-item-path-input" type="text" id="selected-item-table-path-${i}" value="${e}">
+            <button class="selected-item-path-delete" id="selected-item-table-path-delete-${i}">x</button>
+        </div>
+        <div class="w-horizontal-scroll-item-next-indicator-container w-horizontal-scroll-item-container">
+            <div class="w-horizontal-scroll-item-next-indicator">
+            </div>
+        </div>
+        `);
+    })
+
+
 }
 
 //------------------------------------------------------------------------------------------------------------
@@ -137,35 +169,33 @@ function callFunctionOnActionType(actionType, clickFunc, carFunc, inputFunc, red
 
 function switchMenu(selection) {
     callFunctionOnActionType(selection, showClickMenu, showClickAndRedirectMenu, showInputMenu, showRedirectMenu, showSelectMenu, showSideInstructionMenu, showNullMenu);
-    updateCurrentStep(() => {
-        if (currentStepObj.actionType !== selection) {
-            currentStepObj.actionType = selection;
-            callFunctionOnActionType(
-                selection,
-                () => {
-                    currentStepObj.actionObject = new ClickAction(new ClickGuide([], null, null, false, null, false, null), []);
-                }, () => {
-                    currentStepObj.actionObject = new ClickAction(new ClickGuide([], null, null, true, null, false, null), []);
-                }, () => {
-                    currentStepObj.actionObject = new InputAction([], "", [], false, VALUES.INPUT_TYPES.TEXT);
-                }, () => {
-                    currentStepObj.actionObject = new RedirectAction(null);
-                }, () => {
-                    currentStepObj.actionObject = new SelectAction([], null, false);
-                }, () => {
-                    currentStepObj.actionObject = new SideInstructionAction([]);
-                }, () => {
-                    currentStepObj.actionObject = new NullAction();
-                });
+    // updateCurrentStep(() => {
+    //     if (currentStepObj.actionType !== selection) {
+    //         currentStepObj.actionType = selection;
+    //         callFunctionOnActionType(
+    //             selection,
+    //             () => {
+    //                 currentStepObj.actionObject = new ClickAction(new ClickGuide([], null, null, false, null, false, null), []);
+    //             }, () => {
+    //                 currentStepObj.actionObject = new ClickAction(new ClickGuide([], null, null, true, null, false, null), []);
+    //             }, () => {
+    //                 currentStepObj.actionObject = new InputAction([], "", [], false, VALUES.INPUT_TYPES.TEXT);
+    //             }, () => {
+    //                 currentStepObj.actionObject = new RedirectAction(null);
+    //             }, () => {
+    //                 currentStepObj.actionObject = new SelectAction([], null, false);
+    //             }, () => {
+    //                 currentStepObj.actionObject = new SideInstructionAction([]);
+    //             }, () => {
+    //                 currentStepObj.actionObject = new NullAction();
+    //             });
 
-        }
-        loadMenuItems(selection);
-    });
+    //     }
+    //     loadMenuItems(selection);
+    // });
 }
 
 function loadMenuItems(selection) {
-    stepNameInput.val(currentStepObj.name);
-    stepDescriptionInput.val(currentStepObj.description);
     callFunctionOnActionType(
         selection,
         () => {
@@ -191,51 +221,48 @@ function loadMenuItems(selection) {
 //MARK: Step action menu UI manipulation ------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
 function clearCurrentMenu() {
-    stepDetailsContainer.children().hide();
-    $('.common-action-container').show();
-    selectedElementIndicatorContainer.show();
+    $('.redirect-action-container, .click-action-container, .select-action-container').hide();
 }
 
 function showNullMenu() {
-    stepDetailsContainer.children().hide();
-    $('.common-action-container').show();
+    clearCurrentMenu()
 }
 
 function showClickMenu() {
     clearCurrentMenu();
-    $('.customizable-action-container').show();
     $('.click-action-container').show();
-    addAlternativeActionButton.html('Add Alternative Click');
+    // addAlternativeActionButton.html('Add Alternative Click');
 
-    chrome.storage.sync.get(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, result => {
-        const table = result[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE];
-        if (!isNotNull(table)) {
-        } else {
-            useAnyElementInTableInput.val(table)
-        }
-    })
+    // chrome.storage.sync.get(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, result => {
+    //     const table = result[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE];
+    //     if (!isNotNull(table)) {
+    //     } else {
+    //         useAnyElementInTableInput.val(table)
+    //     }
+    // })
 }
 
 function showInputMenu() {
     clearCurrentMenu();
     $('.input-action-container').show();
-    $('.customizable-action-container').show();
-    addAlternativeActionButton.html('Add Alternative Input');
+    //addAlternativeActionButton.html('Add Alternative Input');
 }
 
 function showClickAndRedirectMenu() {
     clearCurrentMenu();
-    urlInputContainer.show();
+    //urlInputContainer.show();
 }
 
 function showRedirectMenu() {
     clearCurrentMenu();
-    selectedElementIndicatorContainer.hide();
-    urlInputContainer.show();
+    $('.redirect-action-container').show();
+    // selectedElementIndicatorContainer.hide();
+    // urlInputContainer.show();
 }
 
 function showSelectMenu() {
     clearCurrentMenu();
+    $('.select-action-container').show();
 }
 
 function showSideInstructionMenu() {

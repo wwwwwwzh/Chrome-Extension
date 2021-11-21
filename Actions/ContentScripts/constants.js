@@ -25,8 +25,8 @@ const VALUES = {
         STEP_ACTION_TYPE: "STEP_ACTION_TYPE",
         //STEP_ACTION_INPUT_VALUE: "STEP_ACTION_INPUT_VALUE",
         // CURRENT_STEP_OBJ: "CURRENT_STEP_OBJ",
-        // CURRENT_SELECTED_ELEMENT: "CURRENT_SELECTED_ELEMENT",
-        // CURRENT_SELECTED_ELEMENT_PARENT_TABLE: "CURRENT_SELECTED_ELEMENT_PARENT_TABLE",
+        CURRENT_SELECTED_ELEMENT: "CURRENT_SELECTED_ELEMENT",
+        CURRENT_SELECTED_ELEMENT_PARENT_TABLE: "CURRENT_SELECTED_ELEMENT_PARENT_TABLE",
         REVISIT_PAGE_COUNT: "REVISIT_PAGE_COUNT",
         MAX_REVISIT_PAGE_COUNT: 3,
 
@@ -168,14 +168,47 @@ function jqueryElementStringFromDomPath(pathStack) {
     return jqueryString
 }
 
-function isSelectedOnRightElement(shouldSelect, isSelecting) {
-    var isSelectedOnRightElement = true;
-    shouldSelect.each((i, element) => {
-        if (!($.contains(isSelecting, element) || element === isSelecting)) {
-            isSelectedOnRightElement = false;
+
+/**
+ * 
+ * @param {*} shouldSelect jQuery element
+ * @param {*} isSelecting jQuery element. Will automaticaclly select the first
+ * @returns 
+ */
+function isSelectedOnRightElement(isSelectingPath, shouldSelectPath) {
+    var isSelecting = isSelectingPath; //jQuery single element
+    var shouldSelect = shouldSelectPath; //jQuery object from selector
+    var type = SELECTOR_TYPES.EXACT;
+    for (let i = 0; i < shouldSelectPath.length; i++) {
+        if (shouldSelectPath[i].includes('=')) {
+            // regex selector
+            isSelecting = $(jqueryElementStringFromDomPath(isSelectingPath)).get(0);
+            shouldSelect = $(jqueryElementStringFromDomPath(shouldSelectPath));
+            type = SELECTOR_TYPES.REGEX;
         }
-    })
+    }
+    var isSelectedOnRightElement = false;
+    switch (type) {
+        case SELECTOR_TYPES.EXACT:
+            isSelectedOnRightElement = isSubArray(isSelecting, shouldSelect);
+            break;
+        case SELECTOR_TYPES.REGEX:
+            shouldSelect.each((index, element) => {
+                if (element.isSameNode(isSelecting)) {
+                    isSelectedOnRightElement = true;
+                }
+            })
+            break;
+        default:
+            break;
+    }
+
     return isSelectedOnRightElement;
+}
+
+const SELECTOR_TYPES = {
+    EXACT: '0',
+    REGEX: '1',
 }
 
 /**
@@ -377,7 +410,8 @@ function movePopupIfOverlap() {
         mainPopupRect.top > instructionWindow.bottom)
 
     if (overlap) {
-        simulateClick(mainCloseButton[0]);
+        //TODO: 
+        //mainPopUpContainer.css({})
     }
 }
 
@@ -452,4 +486,10 @@ function arrayRemoveAll(arr, value) {
         }
     }
     return arr;
+}
+
+function uuidv4() {
+    return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+    );
 }
