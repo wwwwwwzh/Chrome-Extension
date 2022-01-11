@@ -322,4 +322,8 @@ class RecordTutorialViewController {
         //     });
         // })
     }
+
+    dismiss() {
+
+    }
 }

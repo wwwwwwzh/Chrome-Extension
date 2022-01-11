@@ -1,3 +1,7 @@
+function c(...data) {
+    console.log(...data)
+}
+
 const firebaseConfig = {
     apiKey: "AIzaSyD2iKakYgBqJ2T6CVQpzHZIjzJW8k0JQTo",
     authDomain: "test-e7bb0.firebaseapp.com",

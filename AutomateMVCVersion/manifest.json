@@ -1,21 +1,13 @@
 {
-    "name": "Tester For Vega",
+    "name": "Automate",
     "version": "1.0",
     "manifest_version": 3,
     "action": {
         "default_title": "Click to show an alert",
         "default_popup": "popup.html",
-        "default_icon": {
-            "16": "assets/imgs/robot-16.png",
-            "64": "assets/imgs/robot-64.png",
-            "256": "assets/imgs/robot-256.png"
-        }
+        "default_icon": {}
     },
-    "icons": {
-        "16": "assets/imgs/robot-16.png",
-        "64": "assets/imgs/robot-64.png",
-        "256": "assets/imgs/robot-256.png"
-    },
+    "icons": {},
     "options_page": "options.html",
     "permissions": [
         "storage",
@@ -37,7 +29,7 @@
                 "./packages/firebase.js",
                 "./ContentScripts/constants.js",
                 "./ContentScripts/classes.js",
-                "./ContentScripts/contentScriptUI.js",
+                "./ContentScripts/tutorialsModel.js",
                 "./ContentScripts/recordTutorialViewController.js",
                 "./ContentScripts/followTutorialViewController.js",
                 "./ContentScripts/extensionController.js",

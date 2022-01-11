@@ -1,6 +1,10 @@
 class TutorialsModel {
     #tutorials
 
+    #tutorialsQuerySnapshot
+
+    tutorialsModelFollowingTutorialDelegate
+
     getCurrentTutorial() {
         return this.#tutorials[0];
     }
@@ -15,16 +19,34 @@ class TutorialsModel {
         return isNotNull(currentURL) && checkIfUrlMatch(currentURL, globalCache.currentUrl)
     }
 
-    async initiateFromFirestore(tutorialsQuerySnapshot, callback = () => { }) {
+    #getMatchedTutorialsQuery() {
+        const domainName = "https://" + globalCache.currentURLObj.hostname + "/";
+        const url_matches = [globalCache.currentUrl, domainName];
+        return query(collection(ExtensionController.SHARED_FIRESTORE_REF,
+            VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL),
+            where(
+                VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL_ALL_URLS,
+                VALUES.FIRESTORE_QUERY_TYPES.ARRAY_CONTAINS_ANY,
+                url_matches
+            )
+        );
+    }
+
+    async checkIfAnyTutorialExistsOnPage() {
+        this.#tutorialsQuerySnapshot = await getDocs(this.#getMatchedTutorialsQuery());
+        return !this.#tutorialsQuerySnapshot.empty
+    }
+
+    async initializeFromFirestore(callback = () => { }) {
         this.#tutorials = [];
-        await Promise.all(tutorialsQuerySnapshot.docs.map(async (tutorial) => {
+        await Promise.all(this.#tutorialsQuerySnapshot.docs.map(async (tutorial) => {
             const tutorialID = tutorial.id;
             const tutorialData = tutorial.data();
 
-            uiManager.loadSingleTutorialButton(tutorialData, tutorialID);
+            this.tutorialsModelFollowingTutorialDelegate.makeButtonFromTutorialData(tutorialData, tutorialID);
 
             //get all information about the tutorial from firebase
-            const stepsQuery = query(collection(ExtensionController.FIRESTORE_REF,
+            const stepsQuery = query(collection(ExtensionController.SHARED_FIRESTORE_REF,
                 VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL,
                 tutorialID,
                 VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL_STEPS
@@ -53,7 +75,7 @@ class TutorialsModel {
         }));
         this.saveToStorage(callback);
         //TODO: Change to better place for speed optimization
-        uiManager.createSnapshotsForAllTutorials();
+        //uiManager.createSnapshotsForAllTutorials();
     }
 
     loadFromStorage(callback = () => { }) {

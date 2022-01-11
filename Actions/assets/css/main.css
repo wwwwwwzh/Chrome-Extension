@@ -70,12 +70,26 @@
     border-radius: 6px;
     z-index: 2147483647;
     font-family: sans-serif;
-
 }
 
 .w-highlight-box.w-highlight-box-specifier {
     box-shadow: 0px 0px 3px 6px rgba(255, 203, 42, 1);
     border: 2px solid rgba(246, 131, 11, 0.5);
+}
+
+.w-suggestion-float {
+    all: initial;
+    top: 12px;
+    left: 0px;
+    display: block;
+    position: fixed;
+    width: var(--popup-width);
+    height: 40px;
+    padding: var(--padding-normal);
+    background-color: var(--color-background);
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+    z-index: 2147483647;
 }
 
 .w-main-popup {

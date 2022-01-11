@@ -1,17 +1,17 @@
 class ExtensionController {
-    static #app = initializeApp(firebaseConfig);
-    // initializeFirestore(app, { useFetchStreams: false });
-    static FIRESTORE_REF = getFirestore(this.#app);
-    static TUTORIALS = new TutorialsModel();
+    //Static
+    static SHARED_FIRESTORE_REF = getFirestore(initializeApp(firebaseConfig))
+    static SHARED_TUTORIALS_MODEL = new TutorialsModel()
+    static SHARED_USER_EVENT_LISTNER_HANDLER = new UserEventListnerHandler()
 
+    //Views
+    #floatingSuggestionPopup
+
+    //Controllers
     followTutorialViewController = null
     recordTutorialViewController = null
 
     constructor() {
-
-        globalCache = new GlobalCache();
-        uiManager = new UIManager();
-        tutorialsManager = new TutorialsManager();
         //this.#setUpIframeListner();
         this.#checkStatus();
     }
@@ -43,91 +43,63 @@ class ExtensionController {
     #checkStatus() {
         chrome.storage.sync.get(VALUES.TUTORIAL_STATUS.STATUS, (result) => {
             const savedStatus = result[VALUES.TUTORIAL_STATUS.STATUS];
-            const cacheStatus = globalCache.globalEventsHandler.tutorialStatusCache;
+            const cacheStatus = ExtensionController.SHARED_USER_EVENT_LISTNER_HANDLER.tutorialStatusCache;
             console.log('status cache: ' + cacheStatus + '| saved status: ' + savedStatus)
             if ((cacheStatus === savedStatus) && (savedStatus !== VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL)) return;
-            if (savedStatus === VALUES.TUTORIAL_STATUS.STOPPED_FROM_OTHER_PAGE) {
-                onStopTutorialButtonClicked();
-                return;
-            }
             if (cacheStatus === VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL) {
-                globalCache.globalEventsHandler.setTutorialStatusCache(savedStatus);
+                ExtensionController.SHARED_USER_EVENT_LISTNER_HANDLER.setTutorialStatusCache(savedStatus);
                 switch (savedStatus) {
-                    case VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL:
-                        fetchTutorialsFromCloud();
-                        globalCache.globalEventsHandler.setTutorialStatusCache(VALUES.TUTORIAL_STATUS.LOADED);
-                        break;
-                    case VALUES.TUTORIAL_STATUS.LOADED:
-                        fetchTutorialsFromCloud();
-                        break;
                     case VALUES.TUTORIAL_STATUS.STOPPED_FROM_OTHER_PAGE:
-                        onStopTutorialButtonClicked();
-                        break;
-                    case VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
-                        mainPopUpContainer.show();
-                        tutorialsManager.loadCurrentTutorialFromStorage(tutorialsManager.showCurrentStep);
-                        break;
-                    case VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL:
-                        mainPopUpContainer.show();
-                        tutorialsManager.loadCurrentTutorialFromStorage(tutorialsManager.showCurrentStep);
-                        break;
+                        this.#hideFollowingPanel()
+                        break
                     case VALUES.TUTORIAL_STATUS.IS_RECORDING:
-                        tutorialsManager.loadFromStorage(tutorialsManager.updateUIWhenRecording);
+                        this.#showRecordingPanel()
+                        break;
+                    case VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL, VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL:
+                        this.#showFollowingPanel(savedStatus)
                         break;
                     default:
+                        this.#suggestTutorialIfExists(savedStatus)
                         break;
                 }
             }
         })
     }
 
-    //------------------------------------------------------------------------------------------------------------
-    //------------------------------------------------------------------------------------------------------------
-    //MARK: Fetch tutorial on the current page
-    //------------------------------------------------------------------------------------------------------------
-    //------------------------------------------------------------------------------------------------------------
-    fetchTutorialsFromStorage() {
-        uiManager.onFetchingTutorialsFromCloud();
-        tutorialsManager.loadFromStorage(() => {
-            tutorialsManager.tutorials.forEach((tutorial) => {
-                const tutorialID = tutorial.id;
-                uiManager.loadSingleTutorialButton(tutorial, tutorialID);
-            });
-        });
+    async #suggestTutorialIfExists(status) {
+        if (await ExtensionController.SHARED_TUTORIALS_MODEL.checkIfAnyTutorialExistsOnPage()) {
+            this.#showSuggestionPopup(status)
+        }
     }
 
-    fetchTutorialsFromCloud() {
-        uiManager.onFetchingTutorialsFromCloud();
+    #showSuggestionPopup(status) {
+        $('body').append(`
+            <div id="w-suggestion-popup"></div>
+        `)
+        this.#floatingSuggestionPopup = $('#w-suggestion-popup')
+        this.#floatingSuggestionPopup.on('click', () => {
+            this.#showFollowingPanel(status)
+            this.#floatingSuggestionPopup.remove()
+        })
+    }
 
-        const tutorialsQuerySnapshot = await getDocs(getMatchedTutorialsQuery());
-
-        if (!tutorialsQuerySnapshot.empty) {
-            console.log('fetchTutorialsFromCloud() -> query not empty')
-            mainPopUpContainer.show();
-            tutorialsManager.initiateFtomFirestore(tutorialsQuerySnapshot);
-        } else {
-            mainPopUpContainer.hide();
-        }
-
-        function getMatchedTutorialsQuery() {
-            const domainName = "https://" + globalCache.currentURLObj.hostname + "/";
-            const url_matches = [globalCache.currentUrl, domainName];
-            return query(collection(ExtensionController.FIRESTORE_REF,
-                VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL),
-                where(
-                    VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL_ALL_URLS,
-                    VALUES.FIRESTORE_QUERY_TYPES.ARRAY_CONTAINS_ANY,
-                    url_matches
-                )
-            );
-        }
-    };
-
-    showRecordingPanel() {
+    #showRecordingPanel() {
+        this.#hideFollowingPanel()
         this.recordTutorialViewController = new RecordTutorialViewController()
     }
 
-    showMainPopup() {
-        this.followTutorialViewController = new FollowTutorialViewController()
+    #showFollowingPanel(status) {
+        this.#hideRecordingPanel()
+        this.followTutorialViewController = new FollowTutorialViewController(status, this)
+    }
+
+    #hideRecordingPanel() {
+        this.recordTutorialViewController && this.recordTutorialViewController.dismiss()
+        this.recordTutorialViewController = null
+    }
+
+    #hideFollowingPanel() {
+        this.followTutorialViewController && this.followTutorialViewController.dismiss()
+        this.followTutorialViewController = null
     }
 }

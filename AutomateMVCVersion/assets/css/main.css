@@ -78,6 +78,21 @@
     border: 2px solid rgba(246, 131, 11, 0.5);
 }
 
+#w-suggestion-popup {
+    all: initial;
+    top: 12px;
+    left: 0px;
+    display: block;
+    position: fixed;
+    width: var(--popup-width);
+    height: 40px;
+    padding: var(--padding-normal);
+    background-color: var(--color-background);
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+    z-index: 2147483647;
+}
+
 .w-main-popup {
     all: initial;
     top: 12px;
