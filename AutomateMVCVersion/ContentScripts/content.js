@@ -8,7 +8,6 @@ $(() => {
 
 
 
-
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
 //MARK: message handler
@@ -31,7 +30,6 @@ chrome.runtime.onMessage.addListener(
         if (isNotNull(request.newTutorial) && request.newTutorial) {
             //recordingContainer.show();
             extension.showRecordingPanel();
-            tutorialsManager.onCreatingNewRecording();
         }
     }
 );

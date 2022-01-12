@@ -1,4 +1,5 @@
 class FollowTutorialViewController {
+    //UI
     mainPopUpContainer;
     mainDraggableArea;
     automationSpeedSlider;
@@ -14,11 +15,14 @@ class FollowTutorialViewController {
     popUpHeader;
     highlightInstructionWindow;
 
-    constructor(status, followTutorialViewControllerDelegate) {
-        this.followTutorialViewControllerDelegate = followTutorialViewControllerDelegate
-        ExtensionController.SHARED_TUTORIALS_MODEL.tutorialsModelFollowingTutorialDelegate = this
-        this.#initializeUI()
+    //Delegates
+    followTutorialViewControllerDelegate
 
+    constructor(status) {
+        TutorialsModel.tutorialsModelFollowingTutorialDelegate = this
+        UserEventListnerHandler.userEventListnerHandlerDelegate = this
+        Highlighter.highlighterViewControllerSpecificUIDelegate = this
+        this.#initializeUI()
         this.#checkStatus(status)
     }
 
@@ -57,7 +61,7 @@ class FollowTutorialViewController {
 
         this.automationSpeedSlider = $('#w-automation-speed-slider');
         this.automationSpeedSlider.on('change', () => {
-            //onAutomationSpeedSliderChanged();
+            this.#onAutomationSpeedSliderChanged();
         })
 
         this.popUpHeader = $('#w-popup-header');
@@ -95,7 +99,7 @@ class FollowTutorialViewController {
         this.popUpCancelButton = $('#w-popup-cancel-button');
         this.popUpCancelButton.on('click', () => {
             $('.w-follow-tutorial-options-item').hide();
-            //fetchTutorialsFromStorage();
+            this.setOrUpdateChooseTutorialsPopupUIFromModel()
         })
 
         //guides during tutorial
@@ -103,12 +107,12 @@ class FollowTutorialViewController {
         this.popUpNextStepButton.hide();
         this.popUpNextStepButton.on('click', event => {
             //auto go to next step
-            //onPopUpNextStepButtonClicked();
+            this.#onPopUpNextStepButtonClicked()
         })
 
         this.stopOptionsStopButton = $('#w-stop-options-stop-button');
         this.stopOptionsStopButton.on('click', () => {
-            //onStopTutorialButtonClicked();
+            this.stopCurrentTutorial()
         });
 
         this.wrongPageRedirectButton = $('#w-wrong-page-redirect-button');
@@ -126,28 +130,29 @@ class FollowTutorialViewController {
     }
 
     #checkStatus(status) {
+        UserEventListnerHandler.setTutorialStatusCache(status)
         switch (status) {
             case VALUES.TUTORIAL_STATUS.STOPPED_FROM_OTHER_PAGE:
                 this.stopCurrentTutorial()
                 break
             case VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL:
-
+                TutorialsModel.loadActiveTutorialFromStorage(this.#showCurrentStep.bind(this))
                 break;
             case VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
-
+                TutorialsModel.loadActiveTutorialFromStorage(this.#showCurrentStep.bind(this))
                 break;
             case VALUES.TUTORIAL_STATUS.LOADED:
 
                 break;
             case VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL:
-                ExtensionController.SHARED_TUTORIALS_MODEL.initializeFromFirestore()
+                TutorialsModel.initializeFromFirestore(true)
                 break;
             default:
                 break;
         }
     }
 
-    //TutorialsModelFollowingTutorialDelegate methods
+    //TutorialsModelFollowingTutorialDelegate
     makeButtonFromTutorialData(tutorialData, tutorialID) {
         this.mainPopUpContainer.append(`
         <a class=\"w-simple-tutorial-button w-not-following-tutorial-item w-button-normal\" id=\"${tutorialID}\">
@@ -158,12 +163,52 @@ class FollowTutorialViewController {
 
         //button click function. store tutorial's steps to storage
         button.on('click', () => {
-            this.#onFollowTutorialButtonClicked(tutorialID);
+            this.#onTutorialChosen(tutorialID);
         });
     }
 
+    //UserEventListnerHandlerDelegate
+    onClick() {
+        if (UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL || eventHandler.isAutomationInterrupt) {
+            this.onClickWhenFollowingTutorial();
+        }
+    }
+
+    checkIfShouldPreventDefault(event) {
+        return UserEventListnerHandler.isLisentingRecording
+    }
+
+    checkIfShouldProcessEvent(event) {
+        return (event.target !== globalCache.currentElement &&
+            event.target !== this.stopOptionsStopButton[0])
+    }
+
+    //HighlighterViewControllerSpecificUIDelegate
+    useInstructionWindow = true
+    //highlightInstructionWindow has been declared in UI section
+    updateStepInstructionUIHelper() {
+        if (isEmpty(TutorialsModel.getCurrentStep().name)) {
+            TutorialsModel.getCurrentStep().name = `Step ${TutorialsModel.getCurrentStep().index}`;
+        }
+        if (isEmpty(TutorialsModel.getCurrentStep().description)) {
+            TutorialsModel.getCurrentStep().description = `Select the highlighted box`;
+        }
+        this.popUpStepName.html(TutorialsModel.getCurrentStep().name);
+        this.popUpStepDescription.html(TutorialsModel.getCurrentStep().description);
+    }
+
+    highlightedElementNotFoundHandler() {
+        const firstStepOnPageIndex = TutorialsModel.getFirstStepIndexOnCurrentPage();
+        if (firstStepOnPageIndex > -1) {
+            this.#switchToAndShowStepAtIndex(firstStepOnPageIndex);
+            if (TutorialsModel.getCurrentStep().possibleReasonsForElementNotFound.length > 0) {
+                //show in highlight instruction window why might the cause of error be
+            }
+        }
+    }
+
     //Controls
-    #onFollowTutorialButtonClicked(tutorialID) {
+    #onTutorialChosen(tutorialID) {
         globalCache.reHighlightAttempt = 0;
         //UI
         $('.w-follow-tutorial-options-item').show();
@@ -172,46 +217,88 @@ class FollowTutorialViewController {
         this.#automationSpeedSliderHelper();
 
         this.popUpAutomateButton.on('click', () => {
-            this.#onFollowTutorialTypeButtonClicked(VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL, tutorialID);
+            this.#onFollowTutorialModeChosen(VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL, tutorialID);
         });
 
         this.popUpManualButton.on('click', () => {
-            this.#onFollowTutorialTypeButtonClicked(VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL, tutorialID);
+            this.#onFollowTutorialModeChosen(VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL, tutorialID);
         });
     }
 
 
-    #onFollowTutorialTypeButtonClicked(type, tutorialID) {
+    #onFollowTutorialModeChosen(type, tutorialID) {
         //UI
         $('.w-follow-tutorial-options-item').hide();
         $('.w-following-tutorial-item').show();
         this.popUpStepName.html('');
         this.popUpStepDescription.html('');
 
-        ExtensionController.SHARED_USER_EVENT_LISTNER_HANDLER.setTutorialStatusCache(type);
-        ExtensionController.SHARED_TUTORIALS_MODEL.onFollowingNewTutorial(tutorialID);
+        this.#startFollowingNewTutorial(tutorialID);
+        UserEventListnerHandler.setTutorialStatusCache(type);
     }
 
-    async stopCurrentTutorial() {
+    #switchToAndShowStepAtIndex(stepIndex) {
+        if (stepIndex >= TutorialsModel.getCurrentTutorial().steps.length) {
+            this.stopCurrentTutorial();
+            return;
+        }
+        TutorialsModel.changeCurrentTutorialStepIndexTo(stepIndex)
+        const type = UserEventListnerHandler.tutorialStatusCache;
+        if (type === VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL) {
+            this.#showTutorialStepManual();
+        }
+        if (type === VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL) {
+            this.#showTutorialStepAuto();
+        }
+    }
+
+    #startFollowingNewTutorial(tutorialID) {
+        TutorialsModel.changeActiveTutorialToChosen(tutorialID)
+        this.#switchToAndShowStepAtIndex(0)
+    }
+
+    /**
+     * Show step as indicated by tutorial.currentStepIndex. Usually used after
+     * refreshing page or going to new page to load the current step.
+     * If is on wrong page url, show alarm
+     */
+    #showCurrentStep() {
+        const currentStep = TutorialsModel.getCurrentStep();
+        c(this)
+        if (TutorialsModel.checkIfCurrentURLMatchesPageURL()) {
+            $('.w-following-tutorial-item').show();
+            this.#switchToAndShowStepAtIndex(TutorialsModel.getCurrentTutorial().currentStepIndex);
+        } else {
+            this.#onEnteredWrongPage(currentStep);
+        }
+    }
+
+    #showNextStep() {
+        this.#switchToAndShowStepAtIndex(++TutorialsModel.getCurrentTutorial().currentStepIndex);
+    }
+
+    stopCurrentTutorial() {
         //UI
-        //removeLastHighlight();
+        Highlighter.removeLastHighlight()
+        clearTimeout(globalCache.sideInstructionAutoNextTimer);
+        globalCache.sideInstructionAutoNextTimer = null;
         $('.w-following-tutorial-item, .w-follow-tutorial-options-item, .w-highlight-instruction-window').hide();
 
-        const tutorialsManager = ExtensionController.SHARED_TUTORIALS_MODEL
         const data = {};
         data[VALUES.STORAGE.REVISIT_PAGE_COUNT] = 0;
-        if (!isNotNull(tutorialsManager.tutorials[0])) {
+        if (!isNotNull(TutorialsModel.getCurrentTutorial())) {
             data[VALUES.TUTORIAL_STATUS.STATUS] = VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL;
             syncStorageSetBatch(data, () => {
-                //fetchTutorialsFromStorage();
+                this.setOrUpdateChooseTutorialsPopupUIFromModel()
                 globalCache = new GlobalCache();
             });
         }
-        if (tutorialsManager.checkIfCurrentURLMatchesPageURL()) {
-            data[VALUES.TUTORIAL_STATUS.STATUS] = VALUES.TUTORIAL_STATUS.LOADED;
+        if (TutorialsModel.checkIfCurrentURLMatchesPageURL()) {
+            data[VALUES.TUTORIAL_STATUS.STATUS] = VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL;
             syncStorageSetBatch(data, () => {
-                tutorialsManager.revertCurrentTutorialToInitialState();
-                //fetchTutorialsFromStorage();
+                TutorialsModel.revertCurrentTutorialToInitialState();
+                UserEventListnerHandler.setTutorialStatusCache(VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL)
+                this.setOrUpdateChooseTutorialsPopupUIFromModel()
                 globalCache = new GlobalCache();
             });
         } else {
@@ -221,8 +308,306 @@ class FollowTutorialViewController {
         }
     }
 
+    setOrUpdateChooseTutorialsPopupUIFromModel() {
+        this.mainPopUpContainer.show()
+        $('.w-not-following-tutorial-item').remove();
+        this.#automationSpeedSliderHelper();
+        TutorialsModel.forEachTutorial((tutorial, index) => {
+            this.makeButtonFromTutorialData(tutorial, tutorial.id)
+        })
+    }
+
+    //INCOMPLETE
+    #onEnteredWrongPage(tutorialObj, urlToMatch) {
+        for (let i = 0; i < tutorialObj.steps.length; i++) {
+            const currentStep = tutorialObj.steps[i];
+            if (currentStep.url === urlToMatch) {
+                //show the matched step
+                tutorialObj.currentStep = i;
+                const RPCKey = VALUES.STORAGE.REVISIT_PAGE_COUNT;
+                chrome.storage.sync.get([RPCKey], result => {
+                    if (result[RPCKey] > VALUES.STORAGE.MAX_REVISIT_PAGE_COUNT) {
+                        alert('no matching page');
+                        this.stopCurrentTutorial();
+                        return false;
+                    }
+                    syncStorageSet(RPCKey, result[RPCKey] + 1, () => {
+                        // syncStorageSet(VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, tutorialObj, () => {
+                        //     showTutorialStepAuto();
+
+                        //     return true;
+                        // });
+                    })
+                })
+            }
+        }
+    }
+
+    #chooseFunctionAccordingToCurrentStepType(onStepActionClick, onStepActionClickRedirect, onStepActionRedirect, onStepActionInput, onStepActionSelect, onStepSideInstruction) {
+        const currentStep = TutorialsModel.getCurrentStep();
+        const interval = intervalFromSpeed(globalCache.speedBarValue);
+
+        globalCache.interval = interval;
+
+
+        // else if (currentUrl !== currentStep.url) {
+        //     //onEnteredWrongPage(tutorialObj, currentStep.url);
+        // } 
+        //syncStorageSet(VALUES.STORAGE.REVISIT_PAGE_COUNT, 0);
+        //Step.callFunctionOnActionType(currentStep.actionType, onStepActionClick, onStepActionClickRedirect, onStepActionRedirect, onStepActionInput, onStepActionSelect, onStepSideInstruction)
+        switch (currentStep.actionType) {
+            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK: case "STEP_ACTION_TYPE_CLICK":
+                //alert('bingo')
+                isNotNull(onStepActionClick) && onStepActionClick();
+                break;
+            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK_REDIRECT:
+                isNotNull(onStepActionClickRedirect) && onStepActionClickRedirect();
+                break;
+            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_REDIRECT:
+                isNotNull(onStepActionRedirect) && onStepActionRedirect();
+                break;
+            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_INPUT: case "STEP_ACTION_TYPE_INPUT":
+                isNotNull(onStepActionInput) && onStepActionInput();
+                break;
+            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SELECT:
+                isNotNull(onStepActionSelect) && onStepActionSelect();
+                break;
+            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SIDE_INSTRUCTION: case "STEP_ACTION_TYPE_SIDE_INSTRUCTION":
+                isNotNull(onStepSideInstruction) && onStepSideInstruction();
+                break;
+            default:
+                alert("Error: Illegal action type")
+                console.error("Illegal action type");
+                break;
+        }
+    }
+
+    #showTutorialStepManual() {
+        this.#chooseFunctionAccordingToCurrentStepType(this.#manualStep, this.#manualStep, this.#manualRedirect, this.#manualInput, this.#manualSelect, this.#manualSideInstruction);
+    }
+
+    //------------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------
+    //MARK: Walk me through screen actions
+    //------------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------
+    #manualStep() {
+        const click = TutorialsModel.getCurrentStep().actionObject.defaultClick;
+        console.log(click.path)
+        //const element = $(jqueryElementStringFromDomPath(click.path)).first();
+        if (click.useAnythingInTable) {
+            Highlighter.highlightAndScollTo(click.table);
+        } else {
+            Highlighter.highlightAndScollTo(click.path);
+        }
+    }
+
+    #onPopUpNextStepButtonClicked() {
+        const currentStep = TutorialsModel.getCurrentStep();
+        if (currentStep.actionType === VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK || "STEP_ACTION_TYPE_CLICK") {
+            const step = currentStep.actionObject.defaultClick;
+            const element = $(jqueryElementStringFromDomPath(step.path))[0];
+            simulateClick(element);
+        }
+
+    }
+
+    #manualRedirect() {
+        const click = TutorialsModel.getCurrentStep().actionObject.defaultClick;
+        if (click.useAnythingInTable) {
+            Highlighter.highlightAndScollTo(click.table);
+        } else {
+            Highlighter.highlightAndScollTo(click.path);
+        }
+    }
+
+    #manualInput() {
+        const inputObj = TutorialsModel.getCurrentStep().actionObject;
+        //const element = $(jqueryElementStringFromDomPath(inputObj.path)).first();
+        Highlighter.highlightAndScollTo(inputObj.path);
+    }
+
+    #manualSelect() {
+        const click = TutorialsModel.getCurrentStep().actionObject.defaultClick;
+    }
+
+    #manualSideInstruction() {
+        const sideInstructionObj = TutorialsModel.getCurrentStep().actionObject;
+        Highlighter.highlightAndScollTo(sideInstructionObj.path);
+        //UI
+        globalCache.sideInstructionAutoNextTimer = setTimeout(() => {
+            this.#incrementCurrentStepHelper();
+        }, 3000);
+    }
+
+    #updateStepInstructionUIHelper() {
+        if (isEmpty(TutorialsModel.getCurrentStep().name)) {
+            TutorialsModel.getCurrentStep().name = `Step ${TutorialsModel.getCurrentStep().index}`;
+        }
+        if (isEmpty(TutorialsModel.getCurrentStep().description)) {
+            TutorialsModel.getCurrentStep().description = `Select the highlighted box`;
+        }
+        popUpStepName.html(TutorialsModel.getCurrentStep().name);
+        popUpStepDescription.html(TutorialsModel.getCurrentStep().description);
+    }
+
+    //------------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------
+    //MARK: Automating tutorial functions
+    //------------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------
+    #showTutorialStepAuto() {
+        chooseFunctionAccordingToCurrentStepType(this.#autoClick, this.#autoClick, this.#autoRedirect, this.#autoInput, this.#autoSelect, this.#autoSideInstruction)
+    }
+
+    #autoClick() {
+        const step = TutorialsModel.getCurrentStep().actionObject.defaultClick;
+        if (step.useAnythingInTable || TutorialsModel.getCurrentStep().automationInterrupt) {
+            //stop automation
+            UserEventListnerHandler.setIsAutomationInterrupt(true);
+            manualStep();
+            return;
+        }
+        const element = $(jqueryElementStringFromDomPath(step.path))[0];
+        Highlighter.highlightAndScollTo(step.path, true, () => {
+            simulateClick(element);
+            this.#incrementCurrentStepHelper();
+        });
+    }
+
+
+    #autoRedirect() {
+        const url = TutorialsModel.getCurrentStep().actionObject.url;
+        TutorialsModel.getCurrentTutorial().currentStep += 1;
+        location.replace(url);
+    }
+
+    #autoInput() {
+        const step = TutorialsModel.getCurrentStep().actionObject;
+        //get and highlight input element
+        const inputEle = $(jqueryElementStringFromDomPath(step.path)).first();
+
+        Highlighter.highlightAndScollTo(step.path, true, () => {
+            //check if there is default input
+            const defaultText = step.defaultText;
+            // if (isNotNull(defaultText) && !isEmpty(defaultText)) {
+            //     //fill input with default
+            //     inputEle.val(defaultText);
+            //     this.#incrementCurrentStepHelper(tutorialObj);
+            // } else {
+            //     //asks for input
+
+            // }        
+            UserEventListnerHandler.setIsAutomationInterrupt(true);
+            return;
+        });
+    }
+
+    #autoSelect() {
+        const step = TutorialsModel.getCurrentStep().actionObject;
+        //get and highlight input element
+        const selectEle = $(jqueryElementStringFromDomPath(step.path)).first();
+        Highlighter.highlightAndScollTo(step.path, true, () => {
+            //check if there is default input
+            selectEle.val(step.defaultValue);
+            //this step completed, go to next step
+            this.#incrementCurrentStepHelper();
+        });
+    }
+
+    #autoSideInstruction() {
+        this.#incrementCurrentStepHelper();
+    }
+
+    #incrementCurrentStepHelper() {
+        UserEventListnerHandler.setIsAutomationInterrupt(false);
+        this.#showNextStep()
+    }
+
+    #onAutomationSpeedSliderChanged() {
+        globalCache.speedBarValue = automationSpeedSlider.val();
+    }
+
+    //------------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------
+    //MARK: Handling click when walking through tutorial
+    //------------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------
+    onClickWhenFollowingTutorial() {
+        //TODO: add regexp and handle user mistakes
+        console.log('onClickWhenFollowingTutorial');
+        this.#chooseFunctionAccordingToCurrentStepType(
+            onClickWithStepTypeClick.bind(this),
+            onClickWithStepTypeClick.bind(this),
+            onClickWithStepTypeRedirect.bind(this),
+            onClickWithStepTypeInput.bind(this),
+            null,
+            onClickWithStepTypeSideInstruction.bind(this))
+
+        function onClickWithStepTypeClick() {
+            const click = TutorialsModel.getCurrentStep().actionObject.defaultClick;
+            if (click.useAnythingInTable) {
+                const tablePath = click.table;
+
+                if (isSelectedOnRightElement(globalCache.domPath, tablePath)) {
+                    this.#incrementCurrentStepHelper();
+                } else {
+                    onClickedOnWrongElement(tablePath);
+                }
+            } else {
+                const clickPath = click.path;
+                console.log('should click' + clickPath);
+                if (isSelectedOnRightElement(globalCache.domPath, clickPath)) {
+                    this.#incrementCurrentStepHelper();
+                    return;
+                } else {
+                    onClickedOnWrongElement(clickPath);
+                }
+            }
+        }
+
+        function onClickWithStepTypeInput() {
+            const inputPath = TutorialsModel.getCurrentStep().actionObject.path;
+            if (isSelectedOnRightElement(globalCache.domPath, inputPath)) {
+                //TODO: record input and go to next step only when inputted one char
+                this.#incrementCurrentStepHelper();
+                return;
+            } else {
+                onClickedOnWrongElement(inputPath);
+            }
+        }
+
+        function onClickWithStepTypeRedirect() {
+
+        }
+
+        function onClickWithStepTypeSideInstruction() {
+            const elementPath = TutorialsModel.getCurrentStep().actionObject.path;
+            if (isSelectedOnRightElement(globalCache.domPath, elementPath)) {
+                clearTimeout(globalCache.sideInstructionAutoNextTimer);
+                globalCache.sideInstructionAutoNextTimer = null;
+                this.#incrementCurrentStepHelper();
+                return;
+            } else {
+                onClickedOnWrongElement(elementPath);
+            }
+        }
+
+        function onClickedOnWrongElement(path) {
+            //simulateClick(globalCache.currentElement);
+            console.log('wrong element')
+            setTimeout(() => {
+                Highlighter.highlightAndScollTo(path);
+            }, 100);
+        }
+    }
+
+    //lifecycle
     dismiss() {
         this.stopCurrentTutorial()
+        TutorialsModel.tutorialsModelFollowingTutorialDelegate = null
+        UserEventListnerHandler.userEventListnerHandlerDelegate = null
+        Highlighter.highlighterViewControllerSpecificUIDelegate = null
     }
 
     //Pure UI methods

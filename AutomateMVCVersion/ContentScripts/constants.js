@@ -119,7 +119,20 @@ function intervalFromSpeed(speed) {
     }
 }
 
-
+function simulateClick(element, eventType = 'click') {
+    if (isNotNull(element)) {
+        console.log(`simulating click on ${element}`)
+        const evt = new MouseEvent(eventType, {
+            view: window,
+            bubbles: true,
+            cancelable: true
+        });
+        element.dispatchEvent(evt);
+    } else {
+        console.log('simulateClick: element not found')
+    }
+    console.trace();
+}
 
 /**
  * 
@@ -405,8 +418,8 @@ function getInstructionWindowLayout(element) {
     return layout;
 }
 
-function movePopupIfOverlap() {
-    const mainPopupRect = mainPopUpContainer[0].getBoundingClientRect();
+function movePopupIfOverlap(popup, highlightInstructionWindow) {
+    const mainPopupRect = popup[0].getBoundingClientRect();
     const instructionWindow = highlightInstructionWindow[0].getBoundingClientRect();
     const overlap = !(mainPopupRect.right < instructionWindow.left ||
         mainPopupRect.left > instructionWindow.right ||

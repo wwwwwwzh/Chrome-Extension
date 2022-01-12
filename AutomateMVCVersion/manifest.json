@@ -28,14 +28,13 @@
                 "./packages/jquery.box-shadow-animator.min.js",
                 "./packages/firebase.js",
                 "./ContentScripts/constants.js",
+                "./ContentScripts/highlighter.js",
                 "./ContentScripts/classes.js",
                 "./ContentScripts/tutorialsModel.js",
                 "./ContentScripts/recordTutorialViewController.js",
                 "./ContentScripts/followTutorialViewController.js",
                 "./ContentScripts/extensionController.js",
-                "./ContentScripts/content.js",
-                "./ContentScripts/followTutorial.js",
-                "./ContentScripts/recording.js"
+                "./ContentScripts/content.js"
             ]
         }
     ],

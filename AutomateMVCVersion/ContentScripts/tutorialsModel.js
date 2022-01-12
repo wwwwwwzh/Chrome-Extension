@@ -1,25 +1,38 @@
 class TutorialsModel {
-    #tutorials
+    static #tutorials
 
-    #tutorialsQuerySnapshot
+    static #tutorialsQuerySnapshot
 
-    tutorialsModelFollowingTutorialDelegate
+    static tutorialsModelFollowingTutorialDelegate
 
-    getCurrentTutorial() {
-        return this.#tutorials[0];
+    //getter methods
+    static getCurrentTutorial() {
+        return TutorialsModel.#tutorials[0];
     }
 
-    getCurrentStep() {
-        const currentTutorial = getCurrentTutorial();
+    static getCurrentStep() {
+        const currentTutorial = TutorialsModel.getCurrentTutorial();
         return currentTutorial.steps[currentTutorial.currentStepIndex];
     }
 
-    checkIfCurrentURLMatchesPageURL() {
-        const currentURL = this.getCurrentStep()?.url;
+    static forEachTutorial(doThis) {
+        this.#tutorials.forEach((tutorial, index) => {
+            doThis(tutorial, index)
+        })
+    }
+
+    //initialize methods
+
+    /**
+     * 
+     * @returns True if the current tutorial model's current step url matches user's url
+     */
+    static checkIfCurrentURLMatchesPageURL() {
+        const currentURL = TutorialsModel.getCurrentStep()?.url;
         return isNotNull(currentURL) && checkIfUrlMatch(currentURL, globalCache.currentUrl)
     }
 
-    #getMatchedTutorialsQuery() {
+    static #getMatchedTutorialsQuery() {
         const domainName = "https://" + globalCache.currentURLObj.hostname + "/";
         const url_matches = [globalCache.currentUrl, domainName];
         return query(collection(ExtensionController.SHARED_FIRESTORE_REF,
@@ -32,18 +45,18 @@ class TutorialsModel {
         );
     }
 
-    async checkIfAnyTutorialExistsOnPage() {
-        this.#tutorialsQuerySnapshot = await getDocs(this.#getMatchedTutorialsQuery());
-        return !this.#tutorialsQuerySnapshot.empty
+    static async checkIfAnyTutorialExistsOnPage() {
+        TutorialsModel.#tutorialsQuerySnapshot = await getDocs(TutorialsModel.#getMatchedTutorialsQuery());
+        return !TutorialsModel.#tutorialsQuerySnapshot.empty
     }
 
-    async initializeFromFirestore(callback = () => { }) {
-        this.#tutorials = [];
-        await Promise.all(this.#tutorialsQuerySnapshot.docs.map(async (tutorial) => {
+    static async initializeFromFirestore(drawUIOnTheFly = false, callback = () => { }) {
+        TutorialsModel.#tutorials = [];
+        await Promise.all(TutorialsModel.#tutorialsQuerySnapshot.docs.map(async (tutorial) => {
             const tutorialID = tutorial.id;
             const tutorialData = tutorial.data();
 
-            this.tutorialsModelFollowingTutorialDelegate.makeButtonFromTutorialData(tutorialData, tutorialID);
+            drawUIOnTheFly && TutorialsModel.tutorialsModelFollowingTutorialDelegate.makeButtonFromTutorialData(tutorialData, tutorialID);
 
             //get all information about the tutorial from firebase
             const stepsQuery = query(collection(ExtensionController.SHARED_FIRESTORE_REF,
@@ -71,44 +84,47 @@ class TutorialsModel {
                 }
             })
 
-            this.#tutorials.push(new TutorialObject(tutorialData.name, '', [], steps, tutorialData.all_urls, tutorialID));
+            TutorialsModel.#tutorials.push(new TutorialObject(tutorialData.name, '', [], steps, tutorialData.all_urls, tutorialID));
         }));
-        this.saveToStorage(callback);
-        //TODO: Change to better place for speed optimization
-        //uiManager.createSnapshotsForAllTutorials();
+        TutorialsModel.saveToStorage(callback);
     }
 
-    loadFromStorage(callback = () => { }) {
+    /**
+     * Initialize tutorials from chrome.storage.sync. Use cases might include refreshing pages or 
+     * going to new pages.
+     * @param {*} callback 
+     */
+    static loadFromStorage(callback = () => { }) {
         chrome.storage.sync.get([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL, VALUES.STORAGE.ALL_OTHER_TUTORIALS], (result) => {
             const currentTutorial = result[VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL];
             const allOtherTutorials = result[VALUES.STORAGE.ALL_OTHER_TUTORIALS];
-            this.#tutorials = [currentTutorial, ...allOtherTutorials];
-            console.log('loading ' + this.#tutorials.length + ' tutorials from storage')
-            callback();
-        });
-    }
-
-    loadCurrentTutorialFromStorage(callback = () => { }) {
-        chrome.storage.sync.get([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL], (result) => {
-            const currentTutorial = result[VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL];
-            if (this.#tutorials.length > 0) {
-                this.#tutorials[0] = currentTutorial;
-            } else {
-                this.#tutorials = [currentTutorial];
-            }
+            TutorialsModel.#tutorials = [currentTutorial, ...allOtherTutorials];
+            console.log('loading ' + TutorialsModel.#tutorials.length + ' tutorials from storage')
             callback();
         });
     }
 
     /**
-     * Save all tuutorials on page to storage.
+     * Initialize only the first tutorial.
      * @param {*} callback 
      */
-    saveToStorage(callback = () => { }) {
-        console.log('saving ' + this.#tutorials.length + ' tutorials to storage')
+    static loadActiveTutorialFromStorage(callback = () => { }) {
+        chrome.storage.sync.get([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL], (result) => {
+            const currentTutorial = result[VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL];
+            TutorialsModel.#tutorials = [currentTutorial];
+            callback();
+        });
+    }
+
+    /**
+     * Save all tutorials to chrome.storage.sync
+     * @param {*} callback 
+     */
+    static saveToStorage(callback = () => { }) {
+        console.log('saving ' + TutorialsModel.#tutorials.length + ' tutorials to storage')
         syncStorageSetBatch({
-            [VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL]: this.#tutorials[0],
-            [VALUES.STORAGE.ALL_OTHER_TUTORIALS]: this.#tutorials.slice(1),
+            [VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL]: TutorialsModel.#tutorials[0],
+            [VALUES.STORAGE.ALL_OTHER_TUTORIALS]: TutorialsModel.#tutorials.slice(1),
         }, callback);
     }
 
@@ -116,14 +132,14 @@ class TutorialsModel {
      * Save current active tutorial to storage
      * @param {*} callback 
      */
-    saveCurrentTutorialToStorage(callback = () => { }) {
-        console.log('saving current tutorials to storage')
-        syncStorageSet([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL], this.#tutorials[0], callback);
+    static saveActiveTutorialToStorage(callback = () => { }) {
+        console.log('saving active tutorial to storage')
+        syncStorageSet([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL], TutorialsModel.#tutorials[0], callback);
     }
 
-    getFirstStepIndexOnCurrentPage() {
+    static getFirstStepIndexOnCurrentPage() {
         var firstStepIndexOnCurrentPage = -1;
-        this.#tutorials[0].steps.some((step, index) => {
+        TutorialsModel.#tutorials[0].steps.some((step, index) => {
             if (checkIfUrlMatch(step.url, globalCache.currentUrl)) {
                 firstStepIndexOnCurrentPage = index;
                 return true;
@@ -141,13 +157,13 @@ class TutorialsModel {
      * Then calls onCreatingNewStep() to create the first step.
      * After all is done, save the whole tutorial array back
      */
-    onCreatingNewRecording() {
-        this.#tutorials.unshift(new TutorialObject());
-        this.onCreatingNewStep(true);
-        this.saveToStorage();
+    static onCreatingNewRecording() {
+        TutorialsModel.#tutorials.unshift(new TutorialObject());
+        TutorialsModel.onCreatingNewStep(true);
+        TutorialsModel.saveToStorage();
     }
 
-    onCreatingNewStep(firstStep = false) {
+    static onCreatingNewStep(firstStep = false) {
         //create snapshot, save current inputs, push new step object and update step index and UI
 
         //push to storage
@@ -162,16 +178,16 @@ class TutorialsModel {
                 id: id,
             })
 
-            this.#tutorials[0].steps.push(step);
-            this.syncFromCurrentStepStorageToUIWhenRecording();
+            TutorialsModel.#tutorials[0].steps.push(step);
+            TutorialsModel.syncFromCurrentStepStorageToUIWhenRecording();
         } else {
             //save inputs
-            this.syncFromUIToCurrentTutorialWhenRecording(() => {
-                this.#tutorials[0].currentStepIndex = this.#tutorials[0].steps.push(step) - 1;
+            TutorialsModel.syncFromUIToCurrentTutorialWhenRecording(() => {
+                TutorialsModel.#tutorials[0].currentStepIndex = TutorialsModel.#tutorials[0].steps.push(step) - 1;
                 //update
-                uiManager.updateStepSnapshot(this.#tutorials[0].steps[this.#tutorials[0].currentStepIndex - 1].id);
+                uiManager.updateStepSnapshot(TutorialsModel.#tutorials[0].steps[TutorialsModel.#tutorials[0].currentStepIndex - 1].id);
 
-                uiManager.createStepSnapshot(this.#tutorials[0].currentStepIndex, {
+                uiManager.createStepSnapshot(TutorialsModel.#tutorials[0].currentStepIndex, {
                     url: globalCache.currentUrl,
                     name: '',
                     description: '',
@@ -179,22 +195,22 @@ class TutorialsModel {
                 })
             });
             //update UI to new step
-            this.syncFromCurrentStepStorageToUIWhenRecording();
+            TutorialsModel.syncFromCurrentStepStorageToUIWhenRecording();
         }
     }
 
-    onCurrentStepChangedWhenRecording(newStepIndex) {
-        this.syncFromUIToCurrentTutorialWhenRecording();
-        this.#tutorials[0].currentStepIndex = newStepIndex;
-        this.syncFromCurrentStepStorageToUIWhenRecording();
+    static onCurrentStepChangedWhenRecording(newStepIndex) {
+        TutorialsModel.syncFromUIToCurrentTutorialWhenRecording();
+        TutorialsModel.#tutorials[0].currentStepIndex = newStepIndex;
+        TutorialsModel.syncFromCurrentStepStorageToUIWhenRecording();
     }
 
     /**
      * Sync from storage to UI
      */
-    syncFromCurrentStepStorageToUIWhenRecording() {
+    static syncFromCurrentStepStorageToUIWhenRecording() {
         //elements to ui
-        const currentStep = this.getCurrentStep();
+        const currentStep = TutorialsModel.getCurrentStep();
         stepNameInput.attr('value', currentStep.name);
         stepNameInput.val('');
         stepDescriptionInput.attr('value', currentStep.description);
@@ -204,7 +220,7 @@ class TutorialsModel {
     /**
      * Sync UI to storage
      */
-    syncFromUIToCurrentTutorialWhenRecording(callback = () => { }) {
+    static syncFromUIToCurrentTutorialWhenRecording(callback = () => { }) {
         chrome.storage.sync.get([VALUES.STORAGE.CURRENT_SELECTED_ELEMENT], result => {
             const path = result[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT];
             if (!isNotNull(path) || isEmpty(path)) {
@@ -212,8 +228,8 @@ class TutorialsModel {
                 return;
             }
 
-            const stepIndex = this.#tutorials[0].currentStepIndex;
-            const tempStep = this.#tutorials[0].steps[stepIndex];
+            const stepIndex = TutorialsModel.#tutorials[0].currentStepIndex;
+            const tempStep = TutorialsModel.#tutorials[0].steps[stepIndex];
             const actionType = parseInt(actionTypeSelector.val());
             var step = new Step(
                 stepIndex,
@@ -248,75 +264,46 @@ class TutorialsModel {
                     break;
             }
 
-            this.#tutorials[0].steps[stepIndex] = step;
+            TutorialsModel.#tutorials[0].steps[stepIndex] = step;
             //save current step to sync
-            this.saveCurrentTutorialToStorage(callback);
-            console.log('saving current tutorial: ' + JSON.stringify(this.getCurrentTutorial()));
+            TutorialsModel.saveActiveTutorialToStorage(callback);
+            console.log('saving current tutorial: ' + JSON.stringify(TutorialsModel.getCurrentTutorial()));
         });
 
 
     }
 
-    uploadToFirestoreOnFinishRecording() {
+    static uploadToFirestoreOnFinishRecording() {
 
     }
 
     //------------------------------------------------------------------------------------------
     //following tutorial functions
     //------------------------------------------------------------------------------------------
-    onFollowingStep(stepIndex) {
-        if (stepIndex >= this.#tutorials[0].steps.length) {
-            onStopTutorialButtonClicked();
-            return;
-        }
-        this.#tutorials[0].currentStepIndex = stepIndex;
-        const type = globalCache.globalEventsHandler.tutorialStatusCache;
-        if (type === VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL) {
-            showTutorialStepManual();
-        }
-        if (type === VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL) {
-            showTutorialStepAuto();
-        }
-    }
-
-    onFollowingNewTutorial(tutorialID) {
-        //move selected tutorial to index 0
-        if (this.#tutorials.length > 1) {
+    static changeActiveTutorialToChosen(tutorialID) {
+        if (TutorialsModel.#tutorials.length > 1) {
             var tutorialToFollowIndex;
-            this.#tutorials.forEach((tutorial, index) => {
+            TutorialsModel.#tutorials.forEach((tutorial, index) => {
                 if (tutorial.id === tutorialID) {
                     tutorialToFollowIndex = index;
                 }
             });
-            const temp = this.#tutorials[0];
-            this.#tutorials[0] = this.#tutorials[tutorialToFollowIndex];
-            this.#tutorials[tutorialToFollowIndex] = temp;
-            this.saveToStorage(() => {
-                this.onFollowingStep(0)
+            const temp = TutorialsModel.#tutorials[0];
+            TutorialsModel.#tutorials[0] = TutorialsModel.#tutorials[tutorialToFollowIndex];
+            TutorialsModel.#tutorials[tutorialToFollowIndex] = temp;
+            TutorialsModel.saveToStorage(() => {
+
             });
         }
     }
 
-    showCurrentStep() {
-        const currentStep = this.getCurrentStep();
-
-        if (this.checkIfCurrentURLMatchesPageURL()) {
-            $('.w-following-tutorial-item').show();
-            this.onFollowingStep(this.getCurrentTutorial().currentStepIndex);
-
-        } else {
-            uiManager.onOnWrongPage(currentStep);
-        }
+    static changeCurrentTutorialStepIndexTo(index) {
+        TutorialsModel.#tutorials[0].currentStepIndex = index;
+        TutorialsModel.saveActiveTutorialToStorage();
     }
 
-    onFollowingNextStep() {
-        this.onFollowingStep(++this.getCurrentTutorial().currentStepIndex);
-        this.saveCurrentTutorialToStorage();
-    }
-
-    revertCurrentTutorialToInitialState() {
-        this.#tutorials[0].currentStepIndex = 0;
-        this.saveCurrentTutorialToStorage();
+    static revertCurrentTutorialToInitialState() {
+        TutorialsModel.changeCurrentTutorialStepIndexTo(0)
     }
 
 }
@@ -360,5 +347,34 @@ class Step {
         this.automationInterrupt = automationInterrupt;
         this.possibleReasonsForElementNotFound = possibleReasonsForElementNotFound;
         this.id = id;
+    }
+
+    static callFunctionOnActionType(actionType, clickFunc, carFunc, inputFunc, redirectFunc, selectFunc, instructionFunc, nullFunc = null, defaultFunc = null) {
+        switch (actionType) {
+            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL:
+                (nullFunc !== null) && nullFunc();
+                break;
+            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK:
+                (clickFunc !== null) && clickFunc();
+                break;
+            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK_REDIRECT:
+                (carFunc !== null) && carFunc();
+                break;
+            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_INPUT:
+                (inputFunc !== null) && inputFunc();
+                break;
+            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_REDIRECT:
+                (redirectFunc !== null) && redirectFunc();
+                break;
+            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SELECT:
+                (selectFunc !== null) && selectFunc();
+                break;
+            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SIDE_INSTRUCTION:
+                (instructionFunc !== null) && instructionFunc();
+                break;
+            default:
+                (defaultFunc !== null) && defaultFunc();
+                break;
+        }
     }
 }

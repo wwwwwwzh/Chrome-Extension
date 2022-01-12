@@ -130,107 +130,105 @@ function isSideInstructionCompleted(si) {
 }
 
 class UserEventListnerHandler {
-    constructor(onClickWhenFollowingTutorial, onClickWhenRecording) {
+    /**
+     * Set by specific view controllers.
+     * Should contain variables: 
+     * And methods: onClick(), checkIfShouldProcessEvent(event), checkIfShouldPreventDefault(event)
+     */
+    static userEventListnerHandlerDelegate
+    static isLisentingRecording = false;
+    static isLisentingFollowing = false;
+    static isAutomationInterrupt = false;
+    static isOnRightPage = true;
+    static tutorialStatusCache = VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL;
 
-        this.tutorialStatusCache = VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL;
-        this.isLisentingRecording = false;
-        this.isLisentingFollowing = false;
-        this.isAutomationInterrupt = false;
-        this.isOnRightPage = true;
-        this.onClickWhenFollowingTutorial = onClickWhenFollowingTutorial
-        this.onClickWhenRecording = onClickWhenRecording
-        this.selfReference = this
-        this.#removeGlobalEventListenersWhenFollowing();
-        this.#removeGlobalEventListenersWhenRecording();
-    }
-
-    setTutorialStatusCache(tutorialStatusCache) {
+    static setTutorialStatusCache(tutorialStatusCache) {
         syncStorageSet(VALUES.TUTORIAL_STATUS.STATUS, tutorialStatusCache);
-        this.tutorialStatusCache = tutorialStatusCache;
-        this.#onChange();
+        UserEventListnerHandler.tutorialStatusCache = tutorialStatusCache;
+        UserEventListnerHandler.#onChange();
     }
 
-    setIsAutomationInterrupt(isAutomationInterrupt) {
-        this.isAutomationInterrupt = isAutomationInterrupt;
-        this.#onChange();
+    static setIsAutomationInterrupt(isAutomationInterrupt) {
+        UserEventListnerHandler.isAutomationInterrupt = isAutomationInterrupt;
+        UserEventListnerHandler.#onChange();
     }
 
-    setIsOnRightPage(isOnRightPage) {
-        this.isOnRightPage = isOnRightPage;
-        this.#onChange();
+    static setIsOnRightPage(isOnRightPage) {
+        UserEventListnerHandler.isOnRightPage = isOnRightPage;
+        UserEventListnerHandler.#onChange();
     }
 
-    #addGlobalEventListenersWhenRecording() {
+    static #addGlobalEventListenersWhenRecording() {
         $('*').on('blur focus focusin focusout load resize scroll unload dblclick mousedown mouseup mousemove mouseover mouseout mouseenter mouseleave change select submit keydown keypress keyup error',
-            this.selfReference.#preventDefaultHelper);
-        $('*').on('click', this.selfReference.#onClickHelper);
+            UserEventListnerHandler.#preventDefaultHelper);
+        $('*').on('click', UserEventListnerHandler.#onClickHelper);
     }
 
-    #onChange() {
+    static #onChange() {
         //add or remove when recording or not recording
-        if (this.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_RECORDING) {
-            if (!this.isLisentingRecording) {
-                this.#addGlobalEventListenersWhenRecording();
-                this.isLisentingRecording = true;
+        if (UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_RECORDING) {
+            if (!UserEventListnerHandler.isLisentingRecording) {
+                UserEventListnerHandler.#addGlobalEventListenersWhenRecording();
+                UserEventListnerHandler.isLisentingRecording = true;
             }
         } else {
-            if (this.isLisentingRecording) {
-                this.#removeGlobalEventListenersWhenRecording();
-                this.isLisentingRecording = false;
+            if (UserEventListnerHandler.isLisentingRecording) {
+                UserEventListnerHandler.#removeGlobalEventListenersWhenRecording();
+                UserEventListnerHandler.isLisentingRecording = false;
             }
         }
 
-        if (this.isOnRightPage && (this.isAutomationInterrupt || (this.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL))) {
-            if (!this.isLisentingFollowing) {
-                this.#addGlobalEventListenersWhenFollowing();
-                this.isLisentingFollowing = true;
+        if (UserEventListnerHandler.isOnRightPage && (UserEventListnerHandler.isAutomationInterrupt || (UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL))) {
+            if (!UserEventListnerHandler.isLisentingFollowing) {
+                UserEventListnerHandler.#addGlobalEventListenersWhenFollowing();
+                UserEventListnerHandler.isLisentingFollowing = true;
             }
         } else {
-            if (this.isLisentingFollowing) {
-                this.#removeGlobalEventListenersWhenFollowing();
-                this.isLisentingFollowing = false;
+            if (UserEventListnerHandler.isLisentingFollowing) {
+                UserEventListnerHandler.#removeGlobalEventListenersWhenFollowing();
+                UserEventListnerHandler.isLisentingFollowing = false;
             }
         }
     }
 
-    #removeGlobalEventListenersWhenRecording() {
+    static #removeGlobalEventListenersWhenRecording() {
         $('*').off('blur focus focusin focusout load resize scroll unload dblclick mousedown mouseup mousemove mouseover mouseout mouseenter mouseleave change select submit keydown keypress keyup error',
-            this.selfReference.#preventDefaultHelper);
-        $('*').off('click', this.selfReference.#onClickHelper);
+            UserEventListnerHandler.#preventDefaultHelper);
+        $('*').off('click', UserEventListnerHandler.#onClickHelper);
     }
 
-    #addGlobalEventListenersWhenFollowing() {
-        $('*').on('click', this.selfReference.#onClickHelper);
+    static #addGlobalEventListenersWhenFollowing() {
+        $('*').on('click', UserEventListnerHandler.#onClickHelper);
     }
 
-    #removeGlobalEventListenersWhenFollowing() {
-        $('*').off('click', this.selfReference.#onClickHelper);
+    static #removeGlobalEventListenersWhenFollowing() {
+        $('*').off('click', UserEventListnerHandler.#onClickHelper);
     }
 
-    #onClickHelper(event) {
-        const eventHandler = ExtensionController.SHARED_USER_EVENT_LISTNER_HANDLER
-        eventHandler.#preventDefaultHelper(event);
-        if (event.target !== globalCache.currentElement &&
-            event.target !== stopOptionsStopButton[0] &&
-            !$.contains(recordingContainer[0], event.target)) {
-            eventHandler.#processEventHelper(event.target);
+    static removeAllListners() {
+        UserEventListnerHandler.#removeGlobalEventListenersWhenFollowing();
+        UserEventListnerHandler.#removeGlobalEventListenersWhenRecording();
+    }
+
+    static #onClickHelper(event) {
+        UserEventListnerHandler.#preventDefaultHelper(event);
+        if (UserEventListnerHandler.userEventListnerHandlerDelegate.checkIfShouldProcessEvent(event)) {
+            UserEventListnerHandler.#processEventHelper(event.target);
         }
     }
 
-    #processEventHelper(target) {
-        const eventHandler = ExtensionController.SHARED_USER_EVENT_LISTNER_HANDLER
+    static #processEventHelper(target) {
         globalCache.domPath = getShortDomPathStack(target);
         if ($(jqueryElementStringFromDomPath(globalCache.domPath)).length > 1) {
             globalCache.domPath = getCompleteDomPathStack(target);
         }
         console.log(`clicking: ${globalCache.domPath}`);
         globalCache.currentElement = target;
-        eventHandler.#onClickUniversalHandler();
+        UserEventListnerHandler.#onClickUniversalHandler();
     }
 
-    #preventDefaultHelper(event) {
-        const eventHandler = ExtensionController.SHARED_USER_EVENT_LISTNER_HANDLER
-        if (eventHandler.isLisentingRecording) {
+    static #preventDefaultHelper(event) {
+        if (UserEventListnerHandler.userEventListnerHandlerDelegate.checkIfShouldPreventDefault(event)) {
             event.preventDefault();
             event.stopPropagation();
             event.stopImmediatePropagation();
@@ -238,22 +236,8 @@ class UserEventListnerHandler {
         }
     }
 
-    async #onClickUniversalHandler() {
-        const eventHandler = ExtensionController.SHARED_USER_EVENT_LISTNER_HANDLER
-        if (eventHandler.isLisentingRecording) {
-            eventHandler.onClickWhenRecording();
-        } else if (eventHandler.isLisentingFollowing) {
-            switch (eventHandler.tutorialStatusCache) {
-                case VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
-                    eventHandler.onClickWhenFollowingTutorial();
-                    break;
-                default:
-                    break;
-            }
-        }
-        if (eventHandler.isAutomationInterrupt) {
-            eventHandler.onClickWhenFollowingTutorial();
-        }
+    static async #onClickUniversalHandler() {
+        UserEventListnerHandler.userEventListnerHandlerDelegate.onClick()
     }
 }
 
