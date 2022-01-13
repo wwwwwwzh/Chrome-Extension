@@ -3,6 +3,9 @@ class TutorialsModel {
 
     static #tutorialsQuerySnapshot
 
+    /**
+     * Only has a makeButtonFromTutorialData() function for speed optimization
+     */
     static tutorialsModelFollowingTutorialDelegate
 
     //getter methods
@@ -354,13 +357,13 @@ class Step {
             case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL:
                 (nullFunc !== null) && nullFunc();
                 break;
-            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK:
+            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK: case "STEP_ACTION_TYPE_CLICK":
                 (clickFunc !== null) && clickFunc();
                 break;
             case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK_REDIRECT:
                 (carFunc !== null) && carFunc();
                 break;
-            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_INPUT:
+            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_INPUT: case "STEP_ACTION_TYPE_INPUT":
                 (inputFunc !== null) && inputFunc();
                 break;
             case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_REDIRECT:
@@ -369,7 +372,7 @@ class Step {
             case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SELECT:
                 (selectFunc !== null) && selectFunc();
                 break;
-            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SIDE_INSTRUCTION:
+            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SIDE_INSTRUCTION: case "STEP_ACTION_TYPE_SIDE_INSTRUCTION":
                 (instructionFunc !== null) && instructionFunc();
                 break;
             default:

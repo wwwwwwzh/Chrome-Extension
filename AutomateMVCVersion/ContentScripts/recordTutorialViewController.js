@@ -18,11 +18,15 @@ class RecordTutorialViewController {
     recordingAdvancedSectionContainer;
 
     constructor(status) {
-
+        TutorialsModel.tutorialsModelFollowingTutorialDelegate = this
+        UserEventListnerHandler.userEventListnerHandlerDelegate = this
+        Highlighter.highlighterViewControllerSpecificUIDelegate = this
         this.#initializeUI()
+        //this.#checkStatus(status)
     }
 
     #initializeUI() {
+        const body = $('body');
         body.append(`
             <div class="w-recording-panel-container">
                 <div id="w-recording-menu-draggable-area" class="w-common-item w-popup-draggable"></div>
@@ -179,7 +183,7 @@ class RecordTutorialViewController {
 
         this.createNewStepButton = $('#create-new-step-button');
         this.createNewStepButton.on('click', () => {
-            TutorialsModel.onCreatingNewStep();
+            //TutorialsModel.onCreatingNewStep();
         })
 
         this.stepsContainer = $('#w-recording-panel-basic-steps-container');
@@ -206,135 +210,80 @@ class RecordTutorialViewController {
 
         this.recordingAdvancedSectionContainer = $('.recording-panel-advanced-section-container').first();
 
-
         this.#clearCurrentMenu();
+    }
 
+    //TutorialsModelFollowingTutorialDelegate
+    makeButtonFromTutorialData(tutorialData, tutorialID) {
 
-        // //------------------------------------------------------------------------------------------------------------
-        // //MARK: button events------------------------------------------------------------------------------------------------------------
-        // //------------------------------------------------------------------------------------------------------------
-        // recordTutorialSwitch.on('change', () => {
-        //     const checked = recordTutorialSwitch.prop('checked');
-        //     syncStorageSet(VALUES.STORAGE.IS_RECORDING_ACTIONS, checked, () => {
-        //         $('h3').html(checked ? "Recording" : "Not Recording");
-        //         sendMessageToContentScript({ isRecordingStatus: checked });
-        //     })
-        // })
+    }
 
-        // addAlternativeActionButton.on('click', () => {
-        //     let inputContainer = document.querySelector('.input-action-input-option-container-template').cloneNode(true);
-        //     inputContainer.setAttribute('id', inputActionInputOptionTemplate.attr('id'));
-        //     document.getElementById('input-action-input-options-container').appendChild(inputContainer);
-        //     // inputContainer.querySelector('.input-action-input-options').addEventListener("input", event => {
-        //     //     const value = event.target.value;
-        //     // });
-        //     inputContainer.querySelector('.input-action-input-options-delete').addEventListener("click", () => {
-        //         inputContainer.remove();
-        //     });
-        //     inputContainer.hidden = false;
-        // })
+    //UserEventListnerHandlerDelegate
+    onClick() {
+        if (UserEventListnerHandler.isLisentingRecording) {
+            this.#onClickWhenRecording();
+        }
+    }
 
+    checkIfShouldPreventDefault(event) {
+        return UserEventListnerHandler.isLisentingRecording && !$.contains(this.recordingContainer[0], event.target)
+    }
 
+    checkIfShouldProcessEvent(event) {
+        return (event.target !== globalCache.currentElement &&
+            !$.contains(this.recordingContainer[0], event.target))
+    }
 
-        // nextButton.on('click', async () => {
-        //     onNextButtonClicked();
-        // })
-
-        // async function onNextButtonClicked() {
-        //     chrome.storage.sync.get([VALUES.STORAGE.CURRENT_SELECTED_ELEMENT], result => {
-        //         const path = result[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT];
-        //         if (!isNotNull(path) || isEmpty(path)) {
-        //             alert("Please complete required fields first");
-        //             return;
-        //         }
-        //         callFunctionOnActionType(
-        //             currentStepObj.actionType,
-        //             () => {
-        //                 //click
-        //                 currentStepObj.actionObject.defaultClick.path = path;
-        //             }, () => {
-        //                 //car
-        //                 currentStepObj.actionObject.defaultClick.path = path;
-        //             }, () => {
-        //                 //input
-        //                 //TODO: find input type
-        //                 currentStepObj.actionObject.inputType = "text";
-        //                 currentStepObj.actionObject.path = path;
-        //                 document.querySelectorAll('.input-action-input-option-container-template').forEach((element, currentIndex, listObj) => {
-        //                     currentStepObj.actionObject.optionsText.push(element.querySelector('.input-action-input-options').value);
-        //                 })
-        //             }, null, () => {
-        //                 //select
-        //                 const selectPath = path.slice(0, path.length - 1);
-        //                 const selectedElement = $(jqueryElementStringFromDomPath(selectPath));
-        //                 currentStepObj.actionObject.path = selectPath;
-        //                 currentStepObj.actionObject.defaultValue = selectedElement.val();
-        //             }, () => {
-        //                 //instruction
-        //                 currentStepObj.actionObject.path = path;
-        //             });
-
-        //         //check if step is complete
-        //         if (isStepCompleted(currentStepObj)) {
-        //             //upload to firebase
-        //             addStepToFirebase(currentStepObj).then(() => {
-        //                 var data = {};
-        //                 data[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT] = null;
-        //                 data[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE] = null;
-        //                 data[VALUES.STORAGE.IS_RECORDING_ACTIONS] = false;
-
-        //                 syncStorageSetBatch(data, () => {
-        //                     useAnyElementInTableInput.val('');
-        //                     selectedElementIndicator.html('Selected Element: None');
-        //                     recordTutorialSwitch.prop('checked', false);
-        //                     //refresh menu
-        //                     updateCurrentStep(() => { currentStepObj = null; })
-        //                     loadMenuFromStorage(null);
-
-        //                     //auto click the recorded element
-        //                     sendMessageToContentScript({ clickPath: path, isRecordingStatus: false, removeHighlight: true });
-        //                 });
-        //             })
-        //         } else {
-        //             alert("Please complete required fields first");
-        //         }
-        //     })
+    //HighlighterViewControllerSpecificUIDelegate
+    useInstructionWindow = true
+    //highlightInstructionWindow has been declared in UI section
+    updateStepInstructionUIHelper() {
+        // if (isEmpty(TutorialsModel.getCurrentStep().name)) {
+        //     TutorialsModel.getCurrentStep().name = `Step ${TutorialsModel.getCurrentStep().index}`;
         // }
+        // if (isEmpty(TutorialsModel.getCurrentStep().description)) {
+        //     TutorialsModel.getCurrentStep().description = `Select the highlighted box`;
+        // }
+        // this.popUpStepName.html(TutorialsModel.getCurrentStep().name);
+        // this.popUpStepDescription.html(TutorialsModel.getCurrentStep().description);
+    }
 
-        // finishButton.on('click', async () => {
-        //     endRecordingHelper();
-        // })
-
-        // //TODO: cancel should delete current document if it exists
-        // cancelButton.on('click', async () => {
-        //     deleteDocIfExists().then(() => {
-        //         endRecordingHelper();
-        //     });
-        // })
+    highlightedElementNotFoundHandler() {
+        // const firstStepOnPageIndex = TutorialsModel.getFirstStepIndexOnCurrentPage();
+        // if (firstStepOnPageIndex > -1) {
+        //     this.#switchToAndShowStepAtIndex(firstStepOnPageIndex);
+        //     if (TutorialsModel.getCurrentStep().possibleReasonsForElementNotFound.length > 0) {
+        //         //show in highlight instruction window why might the cause of error be
+        //     }
+        // }
     }
 
     #onClickWhenRecording() {
         //get element
         const jQElement = $(globalCache.currentElement);
-
         syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, globalCache.domPath);
 
-        //get table if it exists for tutorial
-        const nearestTable = getNearestTableOrList(jQElement[0]);
-        if (!isNotNull(nearestTable)) {
-            syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, null);
-        } else {
-            var nearestTablePath = getShortDomPathStack(nearestTable)
-            if ($(jqueryElementStringFromDomPath(nearestTablePath)).length > 1) {
-                nearestTablePath = getCompleteDomPathStack(nearestTable);
+        let nearestTable
+        var nearestTablePath
+        storeSelectedElementOrNearestTableIfExists()
+        function storeSelectedElementOrNearestTableIfExists() {
+            nearestTable = getNearestTableOrList(jQElement[0]);
+            if (!isNotNull(nearestTable)) {
+                syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, null);
+            } else {
+                nearestTablePath = getShortDomPathStack(nearestTable)
+                if ($(jqueryElementStringFromDomPath(nearestTablePath)).length > 1) {
+                    nearestTablePath = getCompleteDomPathStack(nearestTable);
+                }
+                syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, nearestTablePath);
             }
-            syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, nearestTablePath);
         }
+
         //Highlight
         if (jQElement.is('a')) {
-            highlightAndRemoveLastHighlight(jQElement.parent());
+            Highlighter.highlightAndRemoveLastHighlight(jQElement.parent());
         } else {
-            highlightAndRemoveLastHighlight(jQElement);
+            Highlighter.highlightAndRemoveLastHighlight(jQElement);
         }
 
         //update recording panel
@@ -424,12 +373,12 @@ class RecordTutorialViewController {
                 case VALUES.RECORDING_STATUS.NOT_RECORDING:
                     syncStorageSet(VALUES.STORAGE.IS_RECORDING, false);
                     globalCache.globalEventsHandler.setIsRecordingCache(request.isRecordingStatus);
-                    //showNewRecordingContainer();
+                    this.#showNewRecordingContainer();
                     break;
                 default:
                     //onStopNewTutorialRecording()
                     globalCache.globalEventsHandler.setIsRecordingCache(request.isRecordingStatus);
-                    //showNewRecordingContainer();
+                    this.#showNewRecordingContainer();
                     break;
             };
         });
@@ -453,22 +402,31 @@ class RecordTutorialViewController {
 
 
     #switchMenu(selection) {
-        callFunctionOnActionType(selection, showClickMenu, showClickAndRedirectMenu, showInputMenu, showRedirectMenu, showSelectMenu, showSideInstructionMenu, showNullMenu);
+        Step.callFunctionOnActionType(
+            selection,
+            this.#showClickMenu.bind(this),
+            this.#showClickAndRedirectMenu.bind(this),
+            this.#showInputMenu.bind(this),
+            this.#showRedirectMenu.bind(this),
+            this.#showSelectMenu.bind(this),
+            this.#showSideInstructionMenu.bind(this),
+            this.#showNullMenu.bind(this)
+        );
     }
 
     #loadMenuItems(selection) {
-        callFunctionOnActionType(
+        Step.callFunctionOnActionType(
             selection,
             () => {
                 //click
-                clickActionNameInput.val(currentStepObj.actionObject.defaultClick.name);
-                clickActionDescriptionInput.val(currentStepObj.actionObject.defaultClick.description);
+                this.clickActionNameInput.val(currentStepObj.actionObject.defaultClick.name);
+                this.clickActionDescriptionInput.val(currentStepObj.actionObject.defaultClick.description);
             }, () => {
                 //car
-                urlInput.val(currentStepObj.actionObject.defaultClick.url);
+                this.urlInput.val(currentStepObj.actionObject.defaultClick.url);
             }, () => {
                 //input
-                inputActionDefaultInput.val(currentStepObj.actionObject.defaultText)
+                this.inputActionDefaultInput.val(currentStepObj.actionObject.defaultText)
             }, () => {
                 //redirect
                 urlInput.val(currentStepObj.actionObject.url);
@@ -478,6 +436,7 @@ class RecordTutorialViewController {
                 //side instruction
             });
     }
+
     //------------------------------------------------------------------------------------------------------------
     //MARK: Step action menu UI manipulation ------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------
@@ -486,11 +445,11 @@ class RecordTutorialViewController {
     }
 
     #showNullMenu() {
-        clearCurrentMenu()
+        this.#clearCurrentMenu()
     }
 
     #showClickMenu() {
-        clearCurrentMenu();
+        this.#clearCurrentMenu();
         $('.click-action-container').show();
         // addAlternativeActionButton.html('Add Alternative Click');
 
@@ -504,30 +463,30 @@ class RecordTutorialViewController {
     }
 
     #showInputMenu() {
-        clearCurrentMenu();
+        this.#clearCurrentMenu();
         $('.input-action-container').show();
         //addAlternativeActionButton.html('Add Alternative Input');
     }
 
     #showClickAndRedirectMenu() {
-        clearCurrentMenu();
+        this.#clearCurrentMenu();
         //urlInputContainer.show();
     }
 
     #showRedirectMenu() {
-        clearCurrentMenu();
+        this.#clearCurrentMenu();
         $('.redirect-action-container').show();
         // selectedElementIndicatorContainer.hide();
         // urlInputContainer.show();
     }
 
     #showSelectMenu() {
-        clearCurrentMenu();
+        this.#clearCurrentMenu();
         $('.select-action-container').show();
     }
 
     #showSideInstructionMenu() {
-        clearCurrentMenu();
+        this.#clearCurrentMenu();
     }
 
 
@@ -544,8 +503,7 @@ class RecordTutorialViewController {
         data[VALUES.STORAGE.STEP_ACTION_TYPE] = VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL;
         sendMessageToContentScript({ isRecordingStatus: false });
         syncStorageSetBatch(data);
-        showNewRecordingContainer();
-
+        this.#showNewRecordingContainer();
     }
     //------------------------------------------------------------------------------------------------------------
     //MARK: Firebase actions------------------------------------------------------

@@ -175,7 +175,7 @@ class FollowTutorialViewController {
     }
 
     checkIfShouldPreventDefault(event) {
-        return UserEventListnerHandler.isLisentingRecording
+        return false
     }
 
     checkIfShouldProcessEvent(event) {
@@ -346,40 +346,9 @@ class FollowTutorialViewController {
     #chooseFunctionAccordingToCurrentStepType(onStepActionClick, onStepActionClickRedirect, onStepActionRedirect, onStepActionInput, onStepActionSelect, onStepSideInstruction) {
         const currentStep = TutorialsModel.getCurrentStep();
         const interval = intervalFromSpeed(globalCache.speedBarValue);
-
         globalCache.interval = interval;
-
-
-        // else if (currentUrl !== currentStep.url) {
-        //     //onEnteredWrongPage(tutorialObj, currentStep.url);
-        // } 
-        //syncStorageSet(VALUES.STORAGE.REVISIT_PAGE_COUNT, 0);
-        //Step.callFunctionOnActionType(currentStep.actionType, onStepActionClick, onStepActionClickRedirect, onStepActionRedirect, onStepActionInput, onStepActionSelect, onStepSideInstruction)
-        switch (currentStep.actionType) {
-            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK: case "STEP_ACTION_TYPE_CLICK":
-                //alert('bingo')
-                isNotNull(onStepActionClick) && onStepActionClick();
-                break;
-            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK_REDIRECT:
-                isNotNull(onStepActionClickRedirect) && onStepActionClickRedirect();
-                break;
-            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_REDIRECT:
-                isNotNull(onStepActionRedirect) && onStepActionRedirect();
-                break;
-            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_INPUT: case "STEP_ACTION_TYPE_INPUT":
-                isNotNull(onStepActionInput) && onStepActionInput();
-                break;
-            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SELECT:
-                isNotNull(onStepActionSelect) && onStepActionSelect();
-                break;
-            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SIDE_INSTRUCTION: case "STEP_ACTION_TYPE_SIDE_INSTRUCTION":
-                isNotNull(onStepSideInstruction) && onStepSideInstruction();
-                break;
-            default:
-                alert("Error: Illegal action type")
-                console.error("Illegal action type");
-                break;
-        }
+        //onEnteredWrongPage(tutorialObj, currentStep.url);
+        Step.callFunctionOnActionType(currentStep.actionType, onStepActionClick, onStepActionClickRedirect, onStepActionInput, onStepActionRedirect, onStepActionSelect, onStepSideInstruction)
     }
 
     #showTutorialStepManual() {
