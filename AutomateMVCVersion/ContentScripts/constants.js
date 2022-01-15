@@ -261,31 +261,26 @@ function sendMessageToContentScript(message, active = true, currentWindow = true
 
 
 function makeElementDraggable(elmnt, target = elmnt) {
-    var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+    var dragOffsetX = 0
+    var dragOffsetY = 0
     elmnt.onmousedown = dragMouseDown;
 
     function dragMouseDown(e) {
-        e = e || window.event;
         e.preventDefault();
+        const element = e.target
+        dragOffsetY = e.y - element.getBoundingClientRect().top
+        dragOffsetX = e.x - element.getBoundingClientRect().left
         // get the mouse cursor position at startup:
-        pos3 = e.clientX;
-        pos4 = e.clientY;
         document.onmouseup = closeDragElement;
         // call a function whenever the cursor moves:
         document.onmousemove = elementDrag;
     }
 
     function elementDrag(e) {
-        e = e || window.event;
         e.preventDefault();
         // calculate the new cursor position:
-        pos1 = pos3 - e.clientX;
-        pos2 = pos4 - e.clientY;
-        pos3 = e.clientX;
-        pos4 = e.clientY;
-        // set the element's new position:
-        target.style.top = (target.offsetTop - pos2) + "px";
-        target.style.left = (target.offsetLeft - pos1) + "px";
+        target.style.top = `${e.y - dragOffsetY}px`
+        target.style.left = `${e.x - dragOffsetX}px`
     }
 
     function closeDragElement() {

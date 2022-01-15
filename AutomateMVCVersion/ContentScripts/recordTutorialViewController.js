@@ -1,4 +1,5 @@
 class RecordTutorialViewController {
+    //UI
     recordingContainer;
     recordingMenuDraggableArea;
     recordTutorialSwitch;
@@ -16,6 +17,10 @@ class RecordTutorialViewController {
     createNewStepButton;
     toogleAdvancedRecordingButton;
     recordingAdvancedSectionContainer;
+
+    //Local Variables
+    #isUsingAdvancedRecordingPanel = false
+    #isRecordingButtonOn = false
 
     constructor(status) {
         TutorialsModel.tutorialsModelFollowingTutorialDelegate = this
@@ -193,19 +198,7 @@ class RecordTutorialViewController {
         //advanced
         this.toogleAdvancedRecordingButton = $('.recording-panel-toogle-advanced-button');
         this.toogleAdvancedRecordingButton.on('click', () => {
-            if (!globalCache.isUsingAdvancedRecordingPanel) {
-                this.recordingContainer.removeClass('w-recording-panel-container');
-                this.recordingContainer.addClass('w-recording-panel-advanced-container');
-                this.toogleAdvancedRecordingButton.removeClass('recording-panel-toogle-advanced-button');
-                this.toogleAdvancedRecordingButton.addClass('recording-panel-toogle-advanced-button-advanced');
-                globalCache.isUsingAdvancedRecordingPanel = true;
-            } else {
-                this.recordingContainer.removeClass('w-recording-panel-advanced-container');
-                this.recordingContainer.addClass('w-recording-panel-container');
-                this.toogleAdvancedRecordingButton.removeClass('recording-panel-toogle-advanced-button-advanced');
-                this.toogleAdvancedRecordingButton.addClass('recording-panel-toogle-advanced-button');
-                globalCache.isUsingAdvancedRecordingPanel = false;
-            }
+            this.#onToogleAdvancedRecordingButton()
         })
 
         this.recordingAdvancedSectionContainer = $('.recording-panel-advanced-section-container').first();
@@ -213,9 +206,63 @@ class RecordTutorialViewController {
         this.#clearCurrentMenu();
     }
 
-    //TutorialsModelFollowingTutorialDelegate
-    makeButtonFromTutorialData(tutorialData, tutorialID) {
+    async #onToogleAdvancedRecordingButton() {
+        if (!this.#isUsingAdvancedRecordingPanel) {
+            this.recordingContainer.removeClass('w-recording-panel-container');
+            this.recordingContainer.addClass('w-recording-panel-advanced-container');
+            this.toogleAdvancedRecordingButton.removeClass('recording-panel-toogle-advanced-button');
+            this.toogleAdvancedRecordingButton.addClass('recording-panel-toogle-advanced-button-advanced');
+            this.#isUsingAdvancedRecordingPanel = true;
+            //load model
+            if (await TutorialsModel.checkIfAnyTutorialExistsOnPage()) {
+                TutorialsModel.initializeFromFirestore(true)
+            }
+        } else {
+            this.recordingContainer.removeClass('w-recording-panel-advanced-container');
+            this.recordingContainer.addClass('w-recording-panel-container');
+            this.toogleAdvancedRecordingButton.removeClass('recording-panel-toogle-advanced-button-advanced');
+            this.toogleAdvancedRecordingButton.addClass('recording-panel-toogle-advanced-button');
+            this.#isUsingAdvancedRecordingPanel = false;
+        }
+    }
 
+    #checkStatus() {
+        chrome.storage.sync.get([VALUES.TUTORIAL_STATUS.STATUS], (result) => {
+            switch (result[VALUES.TUTORIAL_STATUS.STATUS]) {
+                case VALUES.TUTORIAL_STATUS.IS_RECORDING:
+                    recordTutorialSwitch.prop('checked', this.#isRecordingButtonOn);
+                    currentTutorialObj = result[VALUES.STORAGE.CURRENT_TUTORIAL_OBJECT];
+                    loadMenuFromStorage(currentTutorialObj);
+
+                    // const selectedElementPath = result[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT];
+                    // if (isNotNull(selectedElementPath)) {
+                    //     selectedElementIndicator.html(`Selected Element: ${selectedElementPath.slice(max(selectedElementPath.length - 2, 0), selectedElementPath.length)}`)
+                    // } else {
+                    //     selectedElementIndicator.html('Selected Element: None')
+                    // }
+                    // if (isNotNull(result[VALUES.STORAGE.CURRENT_URL])) {
+                    //     customStepUrlInput.val(result[VALUES.STORAGE.CURRENT_URL]);
+                    // }
+
+                    // showStepContainer();
+                    break;
+                case VALUES.RECORDING_STATUS.NOT_RECORDING:
+                    syncStorageSet(VALUES.STORAGE.IS_RECORDING, false);
+                    globalCache.globalEventsHandler.setIsRecordingCache(request.isRecordingStatus);
+                    this.#showNewRecordingContainer();
+                    break;
+                default:
+                    //onStopNewTutorialRecording()
+                    globalCache.globalEventsHandler.setIsRecordingCache(request.isRecordingStatus);
+                    this.#showNewRecordingContainer();
+                    break;
+            };
+        });
+    }
+
+    //TutorialsModelFollowingTutorialDelegate
+    drawUIWhileInitializing(tutorial) {
+        this.#createSnapshotsForTutorial(tutorial)
     }
 
     //UserEventListnerHandlerDelegate
@@ -235,7 +282,7 @@ class RecordTutorialViewController {
     }
 
     //HighlighterViewControllerSpecificUIDelegate
-    useInstructionWindow = true
+    useInstructionWindow = false
     //highlightInstructionWindow has been declared in UI section
     updateStepInstructionUIHelper() {
         // if (isEmpty(TutorialsModel.getCurrentStep().name)) {
@@ -281,9 +328,9 @@ class RecordTutorialViewController {
 
         //Highlight
         if (jQElement.is('a')) {
-            Highlighter.highlightAndRemoveLastHighlight(jQElement.parent());
+            Highlighter.highlight(jQElement.parent());
         } else {
-            Highlighter.highlightAndRemoveLastHighlight(jQElement);
+            Highlighter.highlight(jQElement);
         }
 
         //update recording panel
@@ -339,7 +386,6 @@ class RecordTutorialViewController {
         }
     }
 
-    //MARK: Set up menu if needed
     #showStepContainer() {
         this.newTutorialContainer.hide();
         this.stepDetailsContainer.show();
@@ -350,39 +396,7 @@ class RecordTutorialViewController {
         this.newTutorialContainer.show();
     }
 
-    #checkStatus() {
-        chrome.storage.sync.get([VALUES.TUTORIAL_STATUS.STATUS], (result) => {
-            switch (result[VALUES.TUTORIAL_STATUS.STATUS]) {
-                case VALUES.TUTORIAL_STATUS.IS_RECORDING:
-                    recordTutorialSwitch.prop('checked', globalCache.isRecordingButtonOn);
-                    currentTutorialObj = result[VALUES.STORAGE.CURRENT_TUTORIAL_OBJECT];
-                    loadMenuFromStorage(currentTutorialObj);
 
-                    // const selectedElementPath = result[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT];
-                    // if (isNotNull(selectedElementPath)) {
-                    //     selectedElementIndicator.html(`Selected Element: ${selectedElementPath.slice(max(selectedElementPath.length - 2, 0), selectedElementPath.length)}`)
-                    // } else {
-                    //     selectedElementIndicator.html('Selected Element: None')
-                    // }
-                    // if (isNotNull(result[VALUES.STORAGE.CURRENT_URL])) {
-                    //     customStepUrlInput.val(result[VALUES.STORAGE.CURRENT_URL]);
-                    // }
-
-                    // showStepContainer();
-                    break;
-                case VALUES.RECORDING_STATUS.NOT_RECORDING:
-                    syncStorageSet(VALUES.STORAGE.IS_RECORDING, false);
-                    globalCache.globalEventsHandler.setIsRecordingCache(request.isRecordingStatus);
-                    this.#showNewRecordingContainer();
-                    break;
-                default:
-                    //onStopNewTutorialRecording()
-                    globalCache.globalEventsHandler.setIsRecordingCache(request.isRecordingStatus);
-                    this.#showNewRecordingContainer();
-                    break;
-            };
-        });
-    }
 
     #loadMenuFromStorage(currentTutorialObj) {
         if (isNotNull(currentTutorialObj)) {
@@ -437,9 +451,6 @@ class RecordTutorialViewController {
             });
     }
 
-    //------------------------------------------------------------------------------------------------------------
-    //MARK: Step action menu UI manipulation ------------------------------------------------------
-    //------------------------------------------------------------------------------------------------------------
     #clearCurrentMenu() {
         $('.redirect-action-container, .click-action-container, .select-action-container').hide();
     }
@@ -489,9 +500,8 @@ class RecordTutorialViewController {
         this.#clearCurrentMenu();
     }
 
-
-
-    #endRecordingHelper() {
+    //Controls
+    #endRecordingCurrentTutorial() {
         var data = {};
         data[VALUES.RECORDING_STATUS.STATUS] = VALUES.RECORDING_STATUS.NOT_RECORDING;
         data[VALUES.STORAGE.IS_RECORDING] = false;
@@ -505,6 +515,133 @@ class RecordTutorialViewController {
         syncStorageSetBatch(data);
         this.#showNewRecordingContainer();
     }
+
+    //UI functions
+    #createStepSnapshot(atIndex, snapshot) {
+        const steps = TutorialsModel.getCurrentTutorial().steps;
+        const prevStep = steps[atIndex - 1] || null;
+        const nextStep = steps[atIndex] || null;
+        const trimmedURL = snapshot.url;
+
+        console.log(JSON.stringify(prevStep))
+        if (isNotNull(prevStep) && prevStep.url === snapshot.url) {
+            console.log('apending step snapshot')
+            const container = $(`#${prevStep.id}`).parent();
+            container.append(`
+            <div id="${snapshot.id}" class="step-snapshot-container w-horizontal-scroll-item-container">
+                <!-- snapshot -->
+                <label for="">${snapshot.name}</label>
+                <label for="">${snapshot.description}</label>
+            </div>
+            <div class="w-horizontal-scroll-item-next-indicator-container w-horizontal-scroll-item-container">
+                <div class="w-horizontal-scroll-item-next-indicator"></div>
+            </div>
+            `)
+        } else if (isNotNull(nextStep) && nextStep.url === snapshot.url) {
+            console.log('prepending step snapshot')
+            const container = $(`#${nextStep.id}`).parent();
+            container.prepend(`
+            <div id="${snapshot.id}" class="step-snapshot-container w-horizontal-scroll-item-container">
+                <!-- snapshot -->
+                <label for="">${snapshot.name}</label>
+                <label for="">${snapshot.description}</label>
+            </div>
+            <div class="w-horizontal-scroll-item-next-indicator-container w-horizontal-scroll-item-container">
+                <div class="w-horizontal-scroll-item-next-indicator"></div>
+            </div>
+            `)
+        } else {
+            console.log('appending page contaner')
+            this.addNewStepRoundButton.parent().before(`
+            <div class="w-recording-panel-steps-section-container w-horizontal-scroll-item-container">
+                <div class="w-recording-panel-steps-page-indicator-container">
+                ${trimmedURL}
+                </div>
+                <div class="w-horizontal-scroll-container w-recording-panel-steps-step-indicator-container">
+                    <div id="${snapshot.id}" class="step-snapshot-container w-horizontal-scroll-item-container">
+                        <!-- snapshot -->
+                        <label for="">${snapshot.name}</label>
+                        <label for="">${snapshot.description}</label>
+                    </div>
+                    <div class="w-horizontal-scroll-item-next-indicator-container w-horizontal-scroll-item-container">
+                        <div class="w-horizontal-scroll-item-next-indicator"></div>
+                    </div>
+                </div>
+            </div>
+            `);
+        }
+    }
+
+    #updateStepSnapshot(id) {
+        console.log('updating' + id)
+    }
+
+    // #createTutorialStepsSnapshots(tutorialIndex = 0) {
+    //     const steps = tutorialsManager.tutorials[tutorialIndex].steps;
+    //     steps.forEach((step, index) => {
+    //         uiManager.createStepSnapshot(index, step)
+    //     })
+    // }
+
+    #createSnapshotsForAllTutorials() {
+        TutorialsModel.forEachTutorial((tutorial, index) => {
+            this.#createSnapshotsForTutorial(tutorial)
+        })
+    }
+
+    #createSnapshotsForTutorial(tutorial) {
+        tutorial.steps.forEach((step, index) => {
+            if (step.url === globalCache.currentUrl) {
+                if (index !== 0) {
+                    this.#createSnapshotForStep(tutorial.id, step)
+                } else {
+                    this.#createSnapshotForTutorialTitle(tutorial)
+                    this.#createSnapshotForStep(tutorial.id, step)
+
+                }
+            }
+        })
+        document.querySelectorAll('.step-snapshot-container').forEach(element => {
+            element.usePlaceholder = true
+            DragAndDropHandler.addDragListenerToElement(element)
+            DragAndDropHandler.dropHandlerDelegate = window
+        });
+    }
+
+    #createSnapshotForTutorialTitle(tutorial) {
+        this.recordingAdvancedSectionContainer.append(`
+        <div class="w-horizontal-scroll-container w-recording-panel-advanced-steps-container">
+            <div
+                class="w-horizontal-scroll-item-container w-recording-advanced-panel-steps-section-container w-horizontal-scroll-container">
+                <div id="tutorial-recording-snapshot-${tutorial.id}" class="step-snapshot-container w-horizontal-scroll-item-container">
+                    <!-- snapshot -->
+                    ${tutorial.name}
+                </div>
+            </div>
+        </div>
+        `);
+    }
+
+    #createSnapshotForStep(tutorialId, step) {
+        const container = $(`#tutorial-recording-snapshot-${tutorialId}`).parent().parent();
+        container.append(`
+        <div
+            class="w-horizontal-scroll-item-container w-recording-advanced-panel-steps-section-container w-horizontal-scroll-container">
+            <div id="${step.id}" class="step-snapshot-container w-horizontal-scroll-item-container">
+                <!-- snapshot -->
+                <label for="">${step.name}</label>
+                <label for="">${step.description}</label>
+            </div>
+            <div class="w-horizontal-scroll-item-next-indicator-container w-horizontal-scroll-item-container">
+                <div class="w-horizontal-scroll-item-next-indicator">
+                </div>
+            </div>
+        </div>
+        `)
+    }
+
+
+
     //------------------------------------------------------------------------------------------------------------
     //MARK: Firebase actions------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------
@@ -518,12 +655,12 @@ class RecordTutorialViewController {
         })
     }
 
-    async #addStepToFirebase(stepObj) {
+    async #addStepToFirebase(step) {
         chrome.storage.sync.get(VALUES.RECORDING_STATUS.STATUS, async (result) => {
             switch (result[VALUES.RECORDING_STATUS.STATUS]) {
                 case VALUES.RECORDING_STATUS.BEGAN_RECORDING:
                     await postDocToFirebase(
-                        stepObj,
+                        step,
                         VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL,
                         VALUES.RECORDING_STATUS.BEGAN_RECORDING
                     ).then(() => {
@@ -532,7 +669,7 @@ class RecordTutorialViewController {
                     break;
                 case VALUES.RECORDING_STATUS.RECORDING:
                     await postDocToFirebase(
-                        stepObj,
+                        step,
                         VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL,
                         VALUES.RECORDING_STATUS.RECORDING
                     );

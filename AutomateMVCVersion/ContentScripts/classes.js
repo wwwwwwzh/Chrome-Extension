@@ -242,35 +242,13 @@ class UserEventListnerHandler {
 }
 
 class GlobalCache {
-    constructor(
-        tutorialObj = null,
-        currentStep = null,
-        interval = 2000,
-        domPath = null,
-        currentElement = null,
-        reHighlightAttempt = 0,
-        lastSelectedElement = null,
-        lastSelectedElementCSS = null,
-        currentJQScrollingParent = null,
-    ) {
-        this.tutorialObj = tutorialObj;
-        this.currentStep = currentStep;
-        this.interval = interval;
-        this.domPath = domPath;
-        this.currentElement = currentElement;
-        this.reHighlightAttempt = reHighlightAttempt;
-        this.lastHighlightedElement = lastSelectedElement;
-        this.lastHighlightedElementCSS = lastSelectedElementCSS;
-        this.currentJQScrollingParent = currentJQScrollingParent;
-        this.alertElementInterval = null;
-        this.sideInstructionAutoNextTimer = null;
-        this.isMainPopUpCollapsed = false;
-        this.reHighlightTimer = null;
-        this.isRecordingButtonOn = false;
-        this.speedBarValue = 50;
-        this.currentUrl = $(location).attr('href');
+    constructor() {
+        this.interval = 2000,
+            this.domPath = null,
+            this.currentElement = null,
+            this.reHighlightAttempt = 0,
+            this.currentUrl = $(location).attr('href');
         this.currentURLObj = new URL(this.currentUrl);
-        this.isUsingAdvancedRecordingPanel = false;
     }
 
 

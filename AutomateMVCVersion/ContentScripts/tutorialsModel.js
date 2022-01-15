@@ -1,10 +1,11 @@
 class TutorialsModel {
     static #tutorials
+    static #urlAssociatedWithCurrentTutorialsQuerySnapshot
 
     static #tutorialsQuerySnapshot
 
     /**
-     * Only has a makeButtonFromTutorialData() function for speed optimization
+     * Only has a drawUIWhileInitializing() function for speed optimization
      */
     static tutorialsModelFollowingTutorialDelegate
 
@@ -49,8 +50,13 @@ class TutorialsModel {
     }
 
     static async checkIfAnyTutorialExistsOnPage() {
+        //if (TutorialsModel.#urlAssociatedWithCurrentTutorialsQuerySnapshot !== globalCache.currentURL) {
         TutorialsModel.#tutorialsQuerySnapshot = await getDocs(TutorialsModel.#getMatchedTutorialsQuery());
+        TutorialsModel.#urlAssociatedWithCurrentTutorialsQuerySnapshot = globalCache.currentURL
         return !TutorialsModel.#tutorialsQuerySnapshot.empty
+        // } else {
+        //     return !TutorialsModel.#tutorialsQuerySnapshot.empty
+        // }
     }
 
     static async initializeFromFirestore(drawUIOnTheFly = false, callback = () => { }) {
@@ -58,8 +64,6 @@ class TutorialsModel {
         await Promise.all(TutorialsModel.#tutorialsQuerySnapshot.docs.map(async (tutorial) => {
             const tutorialID = tutorial.id;
             const tutorialData = tutorial.data();
-
-            drawUIOnTheFly && TutorialsModel.tutorialsModelFollowingTutorialDelegate.makeButtonFromTutorialData(tutorialData, tutorialID);
 
             //get all information about the tutorial from firebase
             const stepsQuery = query(collection(ExtensionController.SHARED_FIRESTORE_REF,
@@ -87,7 +91,9 @@ class TutorialsModel {
                 }
             })
 
-            TutorialsModel.#tutorials.push(new TutorialObject(tutorialData.name, '', [], steps, tutorialData.all_urls, tutorialID));
+            const tutorialObj = new TutorialObject(tutorialData.name, '', [], steps, tutorialData.all_urls, tutorialID)
+            TutorialsModel.#tutorials.push(tutorialObj);
+            drawUIOnTheFly && TutorialsModel.tutorialsModelFollowingTutorialDelegate.drawUIWhileInitializing(tutorialObj);
         }));
         TutorialsModel.saveToStorage(callback);
     }
@@ -162,11 +168,11 @@ class TutorialsModel {
      */
     static onCreatingNewRecording() {
         TutorialsModel.#tutorials.unshift(new TutorialObject());
-        TutorialsModel.onCreatingNewStep(true);
+        TutorialsModel.creatingNewStep(true);
         TutorialsModel.saveToStorage();
     }
 
-    static onCreatingNewStep(firstStep = false) {
+    static creatingNewStep(firstStep = false) {
         //create snapshot, save current inputs, push new step object and update step index and UI
 
         //push to storage
@@ -355,28 +361,28 @@ class Step {
     static callFunctionOnActionType(actionType, clickFunc, carFunc, inputFunc, redirectFunc, selectFunc, instructionFunc, nullFunc = null, defaultFunc = null) {
         switch (actionType) {
             case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL:
-                (nullFunc !== null) && nullFunc();
+                nullFunc?.();
                 break;
             case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK: case "STEP_ACTION_TYPE_CLICK":
-                (clickFunc !== null) && clickFunc();
+                clickFunc?.();
                 break;
             case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK_REDIRECT:
-                (carFunc !== null) && carFunc();
+                carFunc?.();
                 break;
             case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_INPUT: case "STEP_ACTION_TYPE_INPUT":
-                (inputFunc !== null) && inputFunc();
+                inputFunc?.();
                 break;
             case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_REDIRECT:
-                (redirectFunc !== null) && redirectFunc();
+                redirectFunc?.();
                 break;
             case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SELECT:
-                (selectFunc !== null) && selectFunc();
+                selectFunc?.();
                 break;
             case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SIDE_INSTRUCTION: case "STEP_ACTION_TYPE_SIDE_INSTRUCTION":
-                (instructionFunc !== null) && instructionFunc();
+                instructionFunc?.();
                 break;
             default:
-                (defaultFunc !== null) && defaultFunc();
+                defaultFunc?.();
                 break;
         }
     }

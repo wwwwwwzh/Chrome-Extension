@@ -15,6 +15,11 @@ class FollowTutorialViewController {
     popUpHeader;
     highlightInstructionWindow;
 
+    //Local Variables
+    #sideInstructionAutoNextTimer = null
+    #isMainPopUpCollapsed = false
+    #speedBarValue = 50
+
     //Delegates
     followTutorialViewControllerDelegate
 
@@ -68,7 +73,7 @@ class FollowTutorialViewController {
         this.mainCloseButton = $('#w-main-close-button');
 
         this.mainCloseButton.on("click", () => {
-            if (globalCache.isMainPopUpCollapsed) {
+            if (this.#isMainPopUpCollapsed) {
                 this.mainPopUpContainer.removeClass('w-popup-collapsed');
                 this.mainPopUpContainer.addClass('w-main-popup');
                 this.mainCloseButton.removeClass('w-close-button-collapsed');
@@ -76,7 +81,7 @@ class FollowTutorialViewController {
                 this.mainPopUpContainer.find('.w-should-reopen').show();
                 this.mainPopUpContainer.find('.w-should-reopen').removeClass('w-should-reopen');
 
-                globalCache.isMainPopUpCollapsed = false;
+                this.#isMainPopUpCollapsed = false;
             } else {
                 this.mainPopUpContainer.find(':visible').each((i, element) => {
                     $(element).addClass('w-should-reopen');
@@ -88,7 +93,7 @@ class FollowTutorialViewController {
                 this.mainCloseButton.addClass('w-close-button-collapsed');
                 this.popUpHeader.show();
                 this.mainDraggableArea.show();
-                globalCache.isMainPopUpCollapsed = true;
+                this.#isMainPopUpCollapsed = true;
             }
         })
 
@@ -153,17 +158,17 @@ class FollowTutorialViewController {
     }
 
     //TutorialsModelFollowingTutorialDelegate
-    makeButtonFromTutorialData(tutorialData, tutorialID) {
+    drawUIWhileInitializing(tutorial) {
         this.mainPopUpContainer.append(`
-        <a class=\"w-simple-tutorial-button w-not-following-tutorial-item w-button-normal\" id=\"${tutorialID}\">
-            ${tutorialData.name}
+        <a class=\"w-simple-tutorial-button w-not-following-tutorial-item w-button-normal\" id=\"${tutorial.id}\">
+            ${tutorial.name}
         </a> 
         `);
-        const button = $(`#${tutorialID}`).first();
+        const button = $(`#${tutorial.id}`).first();
 
         //button click function. store tutorial's steps to storage
         button.on('click', () => {
-            this.#onTutorialChosen(tutorialID);
+            this.#onTutorialChosen(tutorial.id);
         });
     }
 
@@ -280,8 +285,8 @@ class FollowTutorialViewController {
     stopCurrentTutorial() {
         //UI
         Highlighter.removeLastHighlight()
-        clearTimeout(globalCache.sideInstructionAutoNextTimer);
-        globalCache.sideInstructionAutoNextTimer = null;
+        clearTimeout(this.#sideInstructionAutoNextTimer);
+        this.#sideInstructionAutoNextTimer = null;
         $('.w-following-tutorial-item, .w-follow-tutorial-options-item, .w-highlight-instruction-window').hide();
 
         const data = {};
@@ -313,7 +318,7 @@ class FollowTutorialViewController {
         $('.w-not-following-tutorial-item').remove();
         this.#automationSpeedSliderHelper();
         TutorialsModel.forEachTutorial((tutorial, index) => {
-            this.makeButtonFromTutorialData(tutorial, tutorial.id)
+            this.drawUIWhileInitializing(tutorial, tutorial.id)
         })
     }
 
@@ -345,14 +350,21 @@ class FollowTutorialViewController {
 
     #chooseFunctionAccordingToCurrentStepType(onStepActionClick, onStepActionClickRedirect, onStepActionRedirect, onStepActionInput, onStepActionSelect, onStepSideInstruction) {
         const currentStep = TutorialsModel.getCurrentStep();
-        const interval = intervalFromSpeed(globalCache.speedBarValue);
+        const interval = intervalFromSpeed(this.#speedBarValue);
         globalCache.interval = interval;
         //onEnteredWrongPage(tutorialObj, currentStep.url);
         Step.callFunctionOnActionType(currentStep.actionType, onStepActionClick, onStepActionClickRedirect, onStepActionInput, onStepActionRedirect, onStepActionSelect, onStepSideInstruction)
     }
 
     #showTutorialStepManual() {
-        this.#chooseFunctionAccordingToCurrentStepType(this.#manualStep, this.#manualStep, this.#manualRedirect, this.#manualInput, this.#manualSelect, this.#manualSideInstruction);
+        this.#chooseFunctionAccordingToCurrentStepType(
+            this.#manualStep.bind(this),
+            this.#manualStep.bind(this),
+            this.#manualRedirect.bind(this),
+            this.#manualInput.bind(this),
+            this.#manualSelect.bind(this),
+            this.#manualSideInstruction.bind(this)
+        );
     }
 
     //------------------------------------------------------------------------------------------------------------
@@ -365,9 +377,9 @@ class FollowTutorialViewController {
         console.log(click.path)
         //const element = $(jqueryElementStringFromDomPath(click.path)).first();
         if (click.useAnythingInTable) {
-            Highlighter.highlightAndScollTo(click.table);
+            Highlighter.highlight(click.table, true, Highlighter.HIGHLIGHT_TYPES.SCROLL_AND_ALERT);
         } else {
-            Highlighter.highlightAndScollTo(click.path);
+            Highlighter.highlight(click.path, true, Highlighter.HIGHLIGHT_TYPES.SCROLL_AND_ALERT);
         }
     }
 
@@ -384,16 +396,16 @@ class FollowTutorialViewController {
     #manualRedirect() {
         const click = TutorialsModel.getCurrentStep().actionObject.defaultClick;
         if (click.useAnythingInTable) {
-            Highlighter.highlightAndScollTo(click.table);
+            Highlighter.highlight(click.table, true, Highlighter.HIGHLIGHT_TYPES.SCROLL_AND_ALERT);
         } else {
-            Highlighter.highlightAndScollTo(click.path);
+            Highlighter.highlight(click.path, true, Highlighter.HIGHLIGHT_TYPES.SCROLL_AND_ALERT);
         }
     }
 
     #manualInput() {
         const inputObj = TutorialsModel.getCurrentStep().actionObject;
         //const element = $(jqueryElementStringFromDomPath(inputObj.path)).first();
-        Highlighter.highlightAndScollTo(inputObj.path);
+        Highlighter.highlight(inputObj.path, true, Highlighter.HIGHLIGHT_TYPES.SCROLL_AND_ALERT);
     }
 
     #manualSelect() {
@@ -402,9 +414,9 @@ class FollowTutorialViewController {
 
     #manualSideInstruction() {
         const sideInstructionObj = TutorialsModel.getCurrentStep().actionObject;
-        Highlighter.highlightAndScollTo(sideInstructionObj.path);
+        Highlighter.highlight(sideInstructionObj.path, true, Highlighter.HIGHLIGHT_TYPES.SCROLL_AND_ALERT);
         //UI
-        globalCache.sideInstructionAutoNextTimer = setTimeout(() => {
+        this.#sideInstructionAutoNextTimer = setTimeout(() => {
             this.#incrementCurrentStepHelper();
         }, 3000);
     }
@@ -438,7 +450,7 @@ class FollowTutorialViewController {
             return;
         }
         const element = $(jqueryElementStringFromDomPath(step.path))[0];
-        Highlighter.highlightAndScollTo(step.path, true, () => {
+        Highlighter.highlight(step.path, true, Highlighter.HIGHLIGHT_TYPES.ALERT, () => {
             simulateClick(element);
             this.#incrementCurrentStepHelper();
         });
@@ -456,7 +468,7 @@ class FollowTutorialViewController {
         //get and highlight input element
         const inputEle = $(jqueryElementStringFromDomPath(step.path)).first();
 
-        Highlighter.highlightAndScollTo(step.path, true, () => {
+        Highlighter.highlight(step.path, true, Highlighter.HIGHLIGHT_TYPES.ALERT, () => {
             //check if there is default input
             const defaultText = step.defaultText;
             // if (isNotNull(defaultText) && !isEmpty(defaultText)) {
@@ -476,7 +488,7 @@ class FollowTutorialViewController {
         const step = TutorialsModel.getCurrentStep().actionObject;
         //get and highlight input element
         const selectEle = $(jqueryElementStringFromDomPath(step.path)).first();
-        Highlighter.highlightAndScollTo(step.path, true, () => {
+        Highlighter.highlight(step.path, true, Highlighter.HIGHLIGHT_TYPES.ALERT, () => {
             //check if there is default input
             selectEle.val(step.defaultValue);
             //this step completed, go to next step
@@ -494,7 +506,7 @@ class FollowTutorialViewController {
     }
 
     #onAutomationSpeedSliderChanged() {
-        globalCache.speedBarValue = automationSpeedSlider.val();
+        this.#speedBarValue = automationSpeedSlider.val();
     }
 
     //------------------------------------------------------------------------------------------------------------
@@ -553,8 +565,8 @@ class FollowTutorialViewController {
         function onClickWithStepTypeSideInstruction() {
             const elementPath = TutorialsModel.getCurrentStep().actionObject.path;
             if (isSelectedOnRightElement(globalCache.domPath, elementPath)) {
-                clearTimeout(globalCache.sideInstructionAutoNextTimer);
-                globalCache.sideInstructionAutoNextTimer = null;
+                clearTimeout(this.#sideInstructionAutoNextTimer);
+                this.#sideInstructionAutoNextTimer = null;
                 this.#incrementCurrentStepHelper();
                 return;
             } else {
@@ -566,14 +578,22 @@ class FollowTutorialViewController {
             //simulateClick(globalCache.currentElement);
             console.log('wrong element')
             setTimeout(() => {
-                Highlighter.highlightAndScollTo(path);
+                Highlighter.highlight(path, true, Highlighter.HIGHLIGHT_TYPES.SCROLL_AND_ALERT);
             }, 100);
         }
+    }
+
+
+    #deInitializeUI() {
+        $('#w-main-popup-container').remove()
+        $('#w-highlight-instruction-window').remove()
     }
 
     //lifecycle
     dismiss() {
         this.stopCurrentTutorial()
+        this.#deInitializeUI()
+
         TutorialsModel.tutorialsModelFollowingTutorialDelegate = null
         UserEventListnerHandler.userEventListnerHandlerDelegate = null
         Highlighter.highlighterViewControllerSpecificUIDelegate = null
@@ -581,7 +601,7 @@ class FollowTutorialViewController {
 
     //Pure UI methods
     #automationSpeedSliderHelper() {
-        this.automationSpeedSlider.val(globalCache.speedBarValue);
+        this.automationSpeedSlider.val(this.#speedBarValue);
     }
 
 
