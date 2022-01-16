@@ -1,11 +1,12 @@
 class TutorialsModel {
     static #tutorials
     static #urlAssociatedWithCurrentTutorialsQuerySnapshot
+    static #lastSavedTimestamp
 
     static #tutorialsQuerySnapshot
 
     /**
-     * Only has a drawUIWhileInitializing() function for speed optimization
+     * 
      */
     static tutorialsModelFollowingTutorialDelegate
 
@@ -50,17 +51,43 @@ class TutorialsModel {
     }
 
     static async checkIfAnyTutorialExistsOnPage() {
-        //if (TutorialsModel.#urlAssociatedWithCurrentTutorialsQuerySnapshot !== globalCache.currentURL) {
-        TutorialsModel.#tutorialsQuerySnapshot = await getDocs(TutorialsModel.#getMatchedTutorialsQuery());
-        TutorialsModel.#urlAssociatedWithCurrentTutorialsQuerySnapshot = globalCache.currentURL
+        if (TutorialsModel.#checkIfReloadIsNeeded()) {
+            await TutorialsModel.#getTutorialsQuerySnapshot()
+        }
         return !TutorialsModel.#tutorialsQuerySnapshot.empty
-        // } else {
-        //     return !TutorialsModel.#tutorialsQuerySnapshot.empty
-        // }
     }
 
-    static async initializeFromFirestore(drawUIOnTheFly = false, callback = () => { }) {
+    static async #getTutorialsQuerySnapshot() {
+        TutorialsModel.#tutorialsQuerySnapshot = await getDocs(TutorialsModel.#getMatchedTutorialsQuery());
+    }
+
+    static #checkIfReloadIsNeeded() {
+        const result = TutorialsModel.#urlAssociatedWithCurrentTutorialsQuerySnapshot !== globalCache.currentURL || checkIfPassedReloadTime()
+        if (result) {
+            TutorialsModel.#urlAssociatedWithCurrentTutorialsQuerySnapshot = globalCache.currentURL
+            TutorialsModel.#lastSavedTimestamp = Date.now()
+        }
+        return result
+
+        function checkIfPassedReloadTime() {
+            return ((Date.now() / 60000 | 0) - (TutorialsModel.#lastSavedTimestamp / 60000 | 0)) > 3
+        }
+    }
+
+    /**
+     * Load new query from firestore and initialize model.
+     * Should be used when forcing a new firestore query.
+     * smartInit is preferred
+     * @param {*} callback 
+     */
+    static async initializeFromFirestore(callback = () => { }) {
+        await TutorialsModel.#getTutorialsQuerySnapshot()
         TutorialsModel.#tutorials = [];
+        await TutorialsModel.#loadFromQuerySnapshot()
+        TutorialsModel.saveToStorage(callback);
+    }
+
+    static async #loadFromQuerySnapshot() {
         await Promise.all(TutorialsModel.#tutorialsQuerySnapshot.docs.map(async (tutorial) => {
             const tutorialID = tutorial.id;
             const tutorialData = tutorial.data();
@@ -76,14 +103,14 @@ class TutorialsModel {
             var steps = [];
             //TODO!: solve url problem (possibly using regex)
             var isFirstStepReached = false;
-            stepsQuerySnapshot.forEach((step) => {
+            stepsQuerySnapshot.forEach((step, index) => {
                 const data = step.data();
                 data.id = step.id;
+                data.getPath = Step.prototype.getPath
                 //remove steps used prior to accessing this page
                 if (isFirstStepReached) {
                     steps.push(data);
                 } else {
-
                     if (checkIfUrlMatch(data.url, globalCache.currentUrl)) {
                         isFirstStepReached = true;
                         steps.push(data);
@@ -93,14 +120,22 @@ class TutorialsModel {
 
             const tutorialObj = new TutorialObject(tutorialData.name, '', [], steps, tutorialData.all_urls, tutorialID)
             TutorialsModel.#tutorials.push(tutorialObj);
-            drawUIOnTheFly && TutorialsModel.tutorialsModelFollowingTutorialDelegate.drawUIWhileInitializing(tutorialObj);
         }));
-        TutorialsModel.saveToStorage(callback);
+    }
+
+    static async smartInit(callback) {
+        if (TutorialsModel.#checkIfReloadIsNeeded()) {
+            await TutorialsModel.initializeFromFirestore(callback)
+        } else if (TutorialsModel.#tutorials?.length < 1) {
+            await TutorialsModel.#loadFromQuerySnapshot()
+        } else {
+            TutorialsModel.loadFromStorage(callback)
+        }
     }
 
     /**
      * Initialize tutorials from chrome.storage.sync. Use cases might include refreshing pages or 
-     * going to new pages.
+     * going to new pages. smartInit is preferred
      * @param {*} callback 
      */
     static loadFromStorage(callback = () => { }) {
@@ -358,6 +393,10 @@ class Step {
         this.id = id;
     }
 
+    static getPath(step) {
+        return step.actionObject.getPath()
+    }
+
     static callFunctionOnActionType(actionType, clickFunc, carFunc, inputFunc, redirectFunc, selectFunc, instructionFunc, nullFunc = null, defaultFunc = null) {
         switch (actionType) {
             case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL:
@@ -385,5 +424,18 @@ class Step {
                 defaultFunc?.();
                 break;
         }
+    }
+
+    static isStepCompleted(step) {
+        return ((
+            RedirectAction.isRedirectCompleted(step.actionObject) ||
+            ClickAction.isClickActionCompleted(step.actionObject) ||
+            InputAction.isInputCompleted(step.actionObject) ||
+            SelectAction.isSelectCompleted(step.actionObject) ||
+            SideInstructionAction.isSideInstructionCompleted(step.actionObject)) &&
+            isNotNull(step.index) &&
+            step.actionType !== VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL &&
+            typeof step.actionObject !== 'NullAction'
+        )
     }
 }

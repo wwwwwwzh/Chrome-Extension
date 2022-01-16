@@ -4,7 +4,7 @@ let globalCache
 $(() => {
     globalCache = new GlobalCache()
     extension = new ExtensionController()
-    //extension.showRecordingPanel()
+    extension.showRecordingPanel()
 })
 
 

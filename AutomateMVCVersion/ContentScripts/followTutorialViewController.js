@@ -150,7 +150,11 @@ class FollowTutorialViewController {
 
                 break;
             case VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL:
-                TutorialsModel.initializeFromFirestore(true)
+                TutorialsModel.smartInit(() => {
+                    TutorialsModel.forEachTutorial((tutorial) => {
+                        this.#addTutorialButton(tutorial)
+                    })
+                })
                 break;
             default:
                 break;
@@ -158,19 +162,7 @@ class FollowTutorialViewController {
     }
 
     //TutorialsModelFollowingTutorialDelegate
-    drawUIWhileInitializing(tutorial) {
-        this.mainPopUpContainer.append(`
-        <a class=\"w-simple-tutorial-button w-not-following-tutorial-item w-button-normal\" id=\"${tutorial.id}\">
-            ${tutorial.name}
-        </a> 
-        `);
-        const button = $(`#${tutorial.id}`).first();
 
-        //button click function. store tutorial's steps to storage
-        button.on('click', () => {
-            this.#onTutorialChosen(tutorial.id);
-        });
-    }
 
     //UserEventListnerHandlerDelegate
     onClick() {
@@ -318,7 +310,7 @@ class FollowTutorialViewController {
         $('.w-not-following-tutorial-item').remove();
         this.#automationSpeedSliderHelper();
         TutorialsModel.forEachTutorial((tutorial, index) => {
-            this.drawUIWhileInitializing(tutorial, tutorial.id)
+            this.#addTutorialButton(tutorial)
         })
     }
 
@@ -605,4 +597,17 @@ class FollowTutorialViewController {
     }
 
 
+    #addTutorialButton(tutorial) {
+        this.mainPopUpContainer.append(`
+        <a class=\"w-simple-tutorial-button w-not-following-tutorial-item w-button-normal\" id=\"${tutorial.id}\">
+            ${tutorial.name}
+        </a> 
+        `);
+        const button = $(`#${tutorial.id}`).first();
+
+        //button click function. store tutorial's steps to storage
+        button.on('click', () => {
+            this.#onTutorialChosen(tutorial.id);
+        });
+    }
 }

@@ -214,9 +214,9 @@ class RecordTutorialViewController {
             this.toogleAdvancedRecordingButton.addClass('recording-panel-toogle-advanced-button-advanced');
             this.#isUsingAdvancedRecordingPanel = true;
             //load model
-            if (await TutorialsModel.checkIfAnyTutorialExistsOnPage()) {
-                TutorialsModel.initializeFromFirestore(true)
-            }
+            TutorialsModel.smartInit(() => {
+                this.#createSnapshotsForAllTutorials()
+            })
         } else {
             this.recordingContainer.removeClass('w-recording-panel-advanced-container');
             this.recordingContainer.addClass('w-recording-panel-container');
@@ -261,9 +261,6 @@ class RecordTutorialViewController {
     }
 
     //TutorialsModelFollowingTutorialDelegate
-    drawUIWhileInitializing(tutorial) {
-        this.#createSnapshotsForTutorial(tutorial)
-    }
 
     //UserEventListnerHandlerDelegate
     onClick() {
@@ -591,6 +588,7 @@ class RecordTutorialViewController {
 
     #createSnapshotsForTutorial(tutorial) {
         tutorial.steps.forEach((step, index) => {
+            c(step)
             if (step.url === globalCache.currentUrl) {
                 if (index !== 0) {
                     this.#createSnapshotForStep(tutorial.id, step)
@@ -602,9 +600,12 @@ class RecordTutorialViewController {
             }
         })
         document.querySelectorAll('.step-snapshot-container').forEach(element => {
+            //drag and drop handler
             element.usePlaceholder = true
             DragAndDropHandler.addDragListenerToElement(element)
             DragAndDropHandler.dropHandlerDelegate = window
+            //mouse over handler
+
         });
     }
 
@@ -638,6 +639,13 @@ class RecordTutorialViewController {
             </div>
         </div>
         `)
+        const element = document.getElementById(step.id)
+        element.addEventListener("mouseenter", () => {
+            Highlighter.highlight(step.getPath())
+        })
+        element.addEventListener("mouseleave", () => {
+            Highlighter.removeLastHighlight()
+        })
     }
 
 

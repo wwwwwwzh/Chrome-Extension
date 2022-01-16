@@ -697,6 +697,7 @@
     font-style: normal;
     font-size: small;
     font-weight: lighter;
+    cursor: pointer;
 }
 
 .next-step-button-round-container {

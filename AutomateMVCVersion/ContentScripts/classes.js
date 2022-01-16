@@ -1,15 +1,4 @@
-function isStepCompleted(step) {
-    return ((
-        isRedirectCompleted(step.actionObject) ||
-        isClickActionCompleted(step.actionObject) ||
-        isInputCompleted(step.actionObject) ||
-        isSelectCompleted(step.actionObject) ||
-        isSideInstructionCompleted(step.actionObject)) &&
-        isNotNull(step.index) &&
-        step.actionType !== VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL &&
-        typeof step.actionObject !== 'NullAction'
-    )
-}
+
 
 
 /**
@@ -23,11 +12,17 @@ class RedirectAction {
     constructor(url) {
         this.url = url;
     }
+
+    static getPath() {
+        return null
+    }
+
+    static isRedirectCompleted(redirect) {
+        return (isNotNull(redirect.url));
+    }
 }
 
-function isRedirectCompleted(redirect) {
-    return (isNotNull(redirect.url));
-}
+
 
 
 class ClickAction {
@@ -40,11 +35,16 @@ class ClickAction {
         this.defaultClick = defaultClick;
         this.optionsClick = optionsClick;
     }
+
+    static getPath(actionObject) {
+        return actionObject.defaulvtClick.path
+    }
+
+    static isClickActionCompleted(click) {
+        return isClickGuideCompleted(click.defaultClick);
+    }
 }
 
-function isClickActionCompleted(click) {
-    return isClickGuideCompleted(click.defaultClick);
-}
 
 /**
  * Helper class to wrap what to do during one click action step. Used in ClickAction
@@ -67,17 +67,23 @@ class ClickGuide {
         this.useAnythingInTable = useAnythingInTable;
         this.table = table;
     }
+
+    static getPath(actionObject) {
+        return actionObject.path
+    }
+
+    static isClickGuideCompleted(clickGuide) {
+        return (
+            isNotNull(clickGuide) &&
+            isNotNull(clickGuide.path) &&
+            clickGuide.path.length > 0 &&
+            clickGuide.name !== null &&
+            clickGuide.name !== "" &&
+            isNotNull(clickGuide.isRedirect))
+    }
 }
 
-function isClickGuideCompleted(clickGuide) {
-    return (
-        isNotNull(clickGuide) &&
-        isNotNull(clickGuide.path) &&
-        clickGuide.path.length > 0 &&
-        clickGuide.name !== null &&
-        clickGuide.name !== "" &&
-        isNotNull(clickGuide.isRedirect))
-}
+
 
 class InputAction {
     /**
@@ -96,11 +102,17 @@ class InputAction {
         this.optionsText = optionsText;
         this.inputType = inputType;
     }
+
+    static getPath(actionObject) {
+        return actionObject.path
+    }
+
+    static isInputCompleted(input) {
+        return (isNotNull(input.path) && input.path !== [] && isNotNull(input.defaultText) && input.inputType !== "");
+    }
 }
 
-function isInputCompleted(input) {
-    return (isNotNull(input.path) && input.path !== [] && isNotNull(input.defaultText) && input.inputType !== "");
-}
+
 
 class SelectAction {
     /**
@@ -112,22 +124,34 @@ class SelectAction {
         this.path = path;
         this.defaultValue = defaultValue;
     }
+
+    static getPath(actionObject) {
+        return actionObject.path
+    }
+
+    static isSelectCompleted(select) {
+        return (isNotNull(select.path) && select.path !== [] && select.defaultValue !== "")
+    }
 }
 
-function isSelectCompleted(select) {
-    return (isNotNull(select.path) && select.path !== [] && select.defaultValue !== "")
-}
+
 
 
 class SideInstructionAction {
     constructor(path) {
         this.path = path;
     }
+
+    static getPath(actionObject) {
+        return actionObject.path
+    }
+
+    static isSideInstructionCompleted(si) {
+        return (isNotNull(si.path) && si.path !== [])
+    }
 }
 
-function isSideInstructionCompleted(si) {
-    return (isNotNull(si.path) && si.path !== [])
-}
+
 
 class UserEventListnerHandler {
     /**
