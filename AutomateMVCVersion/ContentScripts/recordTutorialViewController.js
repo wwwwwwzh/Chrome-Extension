@@ -641,7 +641,8 @@ class RecordTutorialViewController {
         `)
         const element = document.getElementById(step.id)
         element.addEventListener("mouseenter", () => {
-            Highlighter.highlight(step.getPath())
+            c(Step.getPath(step))
+            Highlighter.highlight(Step.getPath(step))
         })
         element.addEventListener("mouseleave", () => {
             Highlighter.removeLastHighlight()

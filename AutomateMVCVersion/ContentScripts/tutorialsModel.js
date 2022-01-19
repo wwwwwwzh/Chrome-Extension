@@ -394,35 +394,36 @@ class Step {
     }
 
     static getPath(step) {
-        return step.actionObject.getPath()
+        return Step.callFunctionOnActionType(
+            step.actionType,
+            () => { return ClickAction.getPath(step.actionObject) },
+            () => { return ClickAction.getPath(step.actionObject) },
+            () => { return InputAction.getPath(step.actionObject) },
+            () => { return RedirectAction.getPath(step.actionObject) },
+            () => { return SelectAction.getPath(step.actionObject) },
+            () => { return SideInstructionAction.getPath(step.actionObject) },
+            () => { return NullAction.getPath(step.actionObject) },
+        )
     }
 
     static callFunctionOnActionType(actionType, clickFunc, carFunc, inputFunc, redirectFunc, selectFunc, instructionFunc, nullFunc = null, defaultFunc = null) {
         switch (actionType) {
             case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL:
-                nullFunc?.();
-                break;
+                return nullFunc?.();
             case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK: case "STEP_ACTION_TYPE_CLICK":
-                clickFunc?.();
-                break;
+                return clickFunc?.();
             case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK_REDIRECT:
-                carFunc?.();
-                break;
+                return carFunc?.();
             case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_INPUT: case "STEP_ACTION_TYPE_INPUT":
-                inputFunc?.();
-                break;
+                return inputFunc?.();
             case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_REDIRECT:
-                redirectFunc?.();
-                break;
+                return redirectFunc?.();
             case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SELECT:
-                selectFunc?.();
-                break;
+                return selectFunc?.();
             case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SIDE_INSTRUCTION: case "STEP_ACTION_TYPE_SIDE_INSTRUCTION":
-                instructionFunc?.();
-                break;
+                return instructionFunc?.();
             default:
-                defaultFunc?.();
-                break;
+                return defaultFunc?.();
         }
     }
 

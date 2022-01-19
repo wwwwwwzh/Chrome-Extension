@@ -37,7 +37,7 @@ class ClickAction {
     }
 
     static getPath(actionObject) {
-        return actionObject.defaulvtClick.path
+        return actionObject.defaultClick.path
     }
 
     static isClickActionCompleted(click) {

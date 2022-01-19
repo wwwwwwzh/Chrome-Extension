@@ -1,5 +1,6 @@
 function c(...data) {
     console.log(...data)
+    console.trace()
 }
 
 const firebaseConfig = {

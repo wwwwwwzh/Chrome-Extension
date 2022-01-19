@@ -1,4 +1,51 @@
 class FollowTutorialViewController {
+    //Constants
+    static #WORKFLOW_LIST_POPUP_HTML_SIMPLE() {
+        return `
+        <div id="w-workflow-list-popup-simple" class="w-workflow-list-popup">
+            <div id="w-main-draggable-area" class="w-common-item w-popup-draggable"></div>
+            <div id="w-workflow-list-popup-header">
+                <div class="w-search-bar-container">
+                    <input class="w-search-bar" type="text" title="Search">
+                    <img class="w-search-icon" src="./assets/imgs/icons/search.svg" title="Search">
+                </div>
+                <img class="w-close-icon w-workflow-list-popup-close-button" src="./assets/imgs/icons/close.svg" title="Close">
+            </div>
+            <div id="w-workflow-list-popup-scroll-area"></div>
+        </div>`
+    }
+
+    static #WORKFLOW_LIST_POPUP_HTML_AUTUMN() {
+        return `
+            <div id="w-workflow-list-popup-autumn" class="w-workflow-list-popup">
+                <div id="w-main-draggable-area"  class="w-common-item w-popup-draggable"></div>
+
+                <div id="w-popup-header" class="w-common-item w-header">
+                    <div class="w-common-item w-close-button w-workflow-list-popup-close-button" id="w-workflow-list-popup-close-button-autumn"></div>
+                </div>
+
+                <button id="w-popup-automate-button" class="w-follow-tutorial-options-item w-button-normal">Automate</button>
+                <button id="w-popup-manual-button" class="w-follow-tutorial-options-item w-button-normal">Walk Me Through</button>
+                <button id="w-popup-cancel-button" class="w-follow-tutorial-options-item w-button-normal">Cancel</button>
+
+                <button id="w-popup-next-step-button" class="w-following-tutorial-item w-button-normal">Next</button>
+                <button id="w-stop-options-stop-button" class="w-following-tutorial-item w-button-normal">Stop</button>
+                
+                <input type="range" min="1" max="100" value="50" id="w-automation-speed-slider" class="w-common-item">
+
+                <a href="/" id="w-wrong-page-redirect-button" class="w-wrong-page-item w-wrong-page-redirect-button">You have an ongoing tutorial on [website address]</a>
+            </div>
+        `
+    }
+
+    static #HIGHLIGHT_INSTRUCTIONI_WINDOW_HTML() {
+        return `     
+            <div id="w-highlight-instruction-window" class="w-highlight-instruction-window">
+                <h3 id="w-popup-step-name" class="w-following-tutorial-item"></h3>
+                <p id="w-popup-step-description" class="w-following-tutorial-item"></p>
+            </div>
+        `
+    }
     //UI
     mainPopUpContainer;
     mainDraggableArea;
@@ -32,98 +79,79 @@ class FollowTutorialViewController {
     }
 
     #initializeUI() {
-        const body = $('body');
-        body.append(
-            `
-            <div id="w-main-popup-container" class="w-main-popup">
-                <div id="w-main-draggable-area"  class="w-common-item w-popup-draggable"></div>
+        $('body').append(this.#getAllContentHTML());
+        this.#initializeUICommon()
+        this.#initializeUISimple()
 
-                <div id="w-popup-header" class="w-common-item w-header">
-                    <div class="w-common-item w-close-button" id="w-main-close-button"></div>
-                </div>
 
-                <button id="w-popup-automate-button" class="w-follow-tutorial-options-item w-button-normal">Automate</button>
-                <button id="w-popup-manual-button" class="w-follow-tutorial-options-item w-button-normal">Walk Me Through</button>
-                <button id="w-popup-cancel-button" class="w-follow-tutorial-options-item w-button-normal">Cancel</button>
 
-                <button id="w-popup-next-step-button" class="w-following-tutorial-item w-button-normal">Next</button>
-                <button id="w-stop-options-stop-button" class="w-following-tutorial-item w-button-normal">Stop</button>
-                
-                <input type="range" min="1" max="100" value="50" id="w-automation-speed-slider" class="w-common-item">
 
-                <a href="/" id="w-wrong-page-redirect-button" class="w-wrong-page-item w-wrong-page-redirect-button">You have an ongoing tutorial on [website address]</a>
-            </div>
-            <div id="w-highlight-instruction-window" class="w-highlight-instruction-window">
-                <h3 id="w-popup-step-name" class="w-following-tutorial-item"></h3>
-                <p id="w-popup-step-description" class="w-following-tutorial-item"></p>
-            </div>
-        `
-        );
-        this.mainPopUpContainer = $('#w-main-popup-container');
+
+
+
+
+
+
+
+
+        this.mainPopUpContainer.children().hide();
+        $('.w-common-item').show();
+
+
+    }
+
+    #getAllContentHTML() {
+        return FollowTutorialViewController.#WORKFLOW_LIST_POPUP_HTML_SIMPLE() + FollowTutorialViewController.#HIGHLIGHT_INSTRUCTIONI_WINDOW_HTML()
+    }
+
+    #initializeUICommon() {
+        this.mainPopUpContainer = $('.w-workflow-list-popup');
 
         this.mainDraggableArea = $('#w-main-draggable-area');
         makeElementDraggable(this.mainDraggableArea[0], this.mainPopUpContainer[0]);
 
-        this.automationSpeedSlider = $('#w-automation-speed-slider');
-        this.automationSpeedSlider.on('change', () => {
-            this.#onAutomationSpeedSliderChanged();
-        })
+        // this.popUpHeader = $('#w-popup-header');
+        // this.mainCloseButton = $('.w-workflow-list-popup-close-button');
 
-        this.popUpHeader = $('#w-popup-header');
-        this.mainCloseButton = $('#w-main-close-button');
+        // this.mainCloseButton.on("click", () => {
+        //     if (this.#isMainPopUpCollapsed) {
+        //         this.mainPopUpContainer.removeClass('w-popup-collapsed');
+        //         this.mainPopUpContainer.addClass('w-workflow-list-popup');
+        //         this.mainCloseButton.removeClass('w-close-button-collapsed');
+        //         this.mainCloseButton.addClass('w-close-button');
+        //         this.mainPopUpContainer.find('.w-should-reopen').show();
+        //         this.mainPopUpContainer.find('.w-should-reopen').removeClass('w-should-reopen');
 
-        this.mainCloseButton.on("click", () => {
-            if (this.#isMainPopUpCollapsed) {
-                this.mainPopUpContainer.removeClass('w-popup-collapsed');
-                this.mainPopUpContainer.addClass('w-main-popup');
-                this.mainCloseButton.removeClass('w-close-button-collapsed');
-                this.mainCloseButton.addClass('w-close-button');
-                this.mainPopUpContainer.find('.w-should-reopen').show();
-                this.mainPopUpContainer.find('.w-should-reopen').removeClass('w-should-reopen');
+        //         this.#isMainPopUpCollapsed = false;
+        //     } else {
+        //         this.mainPopUpContainer.find(':visible').each((i, element) => {
+        //             $(element).addClass('w-should-reopen');
+        //         })
+        //         this.mainPopUpContainer.removeClass('w-workflow-list-popup');
+        //         this.mainPopUpContainer.addClass('w-popup-collapsed');
+        //         this.mainPopUpContainer.children().hide();
+        //         this.mainCloseButton.removeClass('w-close-button');
+        //         this.mainCloseButton.addClass('w-close-button-collapsed');
+        //         this.popUpHeader.show();
+        //         this.mainDraggableArea.show();
+        //         this.#isMainPopUpCollapsed = true;
+        //     }
+        // })
 
-                this.#isMainPopUpCollapsed = false;
-            } else {
-                this.mainPopUpContainer.find(':visible').each((i, element) => {
-                    $(element).addClass('w-should-reopen');
-                })
-                this.mainPopUpContainer.removeClass('w-main-popup');
-                this.mainPopUpContainer.addClass('w-popup-collapsed');
-                this.mainPopUpContainer.children().hide();
-                this.mainCloseButton.removeClass('w-close-button');
-                this.mainCloseButton.addClass('w-close-button-collapsed');
-                this.popUpHeader.show();
-                this.mainDraggableArea.show();
-                this.#isMainPopUpCollapsed = true;
-            }
-        })
+        // //guides during tutorial
+        // this.popUpNextStepButton = $("#w-popup-next-step-button");
+        // this.popUpNextStepButton.hide();
+        // this.popUpNextStepButton.on('click', event => {
+        //     //auto go to next step
+        //     this.#onPopUpNextStepButtonClicked()
+        // })
 
+        // this.stopOptionsStopButton = $('#w-stop-options-stop-button');
+        // this.stopOptionsStopButton.on('click', () => {
+        //     this.stopCurrentTutorial()
+        // });
 
-        //choose options before start
-        this.popUpAutomateButton = $("#w-popup-automate-button");
-        this.popUpManualButton = $("#w-popup-manual-button");
-        this.popUpCancelButton = $('#w-popup-cancel-button');
-        this.popUpCancelButton.on('click', () => {
-            $('.w-follow-tutorial-options-item').hide();
-            this.setOrUpdateChooseTutorialsPopupUIFromModel()
-        })
-
-        //guides during tutorial
-        this.popUpNextStepButton = $("#w-popup-next-step-button");
-        this.popUpNextStepButton.hide();
-        this.popUpNextStepButton.on('click', event => {
-            //auto go to next step
-            this.#onPopUpNextStepButtonClicked()
-        })
-
-        this.stopOptionsStopButton = $('#w-stop-options-stop-button');
-        this.stopOptionsStopButton.on('click', () => {
-            this.stopCurrentTutorial()
-        });
-
-        this.wrongPageRedirectButton = $('#w-wrong-page-redirect-button');
-
-        this.mainPopUpContainer.children().hide();
-        $('.w-common-item').show();
+        // this.wrongPageRedirectButton = $('#w-wrong-page-redirect-button');
 
         //Highlight instruction window
         this.highlightInstructionWindow = $('#w-highlight-instruction-window');
@@ -133,6 +161,27 @@ class FollowTutorialViewController {
         this.popUpStepDescription = $("#w-popup-step-description");
         this.popUpStepDescription.css({ 'overflow-wrap': 'break-word', });
     }
+
+    #initializeUIAutumn() {
+        this.automationSpeedSlider = $('#w-automation-speed-slider');
+        this.automationSpeedSlider.on('change', () => {
+            this.#onAutomationSpeedSliderChanged();
+        })
+
+        //choose options before start
+        this.popUpAutomateButton = $("#w-popup-automate-button");
+        this.popUpManualButton = $("#w-popup-manual-button");
+        this.popUpCancelButton = $('#w-popup-cancel-button');
+        this.popUpCancelButton.on('click', () => {
+            $('.w-follow-tutorial-options-item').hide();
+            this.setOrUpdateChooseTutorialsPopupUIFromModel()
+        })
+    }
+
+    #initializeUISimple() {
+
+    }
+
 
     #checkStatus(status) {
         UserEventListnerHandler.setTutorialStatusCache(status)
@@ -577,7 +626,7 @@ class FollowTutorialViewController {
 
 
     #deInitializeUI() {
-        $('#w-main-popup-container').remove()
+        $('.w-workflow-list-popup').remove()
         $('#w-highlight-instruction-window').remove()
     }
 
@@ -598,16 +647,61 @@ class FollowTutorialViewController {
 
 
     #addTutorialButton(tutorial) {
-        this.mainPopUpContainer.append(`
-        <a class=\"w-simple-tutorial-button w-not-following-tutorial-item w-button-normal\" id=\"${tutorial.id}\">
-            ${tutorial.name}
-        </a> 
-        `);
-        const button = $(`#${tutorial.id}`).first();
+        addTutorialButtonSimple(this)
 
-        //button click function. store tutorial's steps to storage
-        button.on('click', () => {
-            this.#onTutorialChosen(tutorial.id);
-        });
+
+        function addTutorialButtonAutumn(selfReference) {
+            selfReference.mainPopUpContainer.append(`
+            <a class=\"w-simple-tutorial-button w-not-following-tutorial-item w-button-normal\" id=\"${tutorial.id}\">
+                ${tutorial.name}
+            </a> 
+            `);
+            const button = document.getElementById(`${tutorial.id}`)
+
+            //button click function. store tutorial's steps to storage
+            button.addEventListener('click', () => {
+                selfReference.#onTutorialChosen(tutorial.id);
+            });
+        }
+
+        function addTutorialButtonSimple(selfReference) {
+            selfReference.mainPopUpContainer.append(`
+                <div class="w-workflow-list-cell" id=\"${tutorial.id}\">
+                    <div class="w-workflow-list-cell-upper-container">
+                        <div class="w-workflow-list-cell-attribute-icon"></div>
+                        <div class="w-workflow-list-cell-name">${tutorial.name}</div>
+                    </div>
+                </div>
+            `);
+
+            const item = document.getElementById(`${tutorial.id}`)
+            const original = item.innerHTML
+            item.addEventListener('click', () => {
+                $(item).append(`
+                <div class="w-workflow-list-cell-select-type-container">
+                    <div class="w-workflow-list-cell-type-button">
+                        <title class="w-workflow-list-cell-type-button-name">Auto</title>
+                        <div class="w-more-info-icon-container">
+                            <img class="w-more-info-icon"
+                                src="./assets/imgs/icons/question-mark.svg"
+                                title="Automatically go to the desired place">
+                        </div>
+                    </div>
+                    <div class="w-workflow-list-cell-type-button">
+                        <title class="w-workflow-list-cell-type-button-name">Show me</title>
+                        <div class="w-more-info-icon-container">
+                            <img class="w-more-info-icon"
+                                src="./assets/imgs/icons/question-mark.svg"
+                                title="Walk me through the process">
+                        </div>
+                    </div>
+                </div>
+            `)
+            })
+
+            item.addEventListener('mouseleave', e => {
+                e.target.innerHTML = original
+            })
+        }
     }
 }
