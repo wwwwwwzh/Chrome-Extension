@@ -28,6 +28,7 @@ class Highlighter {
     static highlighterViewControllerSpecificUIDelegate
 
     static highlight(element, removeLastHighlight = true, type = Highlighter.HIGHLIGHT_TYPES.BASIC, callback = () => { }) {
+        c('Highlighting:' + element + '|removeLastHighlight:' + removeLastHighlight + '|type:' + type)
         var jQElement = element
         //get jQElement from path array
         if (Array.isArray(element)) {
@@ -38,7 +39,6 @@ class Highlighter {
         highlightHelper()
 
         function highlightHelper() {
-            c(Highlighter.highlighterViewControllerSpecificUIDelegate)
             removeLastHighlight && Highlighter.removeLastHighlight();
             jQElement.addClass('w-highlight-box w-highlight-box-specifier');
             (Highlighter.#ALERT_MASK & type) && Highlighter.#alertElement(jQElement);
@@ -50,7 +50,6 @@ class Highlighter {
         function getjQElementFromPathAndNullCheck() {
             //TODO: regex path may highlight multiple elements, show all or what
             const jQElementToHighlight = $(jqueryElementStringFromDomPath(element));
-            console.log('jQElementToHighlight:' + JSON.stringify(jQElementToHighlight))
             if (element !== null) {
                 if (!(isNotNull(jQElementToHighlight[0]) && jQElementToHighlight.css('display') !== 'none')) {
                     //element not found
@@ -79,7 +78,16 @@ class Highlighter {
 
         function checkIfNeedToHighlight() {
             if (!isNotNull(jQElement)) return false;
-            if (isNotNull(jQElement.attr("class")) && arrayContains(jQElement.attr("class").split(/\s+/), ['w-highlight-box', 'w-highlight-box-specifier'])) return false;
+            if (Highlighter.#ALERT_MASK & type) {
+                if ($(jQElement).is(':animated')) {
+                    if (isNotNull(jQElement.attr("class")) && arrayContains(jQElement.attr("class").split(/\s+/), ['w-highlight-box', 'w-highlight-box-specifier'])) return false;
+                }
+            } else {
+                if (!$(jQElement).is(':animated')) {
+                    if (isNotNull(jQElement.attr("class")) && arrayContains(jQElement.attr("class").split(/\s+/), ['w-highlight-box', 'w-highlight-box-specifier'])) return false;
+                }
+            }
+
             return true
         }
     }
@@ -155,29 +163,34 @@ class Highlighter {
     }
 
     static #updateCount = 0;
+    static #lastHighlightedElement = null
+    static #lastHighlightedElementUpdateTimeout = null
 
     static #updateHighlightInstructionWindow(element) {
-        const tutorialsManager = TutorialsModel
-        const stepName = tutorialsManager.getCurrentStep().name;
-        const stepDescription = tutorialsManager.getCurrentStep().description;
-
-        if (isNotNull(stepName) || isNotNull(stepDescription)) {
-            Highlighter.highlighterViewControllerSpecificUIDelegate.highlightInstructionWindow.show();
-            const layout = getInstructionWindowLayout(element);
-            //console.log(layout);
-            Highlighter.highlighterViewControllerSpecificUIDelegate.highlightInstructionWindow.css(layout.css);
-            movePopupIfOverlap(Highlighter.highlighterViewControllerSpecificUIDelegate.mainPopUpContainer, Highlighter.highlighterViewControllerSpecificUIDelegate.highlightInstructionWindow);
-            Highlighter.highlighterViewControllerSpecificUIDelegate.updateStepInstructionUIHelper();
-            if (Highlighter.#updateCount === 0) {
-                setTimeout(() => {
-                    Highlighter.#updateHighlightInstructionWindow(element);
-                }, 200);
-                Highlighter.#updateCount++;
-            } else {
-                Highlighter.#updateCount = 0;
+        if (Highlighter.#lastHighlightedElement !== element || Highlighter.highlighterViewControllerSpecificUIDelegate.highlightInstructionWindow.is(":hidden")) {
+            //highlighting new element or no longer lighlighting, remove previous highlight attempt
+            Highlighter.#lastHighlightedElementUpdateTimeout && clearTimeout(Highlighter.#lastHighlightedElementUpdateTimeout)
+            if (element === Highlighter.#lastHighlightedElement) {
+                //no longer highlighting but timer tries to come in, remove and return
+                return
             }
-        } else {
-
         }
+
+        const layout = getInstructionWindowLayout(element);
+        Highlighter.highlighterViewControllerSpecificUIDelegate.highlightInstructionWindow.css(layout.css);
+        movePopupIfOverlap(Highlighter.highlighterViewControllerSpecificUIDelegate.mainPopUpContainer, Highlighter.highlighterViewControllerSpecificUIDelegate.highlightInstructionWindow);
+        Highlighter.highlighterViewControllerSpecificUIDelegate.updateStepInstructionUIHelper();
+
+        if (Highlighter.#updateCount < 2) {
+            Highlighter.#lastHighlightedElementUpdateTimeout = setTimeout(() => {
+                Highlighter.#updateHighlightInstructionWindow(element);
+            }, 200);
+            Highlighter.#updateCount++;
+        } else {
+            Highlighter.#updateCount = 0;
+        }
+
+        Highlighter.highlighterViewControllerSpecificUIDelegate.highlightInstructionWindow.show();
+        Highlighter.#lastHighlightedElement = element
     }
 }

@@ -267,11 +267,10 @@ class UserEventListnerHandler {
 
 class GlobalCache {
     constructor() {
-        this.interval = 2000,
-            this.domPath = null,
-            this.currentElement = null,
-            this.reHighlightAttempt = 0,
-            this.currentUrl = $(location).attr('href');
+        this.domPath = null
+        this.currentElement = null
+        this.reHighlightAttempt = 0
+        this.currentUrl = $(location).attr('href');
         this.currentURLObj = new URL(this.currentUrl);
     }
 

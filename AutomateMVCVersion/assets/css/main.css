@@ -93,49 +93,182 @@
     z-index: 2147483647;
 }
 
-#w-workflow-list-popup-autumn {
+
+/* MARK: Simple style popup menu */
+.w-workflow-list-popup {
     all: initial;
     top: 12px;
     left: 12px;
-    display: block;
     position: fixed;
     width: var(--popup-width);
     height: 300px;
-    padding: var(--padding-normal);
-    background-color: var(--color-background);
-    border-radius: 6px;
+    padding: var(--padding-small);
     z-index: 2147483647;
+    display: block;
+    box-sizing: border-box;
+    background: #ffffff;
+    border-radius: 4px;
+    box-shadow: 0px 0px 8px 0px rgb(0 0 0 / 25%);
 }
 
-.w-popup-collapsed {
+.w-workflow-list-popup-collapsed {
     all: initial;
     top: 12px;
     left: 12px;
-    width: var(--popup-width);
-    height: calc(var(--popup-header-height) + 2 * var(--padding-normal));
+    width: 50px;
+    height: 50px;
     display: block;
     position: fixed;
     padding: var(--padding-normal);
-    background-color: var(--color-background);
-    border-radius: 6px;
+    box-sizing: border-box;
+    background: #ffffff;
+    border-radius: 4px;
+    box-shadow: 0px 0px 8px 0px rgb(0 0 0 / 25%);
+    border-radius: 50px;
     z-index: 2147483647;
 }
 
-.w-header {
-    all: initial;
+.w-workflow-list-popup-header {
     position: relative;
     display: block;
-    width: var(--popup-innerWidth);
-    height: var(--popup-header-height);
-    padding: var(--padding-small);
+    box-sizing: border-box;
+    width: 100%;
+    padding-left: 40px;
 }
+
+.w-search-bar-container {
+    position: relative;
+    width: 120px;
+    border-radius: 30px;
+    border: 1px solid #dcdcdc;
+    outline: none;
+    height: 32px;
+    margin: 6px 0px 8px 6px;
+}
+
+.w-search-bar-container:hover {
+    box-shadow: 1px 1px 8px 1px #dcdcdc;
+}
+
+.w-search-bar-container:focus-within {
+    box-shadow: 1px 1px 8px 1px #dcdcdc;
+    outline: none;
+}
+
+.w-search-bar {
+    position: relative;
+    height: 30px;
+    border: none;
+    width: 80px;
+    font-size: 14px;
+    outline: none;
+    left: 12px;
+}
+
+.w-search-icon {
+    height: 18px;
+    position: absolute;
+    top: 5px;
+    right: 6px;
+    cursor: pointer;
+}
+
+
+.w-workflow-list-popup-scroll-area {
+    box-sizing: border-box;
+    width: 100%;
+    height: 250px;
+    overflow-y: scroll;
+    white-space: nowrap;
+}
+
+.w-workflow-list-cell {
+    position: relative;
+    display: block;
+    font-family: Roboto, RobotoDraft, Helvetica, Arial, sans-serif;
+    color: #202124;
+    font-size: 14px;
+    align-items: center;
+    cursor: pointer;
+}
+
+.w-workflow-list-cell-upper-container {
+    box-sizing: border-box;
+    display: flex;
+    padding: 8px 6px 0px 0px;
+    width: 100%;
+}
+
+.w-workflow-list-cell-attribute-icon {
+    display: inline-block;
+    width: 15%;
+    align-items: center;
+    text-align: center;
+}
+
+.w-workflow-list-cell-name {
+    display: inline-block;
+    width: 85%;
+    padding-bottom: 5px;
+    border-bottom: 0.5px solid #f2f2f2;
+    text-align: left;
+    line-height: 180%;
+    letter-spacing: .2px;
+    white-space: normal;
+}
+
+.w-workflow-list-cell:hover {
+    background-color: #f2f2f2;
+}
+
+.w-workflow-list-cell-select-type-container {
+    display: flex;
+    overflow: hidden;
+    list-style: none;
+    border-top: 0.5px solid #e2e2e2;
+}
+
+.w-workflow-list-cell-type-button {
+    position: relative;
+    display: inline-block;
+    width: 50%;
+    padding: 6px 0px 6px 0px;
+    cursor: pointer;
+    align-items: center;
+    text-align: center;
+    line-height: 180%;
+    letter-spacing: .2px;
+}
+
+.w-workflow-list-cell-type-button:hover {
+    background-color: #e2e2e2;
+}
+
+.w-workflow-list-cell-type-button:active {
+    background-color: #c7c7c7;
+}
+
+.w-workflow-list-cell-type-button-name {
+    display: inline-block;
+}
+
+.w-more-info-icon-container {
+    display: inline-block;
+}
+
+.w-more-info-icon {
+    height: 12px;
+}
+
+
 
 .w-close-button {
     all: initial;
     position: absolute;
-    right: 0px;
-    width: calc(var(--popup-header-height) - 2* var(--padding-small));
-    height: calc(var(--popup-header-height) - 2* var(--padding-small));
+    right: 6px;
+    top: 6px;
+    width: 20px;
+    height: 20px;
     opacity: 0.3;
     cursor: pointer;
     transition: var(--close-button-transition);
@@ -144,12 +277,13 @@
 .w-close-button:before, .w-close-button:after {
     all: initial;
     position: absolute;
-    left: calc((var(--popup-header-height) - 2* var(--padding-small)) / 2);
+    left: 10px;
     content: ' ';
-    height: calc(var(--popup-header-height) - 2* var(--padding-small));
+    height: 20px;
     width: 2px;
     background-color: #333;
     transition: var(--close-button-transition);
+    cursor: pointer;
 }
 .w-close-button:before {
     transform: rotate(45deg);
@@ -165,18 +299,19 @@
 .w-close-button-collapsed {
     all: initial;
     position: absolute;
-    right: 0px;
-    width: calc(var(--popup-header-height) - 2* var(--padding-small));
-    height: calc(var(--popup-header-height) - 2* var(--padding-small));
+    right: 15px;
+    top: 15px;
+    width: 20px;
+    height: 20px;
     opacity: 0.3;
     cursor: pointer;
     transition: var(--close-button-transition);
 }
 .w-close-button-collapsed:before, .w-close-button-collapsed:after {
     position: absolute;
-    left: calc((var(--popup-header-height) - 2* var(--padding-small)) / 2);
+    left: 10px;
     content: ' ';
-    height: calc(var(--popup-header-height) - 2* var(--padding-small));
+    height: 20px;
     width: 2px;
     background-color: #333;
     transition: var(--close-button-transition);
@@ -201,20 +336,8 @@
     bottom: 0px;
     border-radius: 6px;
     z-index: -1;
-}
-
-#w-automation-speed-slider {
-    display: block;
-    position: absolute;
-    bottom: 6px;
-    left: 6px;
-    right: 6px;
-    padding: 6px 6px 6px 6px;
-    width: var(--popup-innerWidth);
-    height: 25px;
-    background: #d3d3d3;
-    outline: none;
-    transition: opacity .2s;
+    cursor: move; 
+    cursor: grab;
 }
 
 .w-wrong-page-redirect-button {
@@ -228,6 +351,26 @@
     line-height: normal;
 }
 
+.w-workflow-list-popup-footer {
+    position: absolute;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+    display: flex;
+    overflow: hidden;
+    list-style: none;
+    border-top: 0.5px solid #e2e2e2;
+    z-index: 20000000;
+    background-color: white;
+}
+
+.w-workflow-list-popup-footer-cell {
+    background-color: rgb(255, 201, 176);
+}
+
+.w-workflow-list-popup-footer-cell:hover {
+    background-color: rgb(253, 96, 96);
+}
 /* -------------------------------------------------------------- */
 /* recording --------------------------------------------------------------*/
 /* -------------------------------------------------------------- */
@@ -766,171 +909,4 @@
     overflow-y: hidden;
     padding: 2px 0px;
     box-sizing: border-box;
-}
-
-/* MARK: Simple style popup menu */
-#w-workflow-list-popup-simple {
-    all: initial;
-    top: 12px;
-    left: 12px;
-    position: fixed;
-    width: var(--popup-width);
-    height: 300px;
-    padding: var(--padding-small);
-    z-index: 2147483647;
-    display: block;
-    box-sizing: border-box;
-    background: #ffffff;
-    border-radius: 4px;
-    box-shadow: 0px 0px 8px 0px rgb(0 0 0 / 25%);
-}
-
-#w-workflow-list-popup-header {
-    position: relative;
-    display: block;
-    box-sizing: border-box;
-    width: 100%;
-    padding-left: 40px;
-}
-
-.w-close-icon {
-    height: 18px;
-    position: absolute;
-    top: 0px;
-    right: 2px;
-    cursor: pointer;
-}
-
-.w-close-icon:hover {
-    filter: invert(39%) sepia(0%) saturate(1222%) hue-rotate(172deg) brightness(98%) contrast(89%);
-}
-
-.w-search-bar-container {
-    position: relative;
-    width: 120px;
-    border-radius: 30px;
-    border: 1px solid #dcdcdc;
-    outline: none;
-    height: 30px;
-    margin: 6px 0px 8px 6px;
-}
-
-.w-search-bar-container:hover {
-    box-shadow: 1px 1px 8px 1px #dcdcdc;
-}
-
-.w-search-bar-container:focus-within {
-    box-shadow: 1px 1px 8px 1px #dcdcdc;
-    outline: none;
-}
-
-.w-search-bar {
-    position: relative;
-    height: 30px;
-    border: none;
-    width: 80px;
-    font-size: 14px;
-    outline: none;
-    left: 12px;
-}
-
-.w-search-icon {
-    height: 18px;
-    position: absolute;
-    top: 5px;
-    right: 6px;
-    cursor: pointer;
-}
-
-
-#w-workflow-list-popup-scroll-area {
-    box-sizing: border-box;
-    width: 100%;
-    height: 250px;
-    overflow-y: scroll;
-    white-space: nowrap;
-}
-
-.w-workflow-list-cell {
-    position: relative;
-    display: block;
-    font-family: Roboto, RobotoDraft, Helvetica, Arial, sans-serif;
-    color: #202124;
-    font-size: 14px;
-    align-items: center;
-    cursor: pointer;
-}
-
-.w-workflow-list-cell-upper-container {
-    box-sizing: border-box;
-    display: flex;
-    padding: 8px 6px 0px 0px;
-    width: 100%;
-}
-
-.w-workflow-list-cell-attribute-icon {
-    display: inline-block;
-    width: 15%;
-    align-items: center;
-    text-align: center;
-}
-
-.w-workflow-list-cell-name {
-    display: inline-block;
-    width: 85%;
-    padding-bottom: 5px;
-    border-bottom: 0.5px solid #f2f2f2;
-    text-align: left;
-    line-height: 180%;
-    letter-spacing: .2px;
-    white-space: normal;
-}
-
-.w-workflow-list-cell:hover {
-    background-color: #f2f2f2;
-}
-
-.w-workflow-list-cell-select-type-container {
-    display: flex;
-    overflow: hidden;
-    list-style: none;
-    border-top: 0.5px solid #e2e2e2;
-}
-
-.w-workflow-list-cell-type-button {
-    position: relative;
-    display: inline-block;
-    width: 50%;
-    padding: 6px 0px 6px 0px;
-    cursor: pointer;
-    align-items: center;
-    text-align: center;
-    line-height: 180%;
-    letter-spacing: .2px;
-}
-
-.w-workflow-list-cell-type-button:hover {
-    background-color: #e2e2e2;
-}
-
-.w-workflow-list-cell-type-button:active {
-    background-color: #c7c7c7;
-}
-
-
-
-
-
-
-.w-workflow-list-cell-type-button-name {
-    display: inline-block;
-}
-
-.w-more-info-icon-container {
-    display: inline-block;
-    transform: translate(0%, 10%)
-}
-
-.w-more-info-icon {
-    height: 12px;
 }

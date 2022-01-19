@@ -26,6 +26,14 @@ class TutorialsModel {
         })
     }
 
+    static getTutorialAtIndex(index) {
+        return TutorialsModel.#tutorials[index];
+    }
+
+    static getFirstStepOfTutorialAtIndex(index) {
+        return TutorialsModel.#tutorials[index].steps[0]
+    }
+
     //initialize methods
 
     /**
@@ -342,6 +350,7 @@ class TutorialsModel {
     }
 
     static changeCurrentTutorialStepIndexTo(index) {
+        if (TutorialsModel.#tutorials[0].currentStepIndex === index) return;
         TutorialsModel.#tutorials[0].currentStepIndex = index;
         TutorialsModel.saveActiveTutorialToStorage();
     }

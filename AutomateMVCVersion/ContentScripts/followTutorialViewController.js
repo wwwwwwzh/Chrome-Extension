@@ -2,44 +2,38 @@ class FollowTutorialViewController {
     //Constants
     static #WORKFLOW_LIST_POPUP_HTML_SIMPLE() {
         return `
-        <div id="w-workflow-list-popup-simple" class="w-workflow-list-popup">
-            <div id="w-main-draggable-area" class="w-common-item w-popup-draggable"></div>
-            <div id="w-workflow-list-popup-header">
+        <div class="w-workflow-list-popup">
+            <div id="w-main-draggable-area" class="w-popup-draggable"></div>
+            <div class="w-workflow-list-popup-header">
                 <div class="w-search-bar-container">
                     <input class="w-search-bar" type="text" title="Search">
                     <img class="w-search-icon" src="./assets/imgs/icons/search.svg" title="Search">
                 </div>
-                <img class="w-close-icon w-workflow-list-popup-close-button" src="./assets/imgs/icons/close.svg" title="Close">
             </div>
-            <div id="w-workflow-list-popup-scroll-area"></div>
+            <div class="w-close-button" id="w-workflow-list-popup-close-button"></div>
+            <div class="w-workflow-list-popup-scroll-area"></div>
+
+            <div class="w-workflow-list-popup-footer">
+                <div id="w-stop-options-stop-button" class="w-workflow-list-cell-type-button w-workflow-list-popup-footer-cell">
+                    <title class="w-workflow-list-cell-type-button-name">Stop</title>
+                    <div class="w-more-info-icon-container">
+                        <img class="w-more-info-icon" src="./assets/imgs/icons/question-mark.svg"
+                            title="">
+                    </div>
+                </div>
+                <div id="w-popup-next-step-button" class="w-workflow-list-cell-type-button">
+                    <title class="w-workflow-list-cell-type-button-name">Next</title>
+                    <div class="w-more-info-icon-container">
+                        <img class="w-more-info-icon" src="./assets/imgs/icons/question-mark.svg"
+                            title="">
+                    </div>
+                </div>
+            </div>
         </div>`
     }
 
-    static #WORKFLOW_LIST_POPUP_HTML_AUTUMN() {
-        return `
-            <div id="w-workflow-list-popup-autumn" class="w-workflow-list-popup">
-                <div id="w-main-draggable-area"  class="w-common-item w-popup-draggable"></div>
-
-                <div id="w-popup-header" class="w-common-item w-header">
-                    <div class="w-common-item w-close-button w-workflow-list-popup-close-button" id="w-workflow-list-popup-close-button-autumn"></div>
-                </div>
-
-                <button id="w-popup-automate-button" class="w-follow-tutorial-options-item w-button-normal">Automate</button>
-                <button id="w-popup-manual-button" class="w-follow-tutorial-options-item w-button-normal">Walk Me Through</button>
-                <button id="w-popup-cancel-button" class="w-follow-tutorial-options-item w-button-normal">Cancel</button>
-
-                <button id="w-popup-next-step-button" class="w-following-tutorial-item w-button-normal">Next</button>
-                <button id="w-stop-options-stop-button" class="w-following-tutorial-item w-button-normal">Stop</button>
-                
-                <input type="range" min="1" max="100" value="50" id="w-automation-speed-slider" class="w-common-item">
-
-                <a href="/" id="w-wrong-page-redirect-button" class="w-wrong-page-item w-wrong-page-redirect-button">You have an ongoing tutorial on [website address]</a>
-            </div>
-        `
-    }
-
     static #HIGHLIGHT_INSTRUCTIONI_WINDOW_HTML() {
-        return `     
+        return `
             <div id="w-highlight-instruction-window" class="w-highlight-instruction-window">
                 <h3 id="w-popup-step-name" class="w-following-tutorial-item"></h3>
                 <p id="w-popup-step-description" class="w-following-tutorial-item"></p>
@@ -49,23 +43,25 @@ class FollowTutorialViewController {
     //UI
     mainPopUpContainer;
     mainDraggableArea;
-    automationSpeedSlider;
-    stopOptionsStopButton;
-    popUpAutomateButton;
-    popUpManualButton;
-    popUpCancelButton;
+    mainCloseButton;
+    mainPopupScrollArea
+
+    searchIconURL = chrome.runtime.getURL('assets/imgs/icons/search.svg')
+    questionMarkURL = chrome.runtime.getURL('assets/imgs/icons/question-mark.svg')
+
+
+    highlightInstructionWindow;
     popUpStepName;
     popUpStepDescription;
+    mainPopupFooter
     popUpNextStepButton;
+    stopOptionsStopButton;
+
     wrongPageRedirectButton;
-    mainCloseButton;
-    popUpHeader;
-    highlightInstructionWindow;
 
     //Local Variables
     #sideInstructionAutoNextTimer = null
     #isMainPopUpCollapsed = false
-    #speedBarValue = 50
 
     //Delegates
     followTutorialViewControllerDelegate
@@ -80,76 +76,55 @@ class FollowTutorialViewController {
 
     #initializeUI() {
         $('body').append(this.#getAllContentHTML());
-        this.#initializeUICommon()
-        this.#initializeUISimple()
 
-
-
-
-
-
-
-
-
-
-
-
-        this.mainPopUpContainer.children().hide();
-        $('.w-common-item').show();
-
-
-    }
-
-    #getAllContentHTML() {
-        return FollowTutorialViewController.#WORKFLOW_LIST_POPUP_HTML_SIMPLE() + FollowTutorialViewController.#HIGHLIGHT_INSTRUCTIONI_WINDOW_HTML()
-    }
-
-    #initializeUICommon() {
         this.mainPopUpContainer = $('.w-workflow-list-popup');
-
         this.mainDraggableArea = $('#w-main-draggable-area');
         makeElementDraggable(this.mainDraggableArea[0], this.mainPopUpContainer[0]);
 
-        // this.popUpHeader = $('#w-popup-header');
-        // this.mainCloseButton = $('.w-workflow-list-popup-close-button');
+        document.getElementsByClassName('w-search-icon')[0].src = this.searchIconURL
+        $('.w-more-info-icon').attr('src', this.questionMarkURL)
 
-        // this.mainCloseButton.on("click", () => {
-        //     if (this.#isMainPopUpCollapsed) {
-        //         this.mainPopUpContainer.removeClass('w-popup-collapsed');
-        //         this.mainPopUpContainer.addClass('w-workflow-list-popup');
-        //         this.mainCloseButton.removeClass('w-close-button-collapsed');
-        //         this.mainCloseButton.addClass('w-close-button');
-        //         this.mainPopUpContainer.find('.w-should-reopen').show();
-        //         this.mainPopUpContainer.find('.w-should-reopen').removeClass('w-should-reopen');
+        this.mainCloseButton = $('#w-workflow-list-popup-close-button');
+        this.mainCloseButton.on("click", () => {
+            if (this.#isMainPopUpCollapsed) {
+                this.mainPopUpContainer.removeClass('w-workflow-list-popup-collapsed');
+                this.mainPopUpContainer.addClass('w-workflow-list-popup');
+                this.mainCloseButton.removeClass('w-close-button-collapsed');
+                this.mainCloseButton.addClass('w-close-button');
+                this.mainPopUpContainer.find('.w-should-reopen').show();
+                this.mainPopUpContainer.find('.w-should-reopen').removeClass('w-should-reopen');
 
-        //         this.#isMainPopUpCollapsed = false;
-        //     } else {
-        //         this.mainPopUpContainer.find(':visible').each((i, element) => {
-        //             $(element).addClass('w-should-reopen');
-        //         })
-        //         this.mainPopUpContainer.removeClass('w-workflow-list-popup');
-        //         this.mainPopUpContainer.addClass('w-popup-collapsed');
-        //         this.mainPopUpContainer.children().hide();
-        //         this.mainCloseButton.removeClass('w-close-button');
-        //         this.mainCloseButton.addClass('w-close-button-collapsed');
-        //         this.popUpHeader.show();
-        //         this.mainDraggableArea.show();
-        //         this.#isMainPopUpCollapsed = true;
-        //     }
-        // })
+                this.#isMainPopUpCollapsed = false;
+            } else {
+                this.mainPopUpContainer.find(':visible').each((i, element) => {
+                    $(element).addClass('w-should-reopen');
+                })
+                this.mainPopUpContainer.removeClass('w-workflow-list-popup');
+                this.mainPopUpContainer.addClass('w-workflow-list-popup-collapsed');
+                this.mainPopUpContainer.children().hide();
+                this.mainCloseButton.removeClass('w-close-button');
+                this.mainCloseButton.addClass('w-close-button-collapsed');
+                this.mainCloseButton.show()
+                this.mainDraggableArea.show();
+                this.#isMainPopUpCollapsed = true;
+            }
+        })
 
-        // //guides during tutorial
-        // this.popUpNextStepButton = $("#w-popup-next-step-button");
-        // this.popUpNextStepButton.hide();
-        // this.popUpNextStepButton.on('click', event => {
-        //     //auto go to next step
-        //     this.#onPopUpNextStepButtonClicked()
-        // })
+        this.mainPopupScrollArea = $('.w-workflow-list-popup-scroll-area')
 
-        // this.stopOptionsStopButton = $('#w-stop-options-stop-button');
-        // this.stopOptionsStopButton.on('click', () => {
-        //     this.stopCurrentTutorial()
-        // });
+        //guides during tutorial
+        this.mainPopupFooter = $('.w-workflow-list-popup-footer')
+        this.popUpNextStepButton = $("#w-popup-next-step-button");
+        this.popUpNextStepButton.on('click', event => {
+            //auto go to next step
+            this.#onPopUpNextStepButtonClicked()
+        })
+
+        this.stopOptionsStopButton = $('#w-stop-options-stop-button');
+        this.stopOptionsStopButton.on('click', () => {
+            this.stopCurrentTutorial()
+        });
+        this.mainPopupFooter.hide()
 
         // this.wrongPageRedirectButton = $('#w-wrong-page-redirect-button');
 
@@ -162,26 +137,9 @@ class FollowTutorialViewController {
         this.popUpStepDescription.css({ 'overflow-wrap': 'break-word', });
     }
 
-    #initializeUIAutumn() {
-        this.automationSpeedSlider = $('#w-automation-speed-slider');
-        this.automationSpeedSlider.on('change', () => {
-            this.#onAutomationSpeedSliderChanged();
-        })
-
-        //choose options before start
-        this.popUpAutomateButton = $("#w-popup-automate-button");
-        this.popUpManualButton = $("#w-popup-manual-button");
-        this.popUpCancelButton = $('#w-popup-cancel-button');
-        this.popUpCancelButton.on('click', () => {
-            $('.w-follow-tutorial-options-item').hide();
-            this.setOrUpdateChooseTutorialsPopupUIFromModel()
-        })
+    #getAllContentHTML() {
+        return FollowTutorialViewController.#WORKFLOW_LIST_POPUP_HTML_SIMPLE() + FollowTutorialViewController.#HIGHLIGHT_INSTRUCTIONI_WINDOW_HTML()
     }
-
-    #initializeUISimple() {
-
-    }
-
 
     #checkStatus(status) {
         UserEventListnerHandler.setTutorialStatusCache(status)
@@ -200,8 +158,8 @@ class FollowTutorialViewController {
                 break;
             case VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL:
                 TutorialsModel.smartInit(() => {
-                    TutorialsModel.forEachTutorial((tutorial) => {
-                        this.#addTutorialButton(tutorial)
+                    TutorialsModel.forEachTutorial((tutorial, index) => {
+                        this.#addTutorialButton(tutorial, index)
                     })
                 })
                 break;
@@ -226,7 +184,8 @@ class FollowTutorialViewController {
 
     checkIfShouldProcessEvent(event) {
         return (event.target !== globalCache.currentElement &&
-            event.target !== this.stopOptionsStopButton[0])
+
+            !$.contains(this.mainPopUpContainer[0], event.target))
     }
 
     //HighlighterViewControllerSpecificUIDelegate
@@ -254,33 +213,16 @@ class FollowTutorialViewController {
     }
 
     //Controls
-    #onTutorialChosen(tutorialID) {
-        globalCache.reHighlightAttempt = 0;
-        //UI
-        $('.w-follow-tutorial-options-item').show();
-        $('.w-not-following-tutorial-item').remove();
-        this.popUpNextStepButton.hide();
-        this.#automationSpeedSliderHelper();
-
-        this.popUpAutomateButton.on('click', () => {
-            this.#onFollowTutorialModeChosen(VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL, tutorialID);
-        });
-
-        this.popUpManualButton.on('click', () => {
-            this.#onFollowTutorialModeChosen(VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL, tutorialID);
-        });
-    }
-
-
     #onFollowTutorialModeChosen(type, tutorialID) {
         //UI
-        $('.w-follow-tutorial-options-item').hide();
-        $('.w-following-tutorial-item').show();
+        this.#hideTutorialButtons()
+        this.mainPopupFooter.show()
+
         this.popUpStepName.html('');
         this.popUpStepDescription.html('');
 
-        this.#startFollowingNewTutorial(tutorialID);
         UserEventListnerHandler.setTutorialStatusCache(type);
+        this.#startFollowingNewTutorial(tutorialID);
     }
 
     #switchToAndShowStepAtIndex(stepIndex) {
@@ -310,7 +252,6 @@ class FollowTutorialViewController {
      */
     #showCurrentStep() {
         const currentStep = TutorialsModel.getCurrentStep();
-        c(this)
         if (TutorialsModel.checkIfCurrentURLMatchesPageURL()) {
             $('.w-following-tutorial-item').show();
             this.#switchToAndShowStepAtIndex(TutorialsModel.getCurrentTutorial().currentStepIndex);
@@ -328,7 +269,7 @@ class FollowTutorialViewController {
         Highlighter.removeLastHighlight()
         clearTimeout(this.#sideInstructionAutoNextTimer);
         this.#sideInstructionAutoNextTimer = null;
-        $('.w-following-tutorial-item, .w-follow-tutorial-options-item, .w-highlight-instruction-window').hide();
+        $('.w-highlight-instruction-window').hide();
 
         const data = {};
         data[VALUES.STORAGE.REVISIT_PAGE_COUNT] = 0;
@@ -340,11 +281,12 @@ class FollowTutorialViewController {
             });
         }
         if (TutorialsModel.checkIfCurrentURLMatchesPageURL()) {
+            //stop from within page
             data[VALUES.TUTORIAL_STATUS.STATUS] = VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL;
             syncStorageSetBatch(data, () => {
                 TutorialsModel.revertCurrentTutorialToInitialState();
                 UserEventListnerHandler.setTutorialStatusCache(VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL)
-                this.setOrUpdateChooseTutorialsPopupUIFromModel()
+                this.#showTutorialButtons()
                 globalCache = new GlobalCache();
             });
         } else {
@@ -357,9 +299,8 @@ class FollowTutorialViewController {
     setOrUpdateChooseTutorialsPopupUIFromModel() {
         this.mainPopUpContainer.show()
         $('.w-not-following-tutorial-item').remove();
-        this.#automationSpeedSliderHelper();
         TutorialsModel.forEachTutorial((tutorial, index) => {
-            this.#addTutorialButton(tutorial)
+            this.#addTutorialButton(tutorial, index)
         })
     }
 
@@ -391,8 +332,6 @@ class FollowTutorialViewController {
 
     #chooseFunctionAccordingToCurrentStepType(onStepActionClick, onStepActionClickRedirect, onStepActionRedirect, onStepActionInput, onStepActionSelect, onStepSideInstruction) {
         const currentStep = TutorialsModel.getCurrentStep();
-        const interval = intervalFromSpeed(this.#speedBarValue);
-        globalCache.interval = interval;
         //onEnteredWrongPage(tutorialObj, currentStep.url);
         Step.callFunctionOnActionType(currentStep.actionType, onStepActionClick, onStepActionClickRedirect, onStepActionInput, onStepActionRedirect, onStepActionSelect, onStepSideInstruction)
     }
@@ -415,7 +354,6 @@ class FollowTutorialViewController {
     //------------------------------------------------------------------------------------------------------------
     #manualStep() {
         const click = TutorialsModel.getCurrentStep().actionObject.defaultClick;
-        console.log(click.path)
         //const element = $(jqueryElementStringFromDomPath(click.path)).first();
         if (click.useAnythingInTable) {
             Highlighter.highlight(click.table, true, Highlighter.HIGHLIGHT_TYPES.SCROLL_AND_ALERT);
@@ -479,7 +417,7 @@ class FollowTutorialViewController {
     //------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------
     #showTutorialStepAuto() {
-        chooseFunctionAccordingToCurrentStepType(this.#autoClick, this.#autoClick, this.#autoRedirect, this.#autoInput, this.#autoSelect, this.#autoSideInstruction)
+        this.#chooseFunctionAccordingToCurrentStepType(this.#autoClick, this.#autoClick, this.#autoRedirect, this.#autoInput, this.#autoSelect, this.#autoSideInstruction)
     }
 
     #autoClick() {
@@ -544,10 +482,6 @@ class FollowTutorialViewController {
     #incrementCurrentStepHelper() {
         UserEventListnerHandler.setIsAutomationInterrupt(false);
         this.#showNextStep()
-    }
-
-    #onAutomationSpeedSliderChanged() {
-        this.#speedBarValue = automationSpeedSlider.val();
     }
 
     //------------------------------------------------------------------------------------------------------------
@@ -641,32 +575,10 @@ class FollowTutorialViewController {
     }
 
     //Pure UI methods
-    #automationSpeedSliderHelper() {
-        this.automationSpeedSlider.val(this.#speedBarValue);
-    }
-
-
-    #addTutorialButton(tutorial) {
-        addTutorialButtonSimple(this)
-
-
-        function addTutorialButtonAutumn(selfReference) {
-            selfReference.mainPopUpContainer.append(`
-            <a class=\"w-simple-tutorial-button w-not-following-tutorial-item w-button-normal\" id=\"${tutorial.id}\">
-                ${tutorial.name}
-            </a> 
-            `);
-            const button = document.getElementById(`${tutorial.id}`)
-
-            //button click function. store tutorial's steps to storage
-            button.addEventListener('click', () => {
-                selfReference.#onTutorialChosen(tutorial.id);
-            });
-        }
-
-        function addTutorialButtonSimple(selfReference) {
-            selfReference.mainPopUpContainer.append(`
-                <div class="w-workflow-list-cell" id=\"${tutorial.id}\">
+    #addTutorialButton(tutorial, index) {
+        const tutorialID = tutorial.id
+        this.mainPopupScrollArea.append(`
+                <div class="w-workflow-list-cell" id=\"${tutorialID}\">
                     <div class="w-workflow-list-cell-upper-container">
                         <div class="w-workflow-list-cell-attribute-icon"></div>
                         <div class="w-workflow-list-cell-name">${tutorial.name}</div>
@@ -674,34 +586,60 @@ class FollowTutorialViewController {
                 </div>
             `);
 
-            const item = document.getElementById(`${tutorial.id}`)
-            const original = item.innerHTML
-            item.addEventListener('click', () => {
+        const item = document.getElementById(`${tutorialID}`)
+        const original = item.innerHTML
+        const cellMouseEnterBinded = cellMouseEnter.bind(this)
+        const cellMouseLeaveBinded = cellMouseLeave.bind(this)
+        item.addEventListener('mouseenter', cellMouseEnterBinded)
+        item.addEventListener('mouseleave', cellMouseLeaveBinded)
+
+        function cellMouseEnter(event) {
+            if (item.innerHTML === original) {
                 $(item).append(`
                 <div class="w-workflow-list-cell-select-type-container">
-                    <div class="w-workflow-list-cell-type-button">
+                    <div class="w-workflow-list-cell-type-button w-workflow-list-cell-type-button-auto" >
                         <title class="w-workflow-list-cell-type-button-name">Auto</title>
                         <div class="w-more-info-icon-container">
                             <img class="w-more-info-icon"
-                                src="./assets/imgs/icons/question-mark.svg"
+                                src="${this.questionMarkURL}"
                                 title="Automatically go to the desired place">
                         </div>
                     </div>
-                    <div class="w-workflow-list-cell-type-button">
-                        <title class="w-workflow-list-cell-type-button-name">Show me</title>
+                    <div class="w-workflow-list-cell-type-button w-workflow-list-cell-type-button-manual">
+                        <title class="w-workflow-list-cell-type-button-name">Show Me</title>
                         <div class="w-more-info-icon-container">
                             <img class="w-more-info-icon"
-                                src="./assets/imgs/icons/question-mark.svg"
+                                src="${this.questionMarkURL}"
                                 title="Walk me through the process">
                         </div>
                     </div>
                 </div>
-            `)
-            })
-
-            item.addEventListener('mouseleave', e => {
-                e.target.innerHTML = original
-            })
+                `)
+                item.getElementsByClassName('w-workflow-list-cell-type-button-auto')[0].addEventListener('click', e => {
+                    this.#onFollowTutorialModeChosen(VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL, tutorialID)
+                })
+                item.getElementsByClassName('w-workflow-list-cell-type-button-manual')[0].addEventListener('click', e => {
+                    this.#onFollowTutorialModeChosen(VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL, tutorialID)
+                })
+            } else {
+                $(item).children().show()
+            }
+            Highlighter.highlight(Step.getPath(TutorialsModel.getFirstStepOfTutorialAtIndex(index)))
         }
+
+        function cellMouseLeave(event) {
+            $(event.target).children().last().hide()
+            if (!$(event.target).is(':visible')) return
+            this.highlightInstructionWindow.hide()
+            Highlighter.removeLastHighlight()
+        }
+    }
+
+    #showTutorialButtons() {
+        this.mainPopupScrollArea.children().show()
+    }
+
+    #hideTutorialButtons() {
+        this.mainPopupScrollArea.children().hide()
     }
 }
