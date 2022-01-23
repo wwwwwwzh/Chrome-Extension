@@ -40,14 +40,15 @@ class FollowTutorialViewController {
             </div>
         `
     }
+
     //UI
     mainPopUpContainer;
     mainDraggableArea;
     mainCloseButton;
-    mainPopupScrollArea
+    mainPopupScrollArea;
 
-    searchIconURL = chrome.runtime.getURL('assets/imgs/icons/search.svg')
-    questionMarkURL = chrome.runtime.getURL('assets/imgs/icons/question-mark.svg')
+    searchIconURL = chrome.runtime.getURL('assets/imgs/icons/search.svg');
+    questionMarkURL = chrome.runtime.getURL('assets/imgs/icons/question-mark.svg');
 
 
     highlightInstructionWindow;
@@ -60,11 +61,11 @@ class FollowTutorialViewController {
     wrongPageRedirectButton;
 
     //Local Variables
-    #sideInstructionAutoNextTimer = null
-    #isMainPopUpCollapsed = false
+    #sideInstructionAutoNextTimer = null;
+    #isMainPopUpCollapsed = false;
 
     //Delegates
-    followTutorialViewControllerDelegate
+    followTutorialViewControllerDelegate;
 
     constructor(status) {
         TutorialsModel.tutorialsModelFollowingTutorialDelegate = this
@@ -148,10 +149,10 @@ class FollowTutorialViewController {
                 this.stopCurrentTutorial()
                 break
             case VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL:
-                TutorialsModel.loadActiveTutorialFromStorage(this.#showCurrentStep.bind(this))
+                TutorialsModel.smartInit(this.#showCurrentStep.bind(this))
                 break;
             case VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
-                TutorialsModel.loadActiveTutorialFromStorage(this.#showCurrentStep.bind(this))
+                TutorialsModel.smartInit(this.#showCurrentStep.bind(this))
                 break;
             case VALUES.TUTORIAL_STATUS.LOADED:
 
@@ -215,11 +216,7 @@ class FollowTutorialViewController {
     //Controls
     #onFollowTutorialModeChosen(type, tutorialID) {
         //UI
-        this.#hideTutorialButtons()
-        this.mainPopupFooter.show()
-
-        this.popUpStepName.html('');
-        this.popUpStepDescription.html('');
+        this.#switchToManualFollowingTutorialView()
 
         UserEventListnerHandler.setTutorialStatusCache(type);
         this.#startFollowingNewTutorial(tutorialID);
@@ -230,14 +227,15 @@ class FollowTutorialViewController {
             this.stopCurrentTutorial();
             return;
         }
-        TutorialsModel.changeCurrentTutorialStepIndexTo(stepIndex)
-        const type = UserEventListnerHandler.tutorialStatusCache;
-        if (type === VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL) {
-            this.#showTutorialStepManual();
-        }
-        if (type === VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL) {
-            this.#showTutorialStepAuto();
-        }
+        TutorialsModel.changeCurrentTutorialStepIndexTo(stepIndex, () => {
+            const type = UserEventListnerHandler.tutorialStatusCache;
+            if (type === VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL) {
+                this.#showTutorialStepManual();
+            }
+            if (type === VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL) {
+                this.#showTutorialStepAuto();
+            }
+        })
     }
 
     #startFollowingNewTutorial(tutorialID) {
@@ -253,7 +251,7 @@ class FollowTutorialViewController {
     #showCurrentStep() {
         const currentStep = TutorialsModel.getCurrentStep();
         if (TutorialsModel.checkIfCurrentURLMatchesPageURL()) {
-            $('.w-following-tutorial-item').show();
+            this.#switchToManualFollowingTutorialView()
             this.#switchToAndShowStepAtIndex(TutorialsModel.getCurrentTutorial().currentStepIndex);
         } else {
             this.#onEnteredWrongPage(currentStep);
@@ -261,7 +259,7 @@ class FollowTutorialViewController {
     }
 
     #showNextStep() {
-        this.#switchToAndShowStepAtIndex(++TutorialsModel.getCurrentTutorial().currentStepIndex);
+        this.#switchToAndShowStepAtIndex(TutorialsModel.getCurrentTutorial().currentStepIndex + 1);
     }
 
     stopCurrentTutorial() {
@@ -269,7 +267,7 @@ class FollowTutorialViewController {
         Highlighter.removeLastHighlight()
         clearTimeout(this.#sideInstructionAutoNextTimer);
         this.#sideInstructionAutoNextTimer = null;
-        $('.w-highlight-instruction-window').hide();
+        this.highlightInstructionWindow.hide()
 
         const data = {};
         data[VALUES.STORAGE.REVISIT_PAGE_COUNT] = 0;
@@ -286,7 +284,7 @@ class FollowTutorialViewController {
             syncStorageSetBatch(data, () => {
                 TutorialsModel.revertCurrentTutorialToInitialState();
                 UserEventListnerHandler.setTutorialStatusCache(VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL)
-                this.#showTutorialButtons()
+                this.#switchToMainWorkflowListView()
                 globalCache = new GlobalCache();
             });
         } else {
@@ -298,7 +296,7 @@ class FollowTutorialViewController {
 
     setOrUpdateChooseTutorialsPopupUIFromModel() {
         this.mainPopUpContainer.show()
-        $('.w-not-following-tutorial-item').remove();
+        this.mainPopupFooter.hide()
         TutorialsModel.forEachTutorial((tutorial, index) => {
             this.#addTutorialButton(tutorial, index)
         })
@@ -635,11 +633,21 @@ class FollowTutorialViewController {
         }
     }
 
-    #showTutorialButtons() {
-        this.mainPopupScrollArea.children().show()
+    #switchToMainWorkflowListView() {
+        if (this.mainPopupScrollArea.children().length > 0) {
+            this.mainPopupFooter.hide()
+            this.mainPopupScrollArea.children().show()
+        } else {
+            this.setOrUpdateChooseTutorialsPopupUIFromModel()
+        }
+        this.highlightInstructionWindow.hide()
     }
 
-    #hideTutorialButtons() {
+    #switchToManualFollowingTutorialView() {
         this.mainPopupScrollArea.children().hide()
+        this.mainPopupFooter.show()
+
+        this.popUpStepName.html('');
+        this.popUpStepDescription.html('');
     }
 }

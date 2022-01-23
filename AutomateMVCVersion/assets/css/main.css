@@ -87,7 +87,10 @@
     width: var(--popup-width);
     height: 40px;
     padding: var(--padding-normal);
-    background-color: var(--color-background);
+    box-sizing: border-box;
+    background: #ffffff;
+    border-radius: 4px;
+    box-shadow: 0px 0px 8px 0px rgb(0 0 0 / 25%);
     border-top-right-radius: 6px;
     border-bottom-right-radius: 6px;
     z-index: 2147483647;
@@ -156,6 +159,7 @@
 }
 
 .w-search-bar {
+    all: initial;
     position: relative;
     height: 30px;
     border: none;

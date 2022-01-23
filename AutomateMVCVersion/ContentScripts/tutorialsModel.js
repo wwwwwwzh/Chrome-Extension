@@ -1,8 +1,10 @@
 class TutorialsModel {
-    static #tutorials
-    static #urlAssociatedWithCurrentTutorialsQuerySnapshot
-    static #lastSavedTimestamp
+    //Constants
+    static LAST_SAVED_TIMESTAMP_KEY = 'LSTK'
+    static URL_ASSOCIATED_WITH_CURRENT_TUTORIAL_QUERY_SNAPSHOT_KEY = 'UAWCTQS'
 
+    //local variables
+    static #tutorials
     static #tutorialsQuerySnapshot
 
     /**
@@ -58,28 +60,40 @@ class TutorialsModel {
         );
     }
 
-    static async checkIfAnyTutorialExistsOnPage() {
-        if (TutorialsModel.#checkIfReloadIsNeeded()) {
-            await TutorialsModel.#getTutorialsQuerySnapshot()
-        }
-        return !TutorialsModel.#tutorialsQuerySnapshot.empty
+    static async checkIfAnyTutorialExistsOnPage(callBackWhenExists, callbackWhenNot = () => { }) {
+        TutorialsModel.#getTutorialsQuerySnapshotFromFirestore(() => {
+            TutorialsModel.#tutorialsQuerySnapshot.empty ? callbackWhenNot() : callBackWhenExists()
+        })
     }
 
-    static async #getTutorialsQuerySnapshot() {
+    static async #getTutorialsQuerySnapshotFromFirestore(callback = () => { }) {
         TutorialsModel.#tutorialsQuerySnapshot = await getDocs(TutorialsModel.#getMatchedTutorialsQuery());
+        callback()
     }
 
-    static #checkIfReloadIsNeeded() {
-        const result = TutorialsModel.#urlAssociatedWithCurrentTutorialsQuerySnapshot !== globalCache.currentURL || checkIfPassedReloadTime()
-        if (result) {
-            TutorialsModel.#urlAssociatedWithCurrentTutorialsQuerySnapshot = globalCache.currentURL
-            TutorialsModel.#lastSavedTimestamp = Date.now()
+    static #checkIfReloadIsNeeded(reloadFunc = () => { }, noReloadFunc = () => { }) {
+        if (UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL ||
+            UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL) {
+            noReloadFunc()
+            return
         }
-        return result
 
-        function checkIfPassedReloadTime() {
-            return ((Date.now() / 60000 | 0) - (TutorialsModel.#lastSavedTimestamp / 60000 | 0)) > 3
-        }
+        chrome.storage.sync.get([TutorialsModel.LAST_SAVED_TIMESTAMP_KEY, TutorialsModel.URL_ASSOCIATED_WITH_CURRENT_TUTORIAL_QUERY_SNAPSHOT_KEY], (result) => {
+            const lastSavedTimestamp = result[TutorialsModel.LAST_SAVED_TIMESTAMP_KEY]
+            const urlAssociatedWithCurrentTutorialsQuerySnapshot = result[TutorialsModel.URL_ASSOCIATED_WITH_CURRENT_TUTORIAL_QUERY_SNAPSHOT_KEY]
+            const isPassedReloadTime = (((Date.now() / 60000 | 0) - (lastSavedTimestamp / 60000 | 0)) > 3)
+            c('last' + urlAssociatedWithCurrentTutorialsQuerySnapshot + '   |now:' + globalCache.currentUrl)
+            const isReload = urlAssociatedWithCurrentTutorialsQuerySnapshot !== globalCache.currentUrl || isPassedReloadTime
+            if (isReload) {
+                var data = {}
+                data[TutorialsModel.LAST_SAVED_TIMESTAMP_KEY] = Date.now()
+                data[TutorialsModel.URL_ASSOCIATED_WITH_CURRENT_TUTORIAL_QUERY_SNAPSHOT_KEY] = globalCache.currentUrl
+                syncStorageSetBatch(data)
+                reloadFunc()
+            } else {
+                noReloadFunc()
+            }
+        })
     }
 
     /**
@@ -89,13 +103,12 @@ class TutorialsModel {
      * @param {*} callback 
      */
     static async initializeFromFirestore(callback = () => { }) {
-        await TutorialsModel.#getTutorialsQuerySnapshot()
+        await TutorialsModel.#getTutorialsQuerySnapshotFromFirestore()
         TutorialsModel.#tutorials = [];
-        await TutorialsModel.#loadFromQuerySnapshot()
-        TutorialsModel.saveToStorage(callback);
+        await TutorialsModel.#loadFromQuerySnapshot(callback)
     }
 
-    static async #loadFromQuerySnapshot() {
+    static async #loadFromQuerySnapshot(callback = () => { }) {
         await Promise.all(TutorialsModel.#tutorialsQuerySnapshot.docs.map(async (tutorial) => {
             const tutorialID = tutorial.id;
             const tutorialData = tutorial.data();
@@ -129,16 +142,26 @@ class TutorialsModel {
             const tutorialObj = new TutorialObject(tutorialData.name, '', [], steps, tutorialData.all_urls, tutorialID)
             TutorialsModel.#tutorials.push(tutorialObj);
         }));
+        TutorialsModel.saveToStorage(callback);
     }
 
     static async smartInit(callback) {
-        if (TutorialsModel.#checkIfReloadIsNeeded()) {
-            await TutorialsModel.initializeFromFirestore(callback)
-        } else if (TutorialsModel.#tutorials?.length < 1) {
-            await TutorialsModel.#loadFromQuerySnapshot()
-        } else {
-            TutorialsModel.loadFromStorage(callback)
-        }
+        TutorialsModel.#checkIfReloadIsNeeded(() => {
+            c('reloading from firestore')
+            TutorialsModel.initializeFromFirestore(callback)
+        }, () => {
+            chrome.storage.sync.get([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL, VALUES.STORAGE.ALL_OTHER_TUTORIALS], async (result) => {
+                const currentTutorial = result[VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL];
+                if (isNotNull(currentTutorial)) {
+                    const allOtherTutorials = result[VALUES.STORAGE.ALL_OTHER_TUTORIALS];
+                    TutorialsModel.#tutorials = [currentTutorial, ...allOtherTutorials];
+                    console.log('loading ' + TutorialsModel.#tutorials.length + ' tutorials from storage')
+                    callback();
+                } else {
+                    TutorialsModel.#loadFromQuerySnapshot(callback)
+                }
+            });
+        })
     }
 
     /**
@@ -349,10 +372,13 @@ class TutorialsModel {
         }
     }
 
-    static changeCurrentTutorialStepIndexTo(index) {
-        if (TutorialsModel.#tutorials[0].currentStepIndex === index) return;
+    static changeCurrentTutorialStepIndexTo(index, callback = () => { }) {
+        if (TutorialsModel.#tutorials[0].currentStepIndex === index) {
+            callback()
+            return
+        };
         TutorialsModel.#tutorials[0].currentStepIndex = index;
-        TutorialsModel.saveActiveTutorialToStorage();
+        TutorialsModel.saveActiveTutorialToStorage(callback);
     }
 
     static revertCurrentTutorialToInitialState() {

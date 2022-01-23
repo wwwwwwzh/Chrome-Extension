@@ -65,9 +65,9 @@ class ExtensionController {
     }
 
     async #suggestTutorialIfExists(status) {
-        if (await TutorialsModel.checkIfAnyTutorialExistsOnPage()) {
+        await TutorialsModel.checkIfAnyTutorialExistsOnPage(() => {
             this.#showSuggestionPopup(status)
-        }
+        })
     }
 
     #showSuggestionPopup(status) {

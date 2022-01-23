@@ -319,6 +319,7 @@ function getNearestTableOrList(element) {
 }
 
 function checkIfUrlMatch(urlToMatch, testingUrl) {
+    c('urlToMatch:' + urlToMatch + 'testingUrl:' + testingUrl)
     if (urlToMatch[0] === '/') {
         const regex = new RegExp(urlToMatch.substr(1, urlToMatch.length - 2));
         return regex.test(testingUrl);

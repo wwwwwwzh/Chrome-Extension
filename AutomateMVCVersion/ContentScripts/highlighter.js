@@ -165,7 +165,7 @@ class Highlighter {
     static #updateCount = 0;
     static #lastHighlightedElement = null
     static #lastHighlightedElementUpdateTimeout = null
-
+    //TODO: seperate instruction window from highlighter
     static #updateHighlightInstructionWindow(element) {
         if (Highlighter.#lastHighlightedElement !== element || Highlighter.highlighterViewControllerSpecificUIDelegate.highlightInstructionWindow.is(":hidden")) {
             //highlighting new element or no longer lighlighting, remove previous highlight attempt
