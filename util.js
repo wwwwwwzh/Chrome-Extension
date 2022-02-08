@@ -52,3 +52,7 @@
 //     );
 // }
 
+
+var a = [1, 2, 4]
+a.unshift(3)
+console.log(a)

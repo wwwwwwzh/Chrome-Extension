@@ -28,6 +28,7 @@ class Highlighter {
     static highlighterViewControllerSpecificUIDelegate
 
     static highlight(element, removeLastHighlight = true, type = Highlighter.HIGHLIGHT_TYPES.BASIC, callback = () => { }) {
+        if (!isNotNull(element)) return;
         c('Highlighting:' + element + '|removeLastHighlight:' + removeLastHighlight + '|type:' + type)
         var jQElement = element
         //get jQElement from path array

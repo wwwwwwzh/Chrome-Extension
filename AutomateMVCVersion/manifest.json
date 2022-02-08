@@ -42,6 +42,7 @@
                 "./ContentScripts/highlighter.js",
                 "./ContentScripts/classes.js",
                 "./ContentScripts/tutorialsModel.js",
+                "./ContentScripts/snapshotView.js",
                 "./ContentScripts/recordTutorialViewController.js",
                 "./ContentScripts/followTutorialViewController.js",
                 "./ContentScripts/extensionController.js",

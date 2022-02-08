@@ -4,7 +4,7 @@ class TutorialsModel {
     static URL_ASSOCIATED_WITH_CURRENT_TUTORIAL_QUERY_SNAPSHOT_KEY = 'UAWCTQS'
 
     //local variables
-    static #tutorials
+    static #tutorials = []
     static #tutorialsQuerySnapshot
 
     /**
@@ -22,9 +22,13 @@ class TutorialsModel {
         return currentTutorial.steps[currentTutorial.currentStepIndex];
     }
 
-    static forEachTutorial(doThis) {
+    static getCurrentStepIndex() {
+        return TutorialsModel.getCurrentTutorial().currentStepIndex;
+    }
+
+    static forEachTutorial(fn) {
         this.#tutorials.forEach((tutorial, index) => {
-            doThis(tutorial, index)
+            fn(tutorial, index)
         })
     }
 
@@ -36,7 +40,15 @@ class TutorialsModel {
         return TutorialsModel.#tutorials[index].steps[0]
     }
 
-    //initialize methods
+    static getStepOfTutorialAtIndex(tutorialIndex, stepIndex) {
+        return TutorialsModel.#tutorials[tutorialIndex].steps[stepIndex]
+    }
+
+    static getStepOfCurrentTutorialAtIndex(index) {
+        return TutorialsModel.#tutorials[0].steps[index]
+    }
+
+    //initialization methods
 
     /**
      * 
@@ -66,6 +78,9 @@ class TutorialsModel {
         })
     }
 
+    /**
+     * This will fetch all tutorials on page to local private variable tutorialsQuerySnapshot
+     */
     static async #getTutorialsQuerySnapshotFromFirestore(callback = () => { }) {
         TutorialsModel.#tutorialsQuerySnapshot = await getDocs(TutorialsModel.#getMatchedTutorialsQuery());
         callback()
@@ -82,7 +97,7 @@ class TutorialsModel {
             const lastSavedTimestamp = result[TutorialsModel.LAST_SAVED_TIMESTAMP_KEY]
             const urlAssociatedWithCurrentTutorialsQuerySnapshot = result[TutorialsModel.URL_ASSOCIATED_WITH_CURRENT_TUTORIAL_QUERY_SNAPSHOT_KEY]
             const isPassedReloadTime = (((Date.now() / 60000 | 0) - (lastSavedTimestamp / 60000 | 0)) > 3)
-            c('last' + urlAssociatedWithCurrentTutorialsQuerySnapshot + '   |now:' + globalCache.currentUrl)
+            // c('last' + urlAssociatedWithCurrentTutorialsQuerySnapshot + '   |now:' + globalCache.currentUrl)
             const isReload = urlAssociatedWithCurrentTutorialsQuerySnapshot !== globalCache.currentUrl || isPassedReloadTime
             if (isReload) {
                 var data = {}
@@ -158,6 +173,7 @@ class TutorialsModel {
                     console.log('loading ' + TutorialsModel.#tutorials.length + ' tutorials from storage')
                     callback();
                 } else {
+                    console.log('loadFromQuerySnapshot')
                     TutorialsModel.#loadFromQuerySnapshot(callback)
                 }
             });
@@ -173,7 +189,9 @@ class TutorialsModel {
         chrome.storage.sync.get([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL, VALUES.STORAGE.ALL_OTHER_TUTORIALS], (result) => {
             const currentTutorial = result[VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL];
             const allOtherTutorials = result[VALUES.STORAGE.ALL_OTHER_TUTORIALS];
-            TutorialsModel.#tutorials = [currentTutorial, ...allOtherTutorials];
+            TutorialsModel.#tutorials = [currentTutorial] ?? []
+            allOtherTutorials && TutorialsModel.#tutorials.push(allOtherTutorials)
+
             console.log('loading ' + TutorialsModel.#tutorials.length + ' tutorials from storage')
             callback();
         });
@@ -232,125 +250,63 @@ class TutorialsModel {
      * Then calls onCreatingNewStep() to create the first step.
      * After all is done, save the whole tutorial array back
      */
-    static onCreatingNewRecording() {
+    static onCreateNewRecording() {
         TutorialsModel.#tutorials.unshift(new TutorialObject());
-        TutorialsModel.creatingNewStep(true);
+        const stepId = TutorialsModel.onCreateNewStep(true);
         TutorialsModel.saveToStorage();
+        return stepId
     }
 
-    static creatingNewStep(firstStep = false) {
-        //create snapshot, save current inputs, push new step object and update step index and UI
+    static loadTutorialsOnPageWhenRecording(callback) {
+        const currentTutorial = TutorialsModel.#tutorials[0]
+        TutorialsModel.smartInit(() => {
+            TutorialsModel.#tutorials.unshift(currentTutorial)
+            callback()
+        })
+    }
 
-        //push to storage
+    static onCreateNewStep(firstStep = false) {
         const id = uuidv4();
         const step = new Step();
         step.id = id;
         if (firstStep) {
-            uiManager.createStepSnapshot(0, {
-                url: globalCache.currentUrl,
-                name: '',
-                description: '',
-                id: id,
-            })
-
             TutorialsModel.#tutorials[0].steps.push(step);
-            TutorialsModel.syncFromCurrentStepStorageToUIWhenRecording();
         } else {
-            //save inputs
-            TutorialsModel.syncFromUIToCurrentTutorialWhenRecording(() => {
-                TutorialsModel.#tutorials[0].currentStepIndex = TutorialsModel.#tutorials[0].steps.push(step) - 1;
-                //update
-                uiManager.updateStepSnapshot(TutorialsModel.#tutorials[0].steps[TutorialsModel.#tutorials[0].currentStepIndex - 1].id);
-
-                uiManager.createStepSnapshot(TutorialsModel.#tutorials[0].currentStepIndex, {
-                    url: globalCache.currentUrl,
-                    name: '',
-                    description: '',
-                    id: id,
-                })
-            });
-            //update UI to new step
-            TutorialsModel.syncFromCurrentStepStorageToUIWhenRecording();
+            TutorialsModel.#tutorials[0].currentStepIndex = TutorialsModel.#tutorials[0].steps.push(step) - 1;
         }
+        return id;
     }
 
-    static onCurrentStepChangedWhenRecording(newStepIndex) {
-        TutorialsModel.syncFromUIToCurrentTutorialWhenRecording();
-        TutorialsModel.#tutorials[0].currentStepIndex = newStepIndex;
-        TutorialsModel.syncFromCurrentStepStorageToUIWhenRecording();
+    static updateCurrentStepWhenRecording(newStepIndex) {
+        // TutorialsModel.syncFromUIToCurrentTutorialWhenRecording();
+        // TutorialsModel.#tutorials[0].currentStepIndex = newStepIndex;
+        // TutorialsModel.saveStep();
     }
 
     /**
      * Sync from storage to UI
      */
-    static syncFromCurrentStepStorageToUIWhenRecording() {
-        //elements to ui
-        const currentStep = TutorialsModel.getCurrentStep();
-        stepNameInput.attr('value', currentStep.name);
-        stepNameInput.val('');
-        stepDescriptionInput.attr('value', currentStep.description);
-        stepDescriptionInput.val('');
+    static saveStep(step, atIndex, callback = () => { }) {
+        TutorialsModel.#tutorials[0].steps[atIndex] = step
+        TutorialsModel.saveActiveTutorialToStorage(callback)
     }
+
+
 
     /**
      * Sync UI to storage
      */
     static syncFromUIToCurrentTutorialWhenRecording(callback = () => { }) {
         chrome.storage.sync.get([VALUES.STORAGE.CURRENT_SELECTED_ELEMENT], result => {
-            const path = result[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT];
-            if (!isNotNull(path) || isEmpty(path)) {
-                alert("Please complete required fields first");
-                return;
-            }
 
-            const stepIndex = TutorialsModel.#tutorials[0].currentStepIndex;
-            const tempStep = TutorialsModel.#tutorials[0].steps[stepIndex];
-            const actionType = parseInt(actionTypeSelector.val());
-            var step = new Step(
-                stepIndex,
-                actionType,
-                null,
-                stepNameInput.attr('value'),
-                stepDescriptionInput.attr('value'),
-                globalCache.currentUrl,
-                false,
-                [],
-                tempStep.id
-            );
-            console.log(stepNameInput.attr('value'))
-            console.log(step.name)
-            switch (actionType) {
-                case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK:
-                    step.actionObject = new ClickAction(new ClickGuide(path, null, null, false, null, false, null), []);
-                    break;
-                case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK_REDIRECT:
-                    step.actionObject = new ClickAction(new ClickGuide(path, null, null, true, null, false, null), []);
-                    break;
-                case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_INPUT:
-                    step.actionObject = new InputAction(path, "", [], false, VALUES.INPUT_TYPES.TEXT);
-                    break;
-                case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_REDIRECT:
-                    step.actionObject = new RedirectAction(stepRedirectURLInput);
-                    break;
-                case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SIDE_INSTRUCTION:
-                    step.actionObject = new SideInstructionAction(path);
-                    break;
-                default:
-                    break;
-            }
-
-            TutorialsModel.#tutorials[0].steps[stepIndex] = step;
-            //save current step to sync
-            TutorialsModel.saveActiveTutorialToStorage(callback);
-            console.log('saving current tutorial: ' + JSON.stringify(TutorialsModel.getCurrentTutorial()));
         });
-
-
     }
 
     static uploadToFirestoreOnFinishRecording() {
 
     }
+
+
 
     //------------------------------------------------------------------------------------------
     //following tutorial functions

@@ -1,38 +1,7 @@
 class RecordTutorialViewController {
-    //UI
-    recordingContainer;
-    recordingMenuDraggableArea;
-    recordTutorialSwitch;
-    actionTypeSelector;
-    recordUpperContainer;
-    stepNameInput;
-    stepDescriptionInput;
-    stepCustomURLInput;
-    stepAltClickInput;
-    stepRedirectURLInput;
-    selectedElementContainer;
-    selectedTableContainer;
-    stepsContainer;
-    addNewStepRoundButton;
-    createNewStepButton;
-    toogleAdvancedRecordingButton;
-    recordingAdvancedSectionContainer;
-
-    //Local Variables
-    #isUsingAdvancedRecordingPanel = false
-    #isRecordingButtonOn = false
-
-    constructor(status) {
-        TutorialsModel.tutorialsModelFollowingTutorialDelegate = this
-        UserEventListnerHandler.userEventListnerHandlerDelegate = this
-        Highlighter.highlighterViewControllerSpecificUIDelegate = this
-        this.#initializeUI()
-        //this.#checkStatus(status)
-    }
-
-    #initializeUI() {
-        const body = $('body');
-        body.append(`
+    //Constants
+    static #RECORDING_PANEL_HTML_SIMPLE() {
+        return `
             <div class="w-recording-panel-container">
                 <div id="w-recording-menu-draggable-area" class="w-common-item w-popup-draggable"></div>
                 <div class="w-recording-panel-main-container">
@@ -52,7 +21,7 @@ class RecordTutorialViewController {
                                     <option value="${VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SIDE_INSTRUCTION}">Instruction</option>
                                 </select>
                             </div>
-                            <div id="w-recording-panel-is-recording-switch-container" class="w-horizontal-scroll-item-container w-horizontal-scroll-container">
+                            <div id="w-recording-panel-is-recording-switch-container" class="w-horizontal-scroll-item-container w-horizontal-scroll-container common-action-container">
                                 <p id="is-recording-indicator" class="w-horizontal-scroll-item-container">Not Recording</p>
                                 <label id="is-recording-switch-label" class="w-horizontal-scroll-item-container">
                                     <input type="checkbox" id="record-tutorial-switch">
@@ -106,20 +75,30 @@ class RecordTutorialViewController {
                             </div>
                         </div>
                     </section>
-                    <section id="w-recording-panel-basic-selected-container" class="w-horizontal-scroll-container click-action-container">
+                    <section id="w-recording-panel-basic-selected-container" class="w-horizontal-scroll-container-orange click-action-container">
                         <!-- selected element -->
                         
                     </section>
-                    <section id="w-recording-panel-basic-table-container" class="w-horizontal-scroll-container click-action-container">
+                    <section id="w-recording-panel-basic-table-container" class="w-horizontal-scroll-container-orange click-action-container">
                         <!-- parent table -->
                     </section>
-                    <section id="w-recording-panel-basic-steps-container" class="w-horizontal-scroll-container common-action-container">
+                    <section id="w-recording-panel-step-options-container" class="w-horizontal-scroll-container">
                         <!-- step selector -->
-                        <div class="next-step-button-round-container w-horizontal-scroll-item-container">
+                        <div id="sdcs" class="step-option-snapshot-container w-horizontal-scroll-item-container">
+                        <!-- snapshot -->
+                        <label class="step-option-snapshot-name-label">sckjcsk sc ds dsdssd</label>
+                    </div>
+                        <div class="w-horizontal-scroll-item-container next-step-button-round-container">
                             <button id="add-new-step-round-button" class="w-round-button">+</button>
                         </div>
                     </section>
-                    <section id="w-recording-panel-basic-buttons-container common-action-container">
+                    <section id="w-recording-panel-basic-steps-container" class="w-horizontal-scroll-container-orange">
+                        <!-- step selector -->
+                        <div class="w-horizontal-scroll-item-container next-step-button-round-container">
+                            <button id="add-new-step-round-button" class="w-round-button">+</button>
+                        </div>
+                    </section>
+                    <section id="w-recording-panel-basic-buttons-container">
                         <!-- buttons -->
                         <button id="create-new-step-button">New Step</button>
                     </section>
@@ -132,10 +111,48 @@ class RecordTutorialViewController {
                 </button>
             </div>
             `
-        );
+    }
+    //UI
+    recordingContainer;
+    recordingMenuDraggableArea;
+    recordTutorialSwitch;
+    actionTypeSelector;
+    recordUpperContainer;
+    stepNameInput;
+    stepDescriptionInput;
+    stepCustomURLInput;
+    stepAltClickInput;
+    stepRedirectURLInput;
+    selectedElementContainer;
+    selectedTableContainer;
+    stepsContainer;
+    addNewStepRoundButton;
+    createNewStepButton;
+    toogleAdvancedRecordingButton;
+    recordingAdvancedSectionContainer;
+
+    //Local Variables
+    #isUsingAdvancedRecordingPanel = false
+    #hasAdvancedRecordingPanelBeenInitialized = false
+    #isRecordingButtonOn = false
+
+    constructor(status) {
+        TutorialsModel.tutorialsModelFollowingTutorialDelegate = this
+        UserEventListnerHandler.userEventListnerHandlerDelegate = this
+        Highlighter.highlighterViewControllerSpecificUIDelegate = this
+        this.#initializeUI()
+        this.#checkStatus(status)
+    }
+
+    #getAllContentHTML() {
+        return RecordTutorialViewController.#RECORDING_PANEL_HTML_SIMPLE();
+    }
+
+    #initializeUI() {
+        const body = $('body');
+        body.append(this.#getAllContentHTML());
 
         this.recordingContainer = $('.w-recording-panel-container').first();
-
         this.recordingMenuDraggableArea = $('#w-recording-menu-draggable-area');
         makeElementDraggable(this.recordingMenuDraggableArea[0], this.recordingContainer[0]);
 
@@ -188,12 +205,14 @@ class RecordTutorialViewController {
 
         this.createNewStepButton = $('#create-new-step-button');
         this.createNewStepButton.on('click', () => {
-            //TutorialsModel.onCreatingNewStep();
+            this.#onCreateNewStep()
         })
 
         this.stepsContainer = $('#w-recording-panel-basic-steps-container');
         this.addNewStepRoundButton = $('#add-new-step-round-button');
-
+        this.addNewStepRoundButton.on('click', () => {
+            this.#onCreateNewStep()
+        })
 
         //advanced
         this.toogleAdvancedRecordingButton = $('.recording-panel-toogle-advanced-button');
@@ -203,8 +222,10 @@ class RecordTutorialViewController {
 
         this.recordingAdvancedSectionContainer = $('.recording-panel-advanced-section-container').first();
 
-        this.#clearCurrentMenu();
+        this.#hideAll();
     }
+
+
 
     async #onToogleAdvancedRecordingButton() {
         if (!this.#isUsingAdvancedRecordingPanel) {
@@ -213,9 +234,11 @@ class RecordTutorialViewController {
             this.toogleAdvancedRecordingButton.removeClass('recording-panel-toogle-advanced-button');
             this.toogleAdvancedRecordingButton.addClass('recording-panel-toogle-advanced-button-advanced');
             this.#isUsingAdvancedRecordingPanel = true;
+
             //load model
-            TutorialsModel.smartInit(() => {
+            !this.#hasAdvancedRecordingPanelBeenInitialized && TutorialsModel.loadTutorialsOnPageWhenRecording(() => {
                 this.#createSnapshotsForAllTutorials()
+                this.#hasAdvancedRecordingPanelBeenInitialized = true;
             })
         } else {
             this.recordingContainer.removeClass('w-recording-panel-advanced-container');
@@ -227,37 +250,38 @@ class RecordTutorialViewController {
     }
 
     #checkStatus() {
-        chrome.storage.sync.get([VALUES.TUTORIAL_STATUS.STATUS], (result) => {
-            switch (result[VALUES.TUTORIAL_STATUS.STATUS]) {
-                case VALUES.TUTORIAL_STATUS.IS_RECORDING:
-                    recordTutorialSwitch.prop('checked', this.#isRecordingButtonOn);
-                    currentTutorialObj = result[VALUES.STORAGE.CURRENT_TUTORIAL_OBJECT];
-                    loadMenuFromStorage(currentTutorialObj);
+        this.#onCreateNewRecording()
+        // chrome.storage.sync.get([VALUES.TUTORIAL_STATUS.STATUS], (result) => {
+        //     switch (result[VALUES.TUTORIAL_STATUS.STATUS]) {
+        //         case VALUES.TUTORIAL_STATUS.IS_RECORDING:
+        //             recordTutorialSwitch.prop('checked', this.#isRecordingButtonOn);
+        //             currentTutorialObj = result[VALUES.STORAGE.CURRENT_TUTORIAL_OBJECT];
+        //             loadMenuFromStorage(currentTutorialObj);
 
-                    // const selectedElementPath = result[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT];
-                    // if (isNotNull(selectedElementPath)) {
-                    //     selectedElementIndicator.html(`Selected Element: ${selectedElementPath.slice(max(selectedElementPath.length - 2, 0), selectedElementPath.length)}`)
-                    // } else {
-                    //     selectedElementIndicator.html('Selected Element: None')
-                    // }
-                    // if (isNotNull(result[VALUES.STORAGE.CURRENT_URL])) {
-                    //     customStepUrlInput.val(result[VALUES.STORAGE.CURRENT_URL]);
-                    // }
+        //             // const selectedElementPath = result[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT];
+        //             // if (isNotNull(selectedElementPath)) {
+        //             //     selectedElementIndicator.html(`Selected Element: ${selectedElementPath.slice(max(selectedElementPath.length - 2, 0), selectedElementPath.length)}`)
+        //             // } else {
+        //             //     selectedElementIndicator.html('Selected Element: None')
+        //             // }
+        //             // if (isNotNull(result[VALUES.STORAGE.CURRENT_URL])) {
+        //             //     customStepUrlInput.val(result[VALUES.STORAGE.CURRENT_URL]);
+        //             // }
 
-                    // showStepContainer();
-                    break;
-                case VALUES.RECORDING_STATUS.NOT_RECORDING:
-                    syncStorageSet(VALUES.STORAGE.IS_RECORDING, false);
-                    globalCache.globalEventsHandler.setIsRecordingCache(request.isRecordingStatus);
-                    this.#showNewRecordingContainer();
-                    break;
-                default:
-                    //onStopNewTutorialRecording()
-                    globalCache.globalEventsHandler.setIsRecordingCache(request.isRecordingStatus);
-                    this.#showNewRecordingContainer();
-                    break;
-            };
-        });
+        //             // showStepContainer();
+        //             break;
+        //         case VALUES.RECORDING_STATUS.NOT_RECORDING:
+        //             syncStorageSet(VALUES.STORAGE.IS_RECORDING, false);
+        //             globalCache.globalEventsHandler.setIsRecordingCache(request.isRecordingStatus);
+        //             this.#showNewRecordingContainer();
+        //             break;
+        //         default:
+        //             //onStopNewTutorialRecording()
+        //             globalCache.globalEventsHandler.setIsRecordingCache(request.isRecordingStatus);
+        //             this.#showNewRecordingContainer();
+        //             break;
+        //     };
+        // });
     }
 
     //TutorialsModelFollowingTutorialDelegate
@@ -310,6 +334,17 @@ class RecordTutorialViewController {
         let nearestTable
         var nearestTablePath
         storeSelectedElementOrNearestTableIfExists()
+
+        //Highlight
+        if (jQElement.is('a')) {
+            Highlighter.highlight(jQElement.parent());
+        } else {
+            Highlighter.highlight(jQElement);
+        }
+
+        //update recording panel
+        this.#updateSelectedElementDomPathView(globalCache.domPath, nearestTable, nearestTablePath)
+
         function storeSelectedElementOrNearestTableIfExists() {
             nearestTable = getNearestTableOrList(jQElement[0]);
             if (!isNotNull(nearestTable)) {
@@ -322,22 +357,16 @@ class RecordTutorialViewController {
                 syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, nearestTablePath);
             }
         }
+    }
 
-        //Highlight
-        if (jQElement.is('a')) {
-            Highlighter.highlight(jQElement.parent());
-        } else {
-            Highlighter.highlight(jQElement);
-        }
-
-        //update recording panel
+    #updateSelectedElementDomPathView(path, nearestTable, nearestTablePath) {
         this.selectedElementContainer.empty();
 
-        globalCache.domPath.forEach((e, i) => {
+        path.forEach((e, i) => {
             this.selectedElementContainer.append(`
             <div class="selected-item-path-container w-horizontal-scroll-item-container">
                 <input class="selected-item-path-input" type="text" id="selected-item-path-${i}" value="${e}">
-                <button class="selected-item-path-delete" id="selected-item-path-delete-${i}">x</button>
+                <button class="selected-item-path-delete" id="selected-item-path-delete-${i}">&times;</button>
             </div>
             <div class="w-horizontal-scroll-item-next-indicator-container w-horizontal-scroll-item-container">
                 <div class="w-horizontal-scroll-item-next-indicator">
@@ -351,7 +380,7 @@ class RecordTutorialViewController {
             this.selectedTableContainer.append(`
             <div class="selected-item-path-container w-horizontal-scroll-item-container">
                 <input class="selected-item-path-input" type="text" id="selected-item-table-path-${i}" value="${e}">
-                <button class="selected-item-path-delete" id="selected-item-table-path-delete-${i}">x</button>
+                <button class="selected-item-path-delete" id="selected-item-table-path-delete-${i}">&#10006</button>
             </div>
             <div class="w-horizontal-scroll-item-next-indicator-container w-horizontal-scroll-item-container">
                 <div class="w-horizontal-scroll-item-next-indicator">
@@ -359,8 +388,6 @@ class RecordTutorialViewController {
             </div>
             `);
         })
-
-
     }
 
     //------------------------------------------------------------------------------------------------------------
@@ -368,51 +395,67 @@ class RecordTutorialViewController {
     //MARK: recording menu
     //------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------
-    #onNewTutorialNameButtonClicked() {
-        if (newTutorialNameInput.val().length > 1) {
-            var data = {};
-            data[VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME] = newTutorialNameInput.val();
-            data[VALUES.RECORDING_STATUS.STATUS] = VALUES.RECORDING_STATUS.BEGAN_RECORDING;
-            data[VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX] = 0;
-            data[VALUES.STORAGE.CURRENT_STEP_OBJ] = null;
-            data[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT] = null;
-            data[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE] = null;
-            syncStorageSetBatch(data);
-            this.newTutorialNameInput.val('');
-            this.#showStepContainer();
-        }
+    // #onNewTutorialNameButtonClicked() {
+    //     if (newTutorialNameInput.val().length > 1) {
+    //         var data = {};
+    //         data[VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME] = newTutorialNameInput.val();
+    //         data[VALUES.RECORDING_STATUS.STATUS] = VALUES.RECORDING_STATUS.BEGAN_RECORDING;
+    //         data[VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX] = 0;
+    //         data[VALUES.STORAGE.CURRENT_STEP_OBJ] = null;
+    //         data[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT] = null;
+    //         data[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE] = null;
+    //         syncStorageSetBatch(data);
+    //         this.newTutorialNameInput.val('');
+    //         this.#showStepContainer();
+    //     }
+    // }
+
+    // #showStepContainer() {
+    //     this.newTutorialContainer.hide();
+    //     this.stepDetailsContainer.show();
+    // }
+
+    // #showNewRecordingContainer() {
+    //     this.stepDetailsContainer.hide();
+    //     this.newTutorialContainer.show();
+    // }
+
+    // UI Control
+
+    #loadMenuForStep(atIndex) {
+        const step = TutorialsModel.getStepOfCurrentTutorialAtIndex(atIndex);
+        this.#switchMenu(step.actionType);
+        this.#loadMenuItems(step)
+
+
     }
 
-    #showStepContainer() {
-        this.newTutorialContainer.hide();
-        this.stepDetailsContainer.show();
-    }
+    #loadMenuItems(step) {
+        this.actionTypeSelector.val(step.actionType);
+        this.stepNameInput = step.name
+        this.stepDescriptionInput = step.description
 
-    #showNewRecordingContainer() {
-        this.stepDetailsContainer.hide();
-        this.newTutorialContainer.show();
-    }
+        const actionObject = step.actionObject
+        Step.callFunctionOnActionType(step.actionType, () => {
+            this.#updateSelectedElementDomPathView(actionObject.defaultClick.path)
+        }, () => {
+            this.#updateSelectedElementDomPathView(actionObject.defaultClick.path)
+        }, () => {
+            this.#updateSelectedElementDomPathView(actionObject.path);
+        }, () => {
 
+        }, () => {
+            this.#updateSelectedElementDomPathView(actionObject.path)
+        }, () => {
+            this.#updateSelectedElementDomPathView(actionObject.path)
+        }, () => {
 
-
-    #loadMenuFromStorage(currentTutorialObj) {
-        if (isNotNull(currentTutorialObj)) {
-            //switchMenu(currentTutorialObj.steps[currentTutorialObj.cu].actionType);
-            //selectActionTypeSelect.val(currentStepObj.actionType);
-            // if (isNotNull(currentStepObj.url)) {
-            //     useCustomStepUrlCheckbox.prop('checked', true);
-            //     customStepUrlContainer.show();
-            //     customStepUrlInput.val(currentStepObj.url);
-            // }
-            currentTutorialObj.updateUIForCurrentStep();
-        } else {
-            switchMenu(VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL);
-            selectActionTypeSelect.val(VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL);
-        }
+        })
     }
 
 
     #switchMenu(selection) {
+        this.#switchMenuUIHelper()
         Step.callFunctionOnActionType(
             selection,
             this.#showClickMenu.bind(this),
@@ -425,39 +468,26 @@ class RecordTutorialViewController {
         );
     }
 
-    #loadMenuItems(selection) {
-        Step.callFunctionOnActionType(
-            selection,
-            () => {
-                //click
-                this.clickActionNameInput.val(currentStepObj.actionObject.defaultClick.name);
-                this.clickActionDescriptionInput.val(currentStepObj.actionObject.defaultClick.description);
-            }, () => {
-                //car
-                this.urlInput.val(currentStepObj.actionObject.defaultClick.url);
-            }, () => {
-                //input
-                this.inputActionDefaultInput.val(currentStepObj.actionObject.defaultText)
-            }, () => {
-                //redirect
-                urlInput.val(currentStepObj.actionObject.url);
-            }, () => {
-                //select
-            }, () => {
-                //side instruction
-            });
+    #createNewMenu() {
+        this.#hideAll()
+        this.stepNameInput.val('')
+        this.stepDescriptionInput.val('')
     }
 
-    #clearCurrentMenu() {
-        $('.redirect-action-container, .click-action-container, .select-action-container').hide();
+    #hideAll() {
+        $('.redirect-action-container, .click-action-container, .select-action-container, .common-action-container').hide();
     }
 
     #showNullMenu() {
-        this.#clearCurrentMenu()
+        this.#hideAll()
+    }
+
+    #switchMenuUIHelper() {
+        this.#hideAll()
+        $('.common-action-container').show()
     }
 
     #showClickMenu() {
-        this.#clearCurrentMenu();
         $('.click-action-container').show();
         // addAlternativeActionButton.html('Add Alternative Click');
 
@@ -471,82 +501,136 @@ class RecordTutorialViewController {
     }
 
     #showInputMenu() {
-        this.#clearCurrentMenu();
         $('.input-action-container').show();
         //addAlternativeActionButton.html('Add Alternative Input');
     }
 
     #showClickAndRedirectMenu() {
-        this.#clearCurrentMenu();
         //urlInputContainer.show();
     }
 
     #showRedirectMenu() {
-        this.#clearCurrentMenu();
         $('.redirect-action-container').show();
         // selectedElementIndicatorContainer.hide();
         // urlInputContainer.show();
     }
 
     #showSelectMenu() {
-        this.#clearCurrentMenu();
         $('.select-action-container').show();
     }
 
     #showSideInstructionMenu() {
-        this.#clearCurrentMenu();
     }
 
-    //Controls
-    #endRecordingCurrentTutorial() {
-        var data = {};
-        data[VALUES.RECORDING_STATUS.STATUS] = VALUES.RECORDING_STATUS.NOT_RECORDING;
-        data[VALUES.STORAGE.IS_RECORDING] = false;
-        data[VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME] = null;
-        data[VALUES.STORAGE.CURRENT_STEP_OBJ] = null;
-        data[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT] = null;
-        data[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE] = null;
-        data[VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID] = null;
-        data[VALUES.STORAGE.STEP_ACTION_TYPE] = VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL;
-        sendMessageToContentScript({ isRecordingStatus: false });
-        syncStorageSetBatch(data);
-        this.#showNewRecordingContainer();
+    //Controller controls
+    #onCreateNewRecording() {
+        const firstStepId = TutorialsModel.onCreateNewRecording()
+        this.#createEmptyStepSnapshot(0, firstStepId)
     }
+
+    #onCreateNewStep(isFirstStep = false) {
+        this.#syncCurrentStepFromInput(() => {
+            const stepId = TutorialsModel.onCreateNewStep(isFirstStep)
+            this.#createEmptyStepSnapshot(TutorialsModel.getCurrentTutorial().steps.length - 1, stepId)
+            this.#createNewMenu()
+            Highlighter.removeLastHighlight()
+        })
+    }
+
+    #syncCurrentStepFromInput(callback = () => { }) {
+        const currentStep = this.#getStepInfoFromInput(TutorialsModel.getCurrentStepIndex())
+        TutorialsModel.saveStep(currentStep, TutorialsModel.getCurrentStepIndex(), () => {
+            this.#updateStepSnapshot()
+            callback()
+        })
+    }
+
+    #getStepPathFromInput() {
+        var pathArray = []
+        this.selectedElementContainer.find('.selected-item-path-container').each((i, element) => {
+            pathArray.push($(element).children('input').val())
+        })
+        return pathArray
+    }
+
+    #getStepInfoFromInput(atIndex) {
+        const stepId = TutorialsModel.getCurrentStep().id
+        const actionType = parseInt(this.actionTypeSelector.val())
+        const selectedElementPath = this.#getStepPathFromInput()
+        var actionObject = Step.callFunctionOnActionType(actionType, () => {
+            return new ClickAction(new ClickGuide(selectedElementPath, null, null, false, null, false, null), []);
+        }, () => {
+            return new ClickAction(new ClickGuide(selectedElementPath, null, null, true, null, false, null), []);
+        }, () => {
+            return new InputAction(selectedElementPath, "", [], false, VALUES.INPUT_TYPES.TEXT);
+        }, () => {
+            return new RedirectAction(null);
+        }, () => {
+            return new SelectAction(selectedElementPath, null, false);
+        }, () => {
+            return new SideInstructionAction(selectedElementPath);
+        }, () => {
+            return new NullAction();
+        })
+        var step = new Step(atIndex, actionType, actionObject, this.stepNameInput.val(), this.stepDescriptionInput.val(), null, null, [], stepId)
+        c('synced from UI: ' + JSON.stringify(step))
+        return step
+    }
+
+    // #endRecordingCurrentTutorial() {
+    //     var data = {};
+    //     data[VALUES.RECORDING_STATUS.STATUS] = VALUES.RECORDING_STATUS.NOT_RECORDING;
+    //     data[VALUES.STORAGE.IS_RECORDING] = false;
+    //     data[VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME] = null;
+    //     data[VALUES.STORAGE.CURRENT_STEP_OBJ] = null;
+    //     data[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT] = null;
+    //     data[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE] = null;
+    //     data[VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID] = null;
+    //     data[VALUES.STORAGE.STEP_ACTION_TYPE] = VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL;
+    //     sendMessageToContentScript({ isRecordingStatus: false });
+    //     syncStorageSetBatch(data);
+    //     this.#showNewRecordingContainer();
+    // }
 
     //UI functions
+    #createEmptyStepSnapshot(atIndex, id) {
+        const type = SnapshotView.TYPE.RECORDING_STEP
+        const snapshotHTML = SnapshotView.getViewHTML({ type, id })
+        jQueryinsertAt($('#w-recording-panel-basic-steps-container'), atIndex, snapshotHTML)
+        SnapshotView.addHoverListener(id, type)
+        SnapshotView.addClickListener(id, this.#onSnapshotClicked.bind(this))
+    }
+
+    #onSnapshotClicked(id) {
+        const index = SnapshotView.getSnapshotIndex(id)
+        this.#loadMenuForStep(index)
+        TutorialsModel.changeCurrentTutorialStepIndexTo(index)
+    }
+
+
+
+
     #createStepSnapshot(atIndex, snapshot) {
         const steps = TutorialsModel.getCurrentTutorial().steps;
         const prevStep = steps[atIndex - 1] || null;
         const nextStep = steps[atIndex] || null;
         const trimmedURL = snapshot.url;
 
+        const type = SnapshotView.TYPE.RECORDING_STEP
+        const snapshotHTML = SnapshotView.getViewHTML(snapshot)
+        const id = snapshot.id
+        SnapshotView.addHoverListener(id, type)
+        SnapshotView.addClickListener(id, this.#onSnapshotClicked.bind(this))
+
         console.log(JSON.stringify(prevStep))
         if (isNotNull(prevStep) && prevStep.url === snapshot.url) {
             console.log('apending step snapshot')
             const container = $(`#${prevStep.id}`).parent();
-            container.append(`
-            <div id="${snapshot.id}" class="step-snapshot-container w-horizontal-scroll-item-container">
-                <!-- snapshot -->
-                <label for="">${snapshot.name}</label>
-                <label for="">${snapshot.description}</label>
-            </div>
-            <div class="w-horizontal-scroll-item-next-indicator-container w-horizontal-scroll-item-container">
-                <div class="w-horizontal-scroll-item-next-indicator"></div>
-            </div>
-            `)
+            container.append(snapshotHTML)
         } else if (isNotNull(nextStep) && nextStep.url === snapshot.url) {
             console.log('prepending step snapshot')
             const container = $(`#${nextStep.id}`).parent();
-            container.prepend(`
-            <div id="${snapshot.id}" class="step-snapshot-container w-horizontal-scroll-item-container">
-                <!-- snapshot -->
-                <label for="">${snapshot.name}</label>
-                <label for="">${snapshot.description}</label>
-            </div>
-            <div class="w-horizontal-scroll-item-next-indicator-container w-horizontal-scroll-item-container">
-                <div class="w-horizontal-scroll-item-next-indicator"></div>
-            </div>
-            `)
+            container.prepend(snapshotHTML)
         } else {
             console.log('appending page contaner')
             this.addNewStepRoundButton.parent().before(`
@@ -554,31 +638,20 @@ class RecordTutorialViewController {
                 <div class="w-recording-panel-steps-page-indicator-container">
                 ${trimmedURL}
                 </div>
-                <div class="w-horizontal-scroll-container w-recording-panel-steps-step-indicator-container">
-                    <div id="${snapshot.id}" class="step-snapshot-container w-horizontal-scroll-item-container">
-                        <!-- snapshot -->
-                        <label for="">${snapshot.name}</label>
-                        <label for="">${snapshot.description}</label>
-                    </div>
-                    <div class="w-horizontal-scroll-item-next-indicator-container w-horizontal-scroll-item-container">
-                        <div class="w-horizontal-scroll-item-next-indicator"></div>
-                    </div>
-                </div>
+                ${snapshotHTML}
             </div>
             `);
         }
     }
 
-    #updateStepSnapshot(id) {
-        console.log('updating' + id)
+    #updateStepSnapshot() {
+        const step = TutorialsModel.getCurrentStep()
+        const stepSnapshotView = $(`#${step.id}`)
+        stepSnapshotView.find('.step-snapshot-name-label').html(`${step.name}`)
+        stepSnapshotView.find('.step-snapshot-description-label').html(`${step.description}`)
     }
 
-    // #createTutorialStepsSnapshots(tutorialIndex = 0) {
-    //     const steps = tutorialsManager.tutorials[tutorialIndex].steps;
-    //     steps.forEach((step, index) => {
-    //         uiManager.createStepSnapshot(index, step)
-    //     })
-    // }
+    //Adcanced actions
 
     #createSnapshotsForAllTutorials() {
         TutorialsModel.forEachTutorial((tutorial, index) => {
@@ -611,37 +684,24 @@ class RecordTutorialViewController {
 
     #createSnapshotForTutorialTitle(tutorial) {
         this.recordingAdvancedSectionContainer.append(`
-        <div class="w-horizontal-scroll-container w-recording-panel-advanced-steps-container">
+        <div class="w-horizontal-scroll-container-orange w-recording-panel-advanced-steps-container">
             <div
                 class="w-horizontal-scroll-item-container w-recording-advanced-panel-steps-section-container w-horizontal-scroll-container">
                 <div id="tutorial-recording-snapshot-${tutorial.id}" class="step-snapshot-container w-horizontal-scroll-item-container">
                     <!-- snapshot -->
                     ${tutorial.name}
                 </div>
-            </div>
         </div>
         `);
     }
 
     #createSnapshotForStep(tutorialId, step) {
+        c(step)
         const container = $(`#tutorial-recording-snapshot-${tutorialId}`).parent().parent();
-        container.append(`
-        <div
-            class="w-horizontal-scroll-item-container w-recording-advanced-panel-steps-section-container w-horizontal-scroll-container">
-            <div id="${step.id}" class="step-snapshot-container w-horizontal-scroll-item-container">
-                <!-- snapshot -->
-                <label for="">${step.name}</label>
-                <label for="">${step.description}</label>
-            </div>
-            <div class="w-horizontal-scroll-item-next-indicator-container w-horizontal-scroll-item-container">
-                <div class="w-horizontal-scroll-item-next-indicator">
-                </div>
-            </div>
-        </div>
-        `)
+        step.type = SnapshotView.TYPE.STEP_FROM_OTHER
+        container.append(SnapshotView.getViewHTML(step))
         const element = document.getElementById(step.id)
         element.addEventListener("mouseenter", () => {
-            c(Step.getPath(step))
             Highlighter.highlight(Step.getPath(step))
         })
         element.addEventListener("mouseleave", () => {

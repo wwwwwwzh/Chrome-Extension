@@ -4,7 +4,8 @@ let globalCache
 $(() => {
     globalCache = new GlobalCache()
     extension = new ExtensionController()
-    //extension.showRecordingPanel()
+    extension.showRecordingPanel()
+    UserEventListnerHandler.tutorialStatusCache = VALUES.TUTORIAL_STATUS.IS_RECORDING
 })
 
 

@@ -5,7 +5,9 @@
  * Placeholder action class for initialization of step object
  */
 class NullAction {
-
+    static getPath() {
+        return null
+    }
 }
 
 class RedirectAction {
@@ -26,22 +28,16 @@ class RedirectAction {
 
 
 class ClickAction {
-    /**
-     * 
-     * @param {ClickGuide} defaultClick
-     * @param {[ClickGuide]} optionsClick 
-     */
-    constructor(defaultClick, optionsClick) {
-        this.defaultClick = defaultClick;
-        this.optionsClick = optionsClick;
+    constructor(clicks) {
+        this.clicks = clicks
     }
 
-    static getPath(actionObject) {
-        return actionObject.defaultClick.path
+    static getPath(clickAction, index = 0) {
+        return clickAction?.clicks[index]?.path
     }
 
     static isClickActionCompleted(click) {
-        return isClickGuideCompleted(click.defaultClick);
+        return isClickGuideCompleted(click.clicks[0]);
     }
 }
 
@@ -68,10 +64,6 @@ class ClickGuide {
         this.table = table;
     }
 
-    static getPath(actionObject) {
-        return actionObject.path
-    }
-
     static isClickGuideCompleted(clickGuide) {
         return (
             isNotNull(clickGuide) &&
@@ -86,29 +78,19 @@ class ClickGuide {
 
 
 class InputAction {
-    /**
-     * Path is required. Default text used to fill input when selecting using default. 
-     * If there is no default, automation halts and asks for input. If options exist,
-     * automation halts when not using default and asks for input (options only used as
-     * suggestions). 
-     * @param {[string]} path 
-     * @param {string} defaultText 
-     * @param {[string]} optionsText 
-     * @param {string} inputType 
-     */
-    constructor(path, defaultText, optionsText, inputType) {
+    constructor(path, inputTexts, inputType, regexRule) {
         this.path = path;
-        this.defaultText = defaultText;
-        this.optionsText = optionsText;
+        this.inputTexts = inputTexts;
         this.inputType = inputType;
+        this.regexRule = regexRule
     }
 
-    static getPath(actionObject) {
-        return actionObject.path
+    static getPath(inputAction) {
+        return inputAction?.path
     }
 
     static isInputCompleted(input) {
-        return (isNotNull(input.path) && input.path !== [] && isNotNull(input.defaultText) && input.inputType !== "");
+        return (isNotNull(input.path) && input.path !== [] && isNotNull(input.inputTexts) && input.inputType !== "");
     }
 }
 
@@ -120,17 +102,17 @@ class SelectAction {
      * @param {[string]} path path to the <select> element. not option
      * @param {string} defaultValue html value attribute, from VALUE.ACTION_TYPE
      */
-    constructor(path, defaultValue) {
+    constructor(path, selections) {
         this.path = path;
-        this.defaultValue = defaultValue;
+        this.selections = selections;
     }
 
-    static getPath(actionObject) {
-        return actionObject.path
+    static getPath(selectAction) {
+        return selectAction?.path
     }
 
     static isSelectCompleted(select) {
-        return (isNotNull(select.path) && select.path !== [] && select.defaultValue !== "")
+        return (isNotNull(select.path) && select.path !== [] && select.selections.length > 0)
     }
 }
 
@@ -143,7 +125,7 @@ class SideInstructionAction {
     }
 
     static getPath(actionObject) {
-        return actionObject.path
+        return actionObject?.path
     }
 
     static isSideInstructionCompleted(si) {

@@ -143,6 +143,10 @@ function simulateClick(element, eventType = 'click') {
     console.trace();
 }
 
+function getElementIndex(element) {
+    return Array.from(element.parentNode.children).indexOf(element);
+}
+
 /**
  * 
  * @param {*} element DOM element
@@ -152,7 +156,7 @@ function simulateClick(element, eventType = 'click') {
 function getCompleteDomPathStack(element) {
     var stack = [];
     while (element.parentNode != null) {
-        const index = $(element).index() + 1;
+        const index = getElementIndex(element) + 1;
         stack.unshift(element.nodeName.toLowerCase() + ':nth-child(' + index + ')');
         element = element.parentNode;
     }
@@ -162,7 +166,7 @@ function getCompleteDomPathStack(element) {
 function getShortDomPathStack(element) {
     var stack = [];
     while (element.parentNode != null) {
-        const index = $(element).index() + 1;
+        const index = getElementIndex(element) + 1;
         if (element.hasAttribute('id') && element.id !== '') {
             stack.unshift('#' + element.id);
             return stack;
@@ -194,7 +198,16 @@ function jqueryElementStringFromDomPath(pathStack) {
     return jqueryString
 }
 
-
+function jQueryinsertAt(parent, index, child) {
+    var lastIndex = parent.children().length;
+    if (index < 0) {
+        index = Math.max(0, lastIndex + 1 + index);
+    }
+    parent.append(child);
+    if (index < lastIndex) {
+        parent.children().eq(index).before(parent.children().last());
+    }
+}
 /**
  * 
  * @param {*} shouldSelect jQuery element
@@ -319,7 +332,7 @@ function getNearestTableOrList(element) {
 }
 
 function checkIfUrlMatch(urlToMatch, testingUrl) {
-    c('urlToMatch:' + urlToMatch + 'testingUrl:' + testingUrl)
+    // c('urlToMatch:' + urlToMatch + 'testingUrl:' + testingUrl)
     if (urlToMatch[0] === '/') {
         const regex = new RegExp(urlToMatch.substr(1, urlToMatch.length - 2));
         return regex.test(testingUrl);
@@ -423,6 +436,7 @@ function getInstructionWindowLayout(element) {
     return layout;
 }
 
+//TODO: move to specific controller
 function movePopupIfOverlap(popup, highlightInstructionWindow) {
     const mainPopupRect = popup[0].getBoundingClientRect();
     const instructionWindow = highlightInstructionWindow[0].getBoundingClientRect();
