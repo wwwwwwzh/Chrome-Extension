@@ -26,6 +26,10 @@ class TutorialsModel {
         return TutorialsModel.getCurrentTutorial().currentStepIndex;
     }
 
+    static getLastStepIndexForTutorial(tutorialIndex = 0) {
+        return TutorialsModel.#tutorials[tutorialIndex].steps.length - 1;
+    }
+
     static forEachTutorial(fn) {
         this.#tutorials.forEach((tutorial, index) => {
             fn(tutorial, index)
@@ -163,13 +167,25 @@ class TutorialsModel {
     static async smartInit(callback) {
         TutorialsModel.#checkIfReloadIsNeeded(() => {
             c('reloading from firestore')
-            TutorialsModel.initializeFromFirestore(callback)
+            if (UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_RECORDING ||
+                UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_CREATING_NEW_TUTORIAL) {
+                chrome.storage.sync.get([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL], async (result) => {
+                    const currentTutorial = result[VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL];
+                    TutorialsModel.initializeFromFirestore(() => {
+                        TutorialsModel.#tutorials.unshift(currentTutorial)
+                        TutorialsModel.saveToStorage(callback);
+                    })
+                });
+            } else {
+                TutorialsModel.initializeFromFirestore(callback)
+            }
         }, () => {
             chrome.storage.sync.get([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL, VALUES.STORAGE.ALL_OTHER_TUTORIALS], async (result) => {
                 const currentTutorial = result[VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL];
                 if (isNotNull(currentTutorial)) {
                     const allOtherTutorials = result[VALUES.STORAGE.ALL_OTHER_TUTORIALS];
-                    TutorialsModel.#tutorials = [currentTutorial, ...allOtherTutorials];
+                    TutorialsModel.#tutorials = [currentTutorial] ?? []
+                    allOtherTutorials && TutorialsModel.#tutorials.push(allOtherTutorials)
                     console.log('loading ' + TutorialsModel.#tutorials.length + ' tutorials from storage')
                     callback();
                 } else {
@@ -265,11 +281,11 @@ class TutorialsModel {
         })
     }
 
-    static onCreateNewStep(firstStep = false) {
+    static onCreateNewStep() {
         const id = uuidv4();
         const step = new Step();
         step.id = id;
-        if (firstStep) {
+        if (TutorialsModel.getLastStepIndexForTutorial() < 0) {
             TutorialsModel.#tutorials[0].steps.push(step);
         } else {
             TutorialsModel.#tutorials[0].currentStepIndex = TutorialsModel.#tutorials[0].steps.push(step) - 1;
@@ -283,27 +299,19 @@ class TutorialsModel {
         // TutorialsModel.saveStep();
     }
 
-    /**
-     * Sync from storage to UI
-     */
-    static saveStep(step, atIndex, callback = () => { }) {
-        TutorialsModel.#tutorials[0].steps[atIndex] = step
+    static saveTutorialBasicInfo(info, callback = () => { }) {
+        TutorialsModel.#tutorials[0].name = info.name
+        TutorialsModel.#tutorials[0].description = info.description
         TutorialsModel.saveActiveTutorialToStorage(callback)
     }
 
-
-
-    /**
-     * Sync UI to storage
-     */
-    static syncFromUIToCurrentTutorialWhenRecording(callback = () => { }) {
-        chrome.storage.sync.get([VALUES.STORAGE.CURRENT_SELECTED_ELEMENT], result => {
-
-        });
+    static saveStep(step, atIndex, saveToStorage, callback = () => { }) {
+        TutorialsModel.#tutorials[0].steps[atIndex] = step
+        saveToStorage && TutorialsModel.saveActiveTutorialToStorage(callback)
     }
 
-    static uploadToFirestoreOnFinishRecording() {
-
+    static discardRecordingTutorial() {
+        TutorialsModel.#tutorials.shift()
     }
 
 
@@ -384,16 +392,16 @@ class Step {
         this.id = id;
     }
 
-    static getPath(step) {
+    static getPath(step, index = 0) {
         return Step.callFunctionOnActionType(
             step.actionType,
-            () => { return ClickAction.getPath(step.actionObject) },
-            () => { return ClickAction.getPath(step.actionObject) },
-            () => { return InputAction.getPath(step.actionObject) },
-            () => { return RedirectAction.getPath(step.actionObject) },
-            () => { return SelectAction.getPath(step.actionObject) },
-            () => { return SideInstructionAction.getPath(step.actionObject) },
-            () => { return NullAction.getPath(step.actionObject) },
+            () => { return ClickAction.getPath(step.actionObject, index) },
+            () => { return ClickAction.getPath(step.actionObject, index) },
+            () => { return InputAction.getPath(step.actionObject, index) },
+            () => { return RedirectAction.getPath(step.actionObject, index) },
+            () => { return SelectAction.getPath(step.actionObject, index) },
+            () => { return SideInstructionAction.getPath(step.actionObject, index) },
+            () => { return NullAction.getPath(step.actionObject, index) },
         )
     }
 
@@ -425,9 +433,7 @@ class Step {
             InputAction.isInputCompleted(step.actionObject) ||
             SelectAction.isSelectCompleted(step.actionObject) ||
             SideInstructionAction.isSideInstructionCompleted(step.actionObject)) &&
-            isNotNull(step.index) &&
-            step.actionType !== VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL &&
-            typeof step.actionObject !== 'NullAction'
+            step.actionType !== VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL
         )
     }
 }

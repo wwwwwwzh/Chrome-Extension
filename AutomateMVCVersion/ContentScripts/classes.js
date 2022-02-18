@@ -20,7 +20,7 @@ class RedirectAction {
     }
 
     static isRedirectCompleted(redirect) {
-        return (isNotNull(redirect.url));
+        return (!isStringEmpty(redirect.url));
     }
 }
 
@@ -37,7 +37,7 @@ class ClickAction {
     }
 
     static isClickActionCompleted(click) {
-        return isClickGuideCompleted(click.clicks[0]);
+        return ClickGuide.isClickGuideCompleted(this.clicks[0]);
     }
 }
 
@@ -67,10 +67,9 @@ class ClickGuide {
     static isClickGuideCompleted(clickGuide) {
         return (
             isNotNull(clickGuide) &&
-            isNotNull(clickGuide.path) &&
-            clickGuide.path.length > 0 &&
-            clickGuide.name !== null &&
-            clickGuide.name !== "" &&
+            !isArrayEmpty(clickGuide.path) &&
+            !isStringEmpty(clickGuide.name) &&
+            !isStringEmpty(clickGuide.description) &&
             isNotNull(clickGuide.isRedirect))
     }
 }
@@ -90,7 +89,7 @@ class InputAction {
     }
 
     static isInputCompleted(input) {
-        return (isNotNull(input.path) && input.path !== [] && isNotNull(input.inputTexts) && input.inputType !== "");
+        return (!isArrayEmpty(input.path) && !isStringEmpty(input.inputTexts));
     }
 }
 
@@ -112,7 +111,7 @@ class SelectAction {
     }
 
     static isSelectCompleted(select) {
-        return (isNotNull(select.path) && select.path !== [] && select.selections.length > 0)
+        return (!isArrayEmpty(select.path) && !isArrayEmpty(select.selections))
     }
 }
 
@@ -129,7 +128,7 @@ class SideInstructionAction {
     }
 
     static isSideInstructionCompleted(si) {
-        return (isNotNull(si.path) && si.path !== [])
+        return (!isArrayEmpty(si.path))
     }
 }
 
@@ -147,10 +146,16 @@ class UserEventListnerHandler {
     static isAutomationInterrupt = false;
     static isOnRightPage = true;
     static tutorialStatusCache = VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL;
+    static recordingIsHighlighting = false
 
     static setTutorialStatusCache(tutorialStatusCache) {
         syncStorageSet(VALUES.TUTORIAL_STATUS.STATUS, tutorialStatusCache);
         UserEventListnerHandler.tutorialStatusCache = tutorialStatusCache;
+        UserEventListnerHandler.#onChange();
+    }
+
+    static setRecordingIsHighlighting(recordingIsHighlighting) {
+        UserEventListnerHandler.recordingIsHighlighting = recordingIsHighlighting;
         UserEventListnerHandler.#onChange();
     }
 
@@ -172,7 +177,7 @@ class UserEventListnerHandler {
 
     static #onChange() {
         //add or remove when recording or not recording
-        if (UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_RECORDING) {
+        if (UserEventListnerHandler.recordingIsHighlighting) {
             if (!UserEventListnerHandler.isLisentingRecording) {
                 UserEventListnerHandler.#addGlobalEventListenersWhenRecording();
                 UserEventListnerHandler.isLisentingRecording = true;

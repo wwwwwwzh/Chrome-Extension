@@ -49,8 +49,8 @@ class ExtensionController {
                     case VALUES.TUTORIAL_STATUS.STOPPED_FROM_OTHER_PAGE:
                         this.#hideFollowingPanel()
                         break
-                    case VALUES.TUTORIAL_STATUS.IS_RECORDING:
-                        this.showRecordingPanel()
+                    case VALUES.TUTORIAL_STATUS.IS_RECORDING: case VALUES.TUTORIAL_STATUS.IS_CREATING_NEW_TUTORIAL:
+                        this.showRecordingPanel(savedStatus)
                         break;
                     case VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
                     case VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL:
@@ -87,9 +87,9 @@ class ExtensionController {
         this.#floatingSuggestionPopup && this.#floatingSuggestionPopup.remove()
     }
 
-    showRecordingPanel() {
+    showRecordingPanel(status) {
         this.#hideFollowingPanel()
-        this.recordTutorialViewController = new RecordTutorialViewController()
+        this.recordTutorialViewController = new RecordTutorialViewController(status)
         this.#hideSuggestionPopup()
     }
 

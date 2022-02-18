@@ -50,7 +50,6 @@ class FollowTutorialViewController {
     searchIconURL = chrome.runtime.getURL('assets/imgs/icons/search.svg');
     questionMarkURL = chrome.runtime.getURL('assets/imgs/icons/question-mark.svg');
 
-
     highlightInstructionWindow;
     popUpStepName;
     popUpStepDescription;
@@ -193,10 +192,10 @@ class FollowTutorialViewController {
     useInstructionWindow = true
     //highlightInstructionWindow has been declared in UI section
     updateStepInstructionUIHelper() {
-        if (isEmpty(TutorialsModel.getCurrentStep().name)) {
+        if (isStringEmpty(TutorialsModel.getCurrentStep().name)) {
             TutorialsModel.getCurrentStep().name = `Step ${TutorialsModel.getCurrentStep().index}`;
         }
-        if (isEmpty(TutorialsModel.getCurrentStep().description)) {
+        if (isStringEmpty(TutorialsModel.getCurrentStep().description)) {
             TutorialsModel.getCurrentStep().description = `Select the highlighted box`;
         }
         this.popUpStepName.html(TutorialsModel.getCurrentStep().name);
@@ -399,10 +398,10 @@ class FollowTutorialViewController {
     }
 
     #updateStepInstructionUIHelper() {
-        if (isEmpty(TutorialsModel.getCurrentStep().name)) {
+        if (isStringEmpty(TutorialsModel.getCurrentStep().name)) {
             TutorialsModel.getCurrentStep().name = `Step ${TutorialsModel.getCurrentStep().index}`;
         }
-        if (isEmpty(TutorialsModel.getCurrentStep().description)) {
+        if (isStringEmpty(TutorialsModel.getCurrentStep().description)) {
             TutorialsModel.getCurrentStep().description = `Select the highlighted box`;
         }
         popUpStepName.html(TutorialsModel.getCurrentStep().name);

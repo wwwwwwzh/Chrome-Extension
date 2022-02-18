@@ -28,7 +28,7 @@ class Highlighter {
     static highlighterViewControllerSpecificUIDelegate
 
     static highlight(element, removeLastHighlight = true, type = Highlighter.HIGHLIGHT_TYPES.BASIC, callback = () => { }) {
-        if (!isNotNull(element)) return;
+        if (!isNotNull(element) || element?.length < 1) return;
         c('Highlighting:' + element + '|removeLastHighlight:' + removeLastHighlight + '|type:' + type)
         var jQElement = element
         //get jQElement from path array
@@ -46,7 +46,6 @@ class Highlighter {
             (Highlighter.#SCROLL_MASK & type) && Highlighter.#scrollToElement(jQElement, callback)
             Highlighter.highlighterViewControllerSpecificUIDelegate.useInstructionWindow && Highlighter.#updateHighlightInstructionWindow(jQElement);
         }
-
 
         function getjQElementFromPathAndNullCheck() {
             //TODO: regex path may highlight multiple elements, show all or what

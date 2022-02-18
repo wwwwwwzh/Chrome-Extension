@@ -80,6 +80,7 @@ const VALUES = {
     TUTORIAL_STATUS: {
         STATUS: "FOLLOWING_TUTORIAL_STATUS",
         IS_RECORDING: 2,
+        IS_CREATING_NEW_TUTORIAL: 20,
         IS_MANUALLY_FOLLOWING_TUTORIAL: 3,
         IS_PAUSING_FOLLOWING_TUTORIAL: 8,
         IS_REQUIRING_OPTIONAL_INFO: 9,
@@ -143,7 +144,7 @@ function simulateClick(element, eventType = 'click') {
     console.trace();
 }
 
-function getElementIndex(element) {
+function getElementIndexInParent(element) {
     return Array.from(element.parentNode.children).indexOf(element);
 }
 
@@ -156,7 +157,7 @@ function getElementIndex(element) {
 function getCompleteDomPathStack(element) {
     var stack = [];
     while (element.parentNode != null) {
-        const index = getElementIndex(element) + 1;
+        const index = getElementIndexInParent(element) + 1;
         stack.unshift(element.nodeName.toLowerCase() + ':nth-child(' + index + ')');
         element = element.parentNode;
     }
@@ -166,7 +167,7 @@ function getCompleteDomPathStack(element) {
 function getShortDomPathStack(element) {
     var stack = [];
     while (element.parentNode != null) {
-        const index = getElementIndex(element) + 1;
+        const index = getElementIndexInParent(element) + 1;
         if (element.hasAttribute('id') && element.id !== '') {
             stack.unshift('#' + element.id);
             return stack;
@@ -459,8 +460,12 @@ function isNotNull(obj) {
     return (obj !== null && typeof obj !== 'undefined');
 }
 
-function isEmpty(str) {
+function isStringEmpty(str) {
     return (!str || str.length === 0);
+}
+
+function isArrayEmpty(arr) {
+    return (!isNotNull(arr) || arr?.length === 0)
 }
 
 function arraysEqual(a, b) {

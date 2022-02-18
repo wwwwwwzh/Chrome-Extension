@@ -4,8 +4,8 @@ let globalCache
 $(() => {
     globalCache = new GlobalCache()
     extension = new ExtensionController()
-    extension.showRecordingPanel()
-    UserEventListnerHandler.tutorialStatusCache = VALUES.TUTORIAL_STATUS.IS_RECORDING
+    // extension.showRecordingPanel(VALUES.TUTORIAL_STATUS.IS_CREATING_NEW_TUTORIAL)
+    // UserEventListnerHandler.tutorialStatusCache = VALUES.TUTORIAL_STATUS.IS_RECORDING
 })
 
 
@@ -31,7 +31,7 @@ chrome.runtime.onMessage.addListener(
         }
         if (isNotNull(request.newTutorial) && request.newTutorial) {
             //recordingContainer.show();
-            extension.showRecordingPanel();
+            extension.showRecordingPanel(VALUES.TUTORIAL_STATUS.IS_CREATING_NEW_TUTORIAL);
         }
     }
 );
