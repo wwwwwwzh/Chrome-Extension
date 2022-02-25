@@ -42,9 +42,11 @@
                 "./ContentScripts/highlighter.js",
                 "./ContentScripts/classes.js",
                 "./ContentScripts/tutorialsModel.js",
+                "./ContentScripts/automationControlObject.js",
+                "./ContentScripts/tutorialsModel.js",
                 "./ContentScripts/snapshotView.js",
                 "./ContentScripts/recordTutorialViewController.js",
-                "./ContentScripts/followTutorialViewController.js",
+                "./ContentScripts/automationChoicesViewController.js",
                 "./ContentScripts/extensionController.js",
                 "./ContentScripts/content.js"
             ]

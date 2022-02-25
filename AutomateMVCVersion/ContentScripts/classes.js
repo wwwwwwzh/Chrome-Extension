@@ -32,6 +32,10 @@ class ClickAction {
         this.clicks = clicks
     }
 
+    static getDefaultClick(clickAction) {
+        return clickAction?.clicks[0]
+    }
+
     static getPath(clickAction, index = 0) {
         return clickAction?.clicks[index]?.path
     }

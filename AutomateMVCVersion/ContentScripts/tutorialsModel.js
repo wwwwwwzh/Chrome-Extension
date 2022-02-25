@@ -65,7 +65,7 @@ class TutorialsModel {
 
     static #getMatchedTutorialsQuery() {
         const domainName = "https://" + globalCache.currentURLObj.hostname + "/";
-        const url_matches = [globalCache.currentUrl, domainName];
+        const url_matches = [globalCache.currentUrl];
         return query(collection(ExtensionController.SHARED_FIRESTORE_REF,
             VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL),
             where(
@@ -183,9 +183,10 @@ class TutorialsModel {
             chrome.storage.sync.get([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL, VALUES.STORAGE.ALL_OTHER_TUTORIALS], async (result) => {
                 const currentTutorial = result[VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL];
                 if (isNotNull(currentTutorial)) {
+
                     const allOtherTutorials = result[VALUES.STORAGE.ALL_OTHER_TUTORIALS];
-                    TutorialsModel.#tutorials = [currentTutorial] ?? []
-                    allOtherTutorials && TutorialsModel.#tutorials.push(allOtherTutorials)
+                    TutorialsModel.#tutorials = [currentTutorial]
+                    isNotNull(allOtherTutorials) && !isArrayEmpty(allOtherTutorials) && TutorialsModel.#tutorials.push(allOtherTutorials)
                     console.log('loading ' + TutorialsModel.#tutorials.length + ' tutorials from storage')
                     callback();
                 } else {
@@ -242,7 +243,7 @@ class TutorialsModel {
      * @param {*} callback 
      */
     static saveActiveTutorialToStorage(callback = () => { }) {
-        console.log('saving active tutorial to storage')
+        console.log('saving active tutorial to storage' + TutorialsModel.#tutorials[0])
         syncStorageSet([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL], TutorialsModel.#tutorials[0], callback);
     }
 

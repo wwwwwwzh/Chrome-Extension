@@ -96,7 +96,6 @@ class RecordTutorialViewController {
                     <section id="w-recording-panel-basic-selected-container" class="w-horizontal-scroll-container-orange click-action-container input-action-container select-action-container instruction-action-container car-action-container">
                     </section>
                     <section id="w-recording-panel-basic-table-container" class="w-horizontal-scroll-container-orange click-action-container">
-                        <input type="checkbox" id="use-anything-in-table-chcker" name="use-list" checked>
                     </section>
                     <section id="w-recording-panel-step-options-container" class="w-horizontal-scroll-container click-action-container input-action-container select-action-container car-action-container">
                         <div class="w-horizontal-scroll-item-container next-step-button-round-container">
@@ -252,7 +251,7 @@ class RecordTutorialViewController {
 
         this.selectedElementContainer = $('#w-recording-panel-basic-selected-container');
         this.selectedTableContainer = $('#w-recording-panel-basic-table-container');
-        this.useAnythingInTableChecker = $('#use-anything-in-table-chcker');
+
 
         this.stepOptionsContainer = $('#w-recording-panel-step-options-container');
         this.addNewStepOptionButton = $('#add-new-step-option-round-button');
@@ -438,12 +437,19 @@ class RecordTutorialViewController {
             `);
         })
 
-        this.selectedTableContainer.children().find('.selected-item-path-container, .w-horizontal-scroll-item-next-indicator-container').remove();
+        this.selectedTableContainer.empty();
+        this.useAnythingInTableChecker = null
         nearestTablePath?.forEach((e, i) => {
+            if (i === 0) {
+                this.selectedTableContainer.append(`
+                <input type="checkbox" id="use-anything-in-table-chcker" name="use-list" checked></input>
+                `)
+                this.useAnythingInTableChecker = $('#use-anything-in-table-chcker');
+            }
             this.selectedTableContainer.append(`
-            <div class="c w-horizontal-scroll-item-container">
+            <div class="selected-item-path-container w-horizontal-scroll-item-container">
                 <input class="selected-item-path-input" type="text" id="selected-item-table-path-${i}" value="${e}">
-                <div class="selected-item-path-delete" id="selected-item-table-path-delete-${i}">&#10006</div>
+                <div class="selected-item-path-delete" id="selected-item-table-path-delete-${i}">&times;</div>
             </div>
             <div class="w-horizontal-scroll-item-next-indicator-container w-horizontal-scroll-item-container">
                 <div class="w-horizontal-scroll-item-next-indicator">
@@ -499,7 +505,8 @@ class RecordTutorialViewController {
                 clickOptionName: click.name,
                 clickOptionDescription: click.description,
                 clickOptionPath: click.path,
-                clickOptionTablePath: click.table
+                clickOptionTablePath: click.table,
+                clickOptionUseTable: click.useAnythingInTable
             }
         })
         actionObject.inputTexts && actionObject.inputTexts.forEach((text, index) => {
@@ -524,6 +531,7 @@ class RecordTutorialViewController {
         this.#setMaterialInputValue(this.stepClickOptionDescription, option?.clickOptionDescription ?? '')
         this.#setMaterialInputValue(this.stepInputOptionText, option?.inputOptionText ?? '')
         this.#updateSelectedElementDomPathView(option?.clickOptionPath, option?.clickOptionTablePath)
+        this.useAnythingInTableChecker?.prop('checked', option.clickOptionUseTable)
     }
 
     /**
@@ -575,6 +583,7 @@ class RecordTutorialViewController {
         this.#setMaterialInputValue(this.stepRedirectURLInput)
         this.#clearOptionsListAndRelatedMenuItems()
         this.selectedElementContainer.empty()
+        this.selectedTableContainer.empty()
         this.selectedTableContainer.children().find('.selected-item-path-container, .w-horizontal-scroll-item-next-indicator-container').remove();
     }
 
@@ -712,7 +721,14 @@ class RecordTutorialViewController {
         var actionObject = Step.callFunctionOnActionType(actionType, () => {
             var clicks = []
             this.#currentStepOptionsCache.forEach((option, index) => {
-                clicks.push(new ClickGuide(option.clickOptionPath, option.clickOptionName, option.clickOptionDescription, false, null, false, option.clickOptionTablePath))
+                clicks.push(new ClickGuide(
+                    option.clickOptionPath,
+                    option.clickOptionName,
+                    option.clickOptionDescription,
+                    false,
+                    null,
+                    option.clickOptionUseTable,
+                    option.clickOptionTablePath))
             })
             return new ClickAction(clicks);
         }, () => {
@@ -736,7 +752,17 @@ class RecordTutorialViewController {
         }, () => {
             return new NullAction();
         })
-        var step = new Step(stepIndex, actionType, actionObject, this.stepNameInput.val(), this.stepDescriptionInput.val(), this.#processInputURLToFinalURLString(), null, [], stepId)
+        var step = new Step(
+            stepIndex,
+            actionType,
+            actionObject,
+            this.stepNameInput.val(),
+            this.stepDescriptionInput.val(),
+            this.#processInputURLToFinalURLString(),
+            false,
+            [],
+            stepId
+        )
         c('synced from UI: ' + JSON.stringify(step))
         return step
     }
@@ -751,7 +777,8 @@ class RecordTutorialViewController {
         const inputOptionText = this.stepInputOptionText.val()
         const clickOptionPath = this.#getStepPathFromInput()
         const clickOptionTablePath = this.#getStepTablePathFromInput()
-        this.#currentStepOptionsCache[index] = { clickOptionName, clickOptionDescription, clickOptionPath, clickOptionTablePath, inputOptionText }
+        const clickOptionUseTable = this.useAnythingInTableChecker?.prop('checked') ?? false
+        this.#currentStepOptionsCache[index] = { clickOptionName, clickOptionDescription, clickOptionPath, clickOptionTablePath, inputOptionText, clickOptionUseTable }
     }
 
     /**
@@ -858,7 +885,7 @@ class RecordTutorialViewController {
 
     #disableHighlight() {
         UserEventListnerHandler.setRecordingIsHighlighting(false)
-        this.highlightSwitch.prop('cheked', false)
+        this.highlightSwitch.prop('checked', false)
     }
 
 
@@ -933,12 +960,11 @@ class RecordTutorialViewController {
     }
 
     #updateTutorialTitleSnapshot() {
-        const name = TutorialsModel.changeCurrentTutorialStepIndexTo(index)
+        const name = TutorialsModel.getCurrentTutorial().name
         this.stepsContainer.children().eq(0).children().eq(0).children().eq(0).html(`${isStringEmpty(name) ? 'Tutorial Name' : name}`)
     }
 
     //Adcanced actions
-
     #createSnapshotsForAllTutorialsInAdvancedPanel() {
         TutorialsModel.forEachTutorial((tutorial, index) => {
             if (index === 0) return
@@ -980,14 +1006,17 @@ class RecordTutorialViewController {
     //MARK: Utility functions------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------
     #checkfTutorialIsComplete() {
-        var isTutorialCompleted = true
-        TutorialsModel.getCurrentTutorial().steps.forEach((step, index) => {
-            if (!Step.isStepCompleted(step)) {
-                isTutorialCompleted = false
-            }
-        })
-        c(isTutorialCompleted)
-        return isTutorialCompleted
+        // var isTutorialCompleted = true
+        // if (isStringEmpty(TutorialsModel.getCurrentTutorial().name)) {
+
+        // }
+        // TutorialsModel.getCurrentTutorial().steps.forEach((step, index) => {
+        //     if (!Step.isStepCompleted(step)) {
+        //         isTutorialCompleted = false
+        //     }
+        // })
+        // return isTutorialCompleted
+        return true
     }
 
 
@@ -1034,3 +1063,20 @@ class RecordTutorialViewController {
     }
 }
 
+class TutorialInfoError {
+    constructor(type) {
+        this.type = type
+    }
+
+    message() {
+        return 'Tutorial missing' + this.type.message
+    }
+}
+
+class StepError {
+    constructor(stepIndex, message, type) {
+        this.stepIndex = stepIndex
+        this.message = message
+        this.type = type
+    }
+}

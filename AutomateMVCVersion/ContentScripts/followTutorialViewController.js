@@ -249,6 +249,7 @@ class FollowTutorialViewController {
      */
     #showCurrentStep() {
         const currentStep = TutorialsModel.getCurrentStep();
+        c(currentStep)
         if (TutorialsModel.checkIfCurrentURLMatchesPageURL()) {
             this.#switchToManualFollowingTutorialView()
             this.#switchToAndShowStepAtIndex(TutorialsModel.getCurrentTutorial().currentStepIndex);
@@ -302,29 +303,31 @@ class FollowTutorialViewController {
     }
 
     //INCOMPLETE
-    #onEnteredWrongPage(tutorialObj, urlToMatch) {
-        for (let i = 0; i < tutorialObj.steps.length; i++) {
-            const currentStep = tutorialObj.steps[i];
-            if (currentStep.url === urlToMatch) {
-                //show the matched step
-                tutorialObj.currentStep = i;
-                const RPCKey = VALUES.STORAGE.REVISIT_PAGE_COUNT;
-                chrome.storage.sync.get([RPCKey], result => {
-                    if (result[RPCKey] > VALUES.STORAGE.MAX_REVISIT_PAGE_COUNT) {
-                        alert('no matching page');
-                        this.stopCurrentTutorial();
-                        return false;
-                    }
-                    syncStorageSet(RPCKey, result[RPCKey] + 1, () => {
-                        // syncStorageSet(VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, tutorialObj, () => {
-                        //     showTutorialStepAuto();
+    #onEnteredWrongPage(currentStep) {
+        c('wrong page' + currentStep)
 
-                        //     return true;
-                        // });
-                    })
-                })
-            }
-        }
+        // for (let i = 0; i < tutorialObj.steps.length; i++) {
+        //     const currentStep = tutorialObj.steps[i];
+        //     if (currentStep.url === urlToMatch) {
+        //         //show the matched step
+        //         tutorialObj.currentStep = i;
+        //         const RPCKey = VALUES.STORAGE.REVISIT_PAGE_COUNT;
+        //         chrome.storage.sync.get([RPCKey], result => {
+        //             if (result[RPCKey] > VALUES.STORAGE.MAX_REVISIT_PAGE_COUNT) {
+        //                 alert('no matching page');
+        //                 this.stopCurrentTutorial();
+        //                 return false;
+        //             }
+        //             syncStorageSet(RPCKey, result[RPCKey] + 1, () => {
+        //                 // syncStorageSet(VALUES.TUTORIAL_ID.CURRENT_FOLLOWING_TUTORIAL_OBJECT_ID, tutorialObj, () => {
+        //                 //     showTutorialStepAuto();
+
+        //                 //     return true;
+        //                 // });
+        //             })
+        //         })
+        //     }
+        // }
     }
 
     #chooseFunctionAccordingToCurrentStepType(onStepActionClick, onStepActionClickRedirect, onStepActionRedirect, onStepActionInput, onStepActionSelect, onStepSideInstruction) {
@@ -350,7 +353,7 @@ class FollowTutorialViewController {
     //------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------
     #manualStep() {
-        const click = TutorialsModel.getCurrentStep().actionObject.defaultClick;
+        const click = ClickAction.getDefaultClick(TutorialsModel.getCurrentStep().actionObject)
         //const element = $(jqueryElementStringFromDomPath(click.path)).first();
         if (click.useAnythingInTable) {
             Highlighter.highlight(click.table, true, Highlighter.HIGHLIGHT_TYPES.SCROLL_AND_ALERT);
@@ -362,20 +365,14 @@ class FollowTutorialViewController {
     #onPopUpNextStepButtonClicked() {
         const currentStep = TutorialsModel.getCurrentStep();
         if (currentStep.actionType === VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK || "STEP_ACTION_TYPE_CLICK") {
-            const step = currentStep.actionObject.defaultClick;
+            const step = ClickAction.getDefaultClick(currentStep.actionObject);
             const element = $(jqueryElementStringFromDomPath(step.path))[0];
             simulateClick(element);
         }
-
     }
 
     #manualRedirect() {
-        const click = TutorialsModel.getCurrentStep().actionObject.defaultClick;
-        if (click.useAnythingInTable) {
-            Highlighter.highlight(click.table, true, Highlighter.HIGHLIGHT_TYPES.SCROLL_AND_ALERT);
-        } else {
-            Highlighter.highlight(click.path, true, Highlighter.HIGHLIGHT_TYPES.SCROLL_AND_ALERT);
-        }
+
     }
 
     #manualInput() {
@@ -385,7 +382,7 @@ class FollowTutorialViewController {
     }
 
     #manualSelect() {
-        const click = TutorialsModel.getCurrentStep().actionObject.defaultClick;
+
     }
 
     #manualSideInstruction() {
@@ -418,18 +415,18 @@ class FollowTutorialViewController {
     }
 
     #autoClick() {
-        const step = TutorialsModel.getCurrentStep().actionObject.defaultClick;
-        if (step.useAnythingInTable || TutorialsModel.getCurrentStep().automationInterrupt) {
-            //stop automation
-            UserEventListnerHandler.setIsAutomationInterrupt(true);
-            manualStep();
-            return;
-        }
-        const element = $(jqueryElementStringFromDomPath(step.path))[0];
-        Highlighter.highlight(step.path, true, Highlighter.HIGHLIGHT_TYPES.ALERT, () => {
-            simulateClick(element);
-            this.#incrementCurrentStepHelper();
-        });
+        //const step = get from model (user specified)
+        // if (step.useAnythingInTable || TutorialsModel.getCurrentStep().automationInterrupt) {
+        //     //stop automation
+        //     UserEventListnerHandler.setIsAutomationInterrupt(true);
+        //     manualStep();
+        //     return;
+        // }
+        // const element = $(jqueryElementStringFromDomPath(step.path))[0];
+        // Highlighter.highlight(step.path, true, Highlighter.HIGHLIGHT_TYPES.ALERT, () => {
+        //     simulateClick(element);
+        //     this.#incrementCurrentStepHelper();
+        // });
     }
 
 
@@ -498,7 +495,7 @@ class FollowTutorialViewController {
             onClickWithStepTypeSideInstruction.bind(this))
 
         function onClickWithStepTypeClick() {
-            const click = TutorialsModel.getCurrentStep().actionObject.defaultClick;
+            const click = ClickAction.getDefaultClick(TutorialsModel.getCurrentStep().actionObject);
             if (click.useAnythingInTable) {
                 const tablePath = click.table;
 
