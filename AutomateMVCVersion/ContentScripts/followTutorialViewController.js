@@ -28,6 +28,20 @@ class FollowTutorialViewController {
                             title="">
                     </div>
                 </div>
+                <div id="w-automation-choices-cancel-button" class="w-workflow-list-cell-type-button w-workflow-list-popup-footer-cell">
+                    <title class="w-workflow-list-cell-type-button-name">Cancel</title>
+                    <div class="w-more-info-icon-container">
+                        <img class="w-more-info-icon" src="./assets/imgs/icons/question-mark.svg"
+                            title="">
+                    </div>
+                </div>
+                <div id="w-automation-choices-done-button" class="w-workflow-list-cell-type-button">
+                    <title class="w-workflow-list-cell-type-button-name">Done</title>
+                    <div class="w-more-info-icon-container">
+                        <img class="w-more-info-icon" src="./assets/imgs/icons/question-mark.svg"
+                            title="">
+                    </div>
+                </div>
             </div>
         </div>`
     }
@@ -56,6 +70,8 @@ class FollowTutorialViewController {
     mainPopupFooter
     popUpNextStepButton;
     stopOptionsStopButton;
+    automationChoicesCancelButton;
+    automationChoicesDoneButton;
 
     wrongPageRedirectButton;
 
@@ -85,45 +101,23 @@ class FollowTutorialViewController {
         $('.w-more-info-icon').attr('src', this.questionMarkURL)
 
         this.mainCloseButton = $('#w-workflow-list-popup-close-button');
-        this.mainCloseButton.on("click", () => {
-            if (this.#isMainPopUpCollapsed) {
-                this.mainPopUpContainer.removeClass('w-workflow-list-popup-collapsed');
-                this.mainPopUpContainer.addClass('w-workflow-list-popup');
-                this.mainCloseButton.removeClass('w-close-button-collapsed');
-                this.mainCloseButton.addClass('w-close-button');
-                this.mainPopUpContainer.find('.w-should-reopen').show();
-                this.mainPopUpContainer.find('.w-should-reopen').removeClass('w-should-reopen');
-
-                this.#isMainPopUpCollapsed = false;
-            } else {
-                this.mainPopUpContainer.find(':visible').each((i, element) => {
-                    $(element).addClass('w-should-reopen');
-                })
-                this.mainPopUpContainer.removeClass('w-workflow-list-popup');
-                this.mainPopUpContainer.addClass('w-workflow-list-popup-collapsed');
-                this.mainPopUpContainer.children().hide();
-                this.mainCloseButton.removeClass('w-close-button');
-                this.mainCloseButton.addClass('w-close-button-collapsed');
-                this.mainCloseButton.show()
-                this.mainDraggableArea.show();
-                this.#isMainPopUpCollapsed = true;
-            }
-        })
+        this.mainCloseButton.on("click", this.#onMainPopupCloseButtonClicked.bind(this))
 
         this.mainPopupScrollArea = $('.w-workflow-list-popup-scroll-area')
 
         //guides during tutorial
         this.mainPopupFooter = $('.w-workflow-list-popup-footer')
         this.popUpNextStepButton = $("#w-popup-next-step-button");
-        this.popUpNextStepButton.on('click', event => {
-            //auto go to next step
-            this.#onPopUpNextStepButtonClicked()
-        })
+        this.popUpNextStepButton.on('click', this.#onPopUpNextStepButtonClicked.bind(this))
 
         this.stopOptionsStopButton = $('#w-stop-options-stop-button');
-        this.stopOptionsStopButton.on('click', () => {
-            this.stopCurrentTutorial()
-        });
+        this.stopOptionsStopButton.on('click', this.stopCurrentTutorial.bind(this));
+
+        this.automationChoicesCancelButton = $('#w-automation-choices-cancel-button');
+        this.automationChoicesCancelButton.on('click', this.#onAutomationChoicesCanceled.bind(this))
+
+        this.automationChoicesDoneButton = $('#w-automation-choices-done-button');
+        this.automationChoicesDoneButton.on('click', this.#onAutomationChoicesDone.bind(this));
         this.mainPopupFooter.hide()
 
         // this.wrongPageRedirectButton = $('#w-wrong-page-redirect-button');
@@ -137,6 +131,31 @@ class FollowTutorialViewController {
         this.popUpStepDescription.css({ 'overflow-wrap': 'break-word', });
     }
 
+    #onMainPopupCloseButtonClicked() {
+        if (this.#isMainPopUpCollapsed) {
+            this.mainPopUpContainer.removeClass('w-workflow-list-popup-collapsed');
+            this.mainPopUpContainer.addClass('w-workflow-list-popup');
+            this.mainCloseButton.removeClass('w-close-button-collapsed');
+            this.mainCloseButton.addClass('w-close-button');
+            this.mainPopUpContainer.find('.w-should-reopen').show();
+            this.mainPopUpContainer.find('.w-should-reopen').removeClass('w-should-reopen');
+
+            this.#isMainPopUpCollapsed = false;
+        } else {
+            this.mainPopUpContainer.find(':visible').each((i, element) => {
+                $(element).addClass('w-should-reopen');
+            })
+            this.mainPopUpContainer.removeClass('w-workflow-list-popup');
+            this.mainPopUpContainer.addClass('w-workflow-list-popup-collapsed');
+            this.mainPopUpContainer.children().hide();
+            this.mainCloseButton.removeClass('w-close-button');
+            this.mainCloseButton.addClass('w-close-button-collapsed');
+            this.mainCloseButton.show()
+            this.mainDraggableArea.show();
+            this.#isMainPopUpCollapsed = true;
+        }
+    }
+
     #getAllContentHTML() {
         return FollowTutorialViewController.#WORKFLOW_LIST_POPUP_HTML_SIMPLE() + FollowTutorialViewController.#HIGHLIGHT_INSTRUCTIONI_WINDOW_HTML()
     }
@@ -148,10 +167,14 @@ class FollowTutorialViewController {
                 this.stopCurrentTutorial()
                 break
             case VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL:
-                TutorialsModel.smartInit(this.#showCurrentStep.bind(this))
+                TutorialsModel.smartInit(() => {
+                    this.#showCurrentStep(status)
+                })
                 break;
             case VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
-                TutorialsModel.smartInit(this.#showCurrentStep.bind(this))
+                TutorialsModel.smartInit(() => {
+                    this.#showCurrentStep(status)
+                })
                 break;
             case VALUES.TUTORIAL_STATUS.LOADED:
 
@@ -173,7 +196,7 @@ class FollowTutorialViewController {
 
     //UserEventListnerHandlerDelegate
     onClick() {
-        if (UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL || eventHandler.isAutomationInterrupt) {
+        if (isManualFollowingTutorial() || eventHandler.isAutomationInterrupt) {
             this.onClickWhenFollowingTutorial();
         }
     }
@@ -202,6 +225,20 @@ class FollowTutorialViewController {
         this.popUpStepDescription.html(TutorialsModel.getCurrentStep().description);
     }
 
+    movePopupIfOverlap() {
+        const mainPopupRect = this.mainPopUpContainer[0].getBoundingClientRect();
+        const instructionWindow = this.highlightInstructionWindow[0].getBoundingClientRect();
+        const overlap = !(mainPopupRect.right < instructionWindow.left ||
+            mainPopupRect.left > instructionWindow.right ||
+            mainPopupRect.bottom < instructionWindow.top ||
+            mainPopupRect.top > instructionWindow.bottom)
+        if (overlap) {
+            if (isManualFollowingTutorial()) {
+                this.#onMainPopupCloseButtonClicked()
+            }
+        }
+    }
+
     highlightedElementNotFoundHandler() {
         const firstStepOnPageIndex = TutorialsModel.getFirstStepIndexOnCurrentPage();
         if (firstStepOnPageIndex > -1) {
@@ -214,11 +251,48 @@ class FollowTutorialViewController {
 
     //Controls
     #onFollowTutorialModeChosen(type, tutorialID) {
-        //UI
-        this.#switchToManualFollowingTutorialView()
+        if (type === VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL) {
+            Highlighter.removeLastHighlight()
+            this.#switchToAutomationChoicesView()
+            TutorialsModel.changeActiveTutorialToChosen(tutorialID)
+            this.automationChoicesViewController = new AutomationChoicesViewController(this)
+        } else {
+            //UI
+            this.#switchToManualFollowingTutorialView()
+            UserEventListnerHandler.setTutorialStatusCache(type);
+            this.#startFollowingNewTutorial(tutorialID);
+        }
+    }
 
-        UserEventListnerHandler.setTutorialStatusCache(type);
-        this.#startFollowingNewTutorial(tutorialID);
+    onNoAutomationChoiceDetected() {
+        this.mainPopupFooter.hide()
+        UserEventListnerHandler.setTutorialStatusCache(VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL);
+        this.automationChoicesViewController = null
+        this.#showTutorialStepAuto()
+    }
+
+    #onAutomationChoicesCanceled() {
+        this.mainPopupScrollArea.children().show()
+        this.mainPopupFooter.hide()
+        this.automationChoicesViewController.dismiss()
+        this.automationChoicesViewController = null
+    }
+
+    #onAutomationChoicesDone() {
+        if (this.automationChoicesViewController.isAllOptionsChosen()) {
+            this.mainPopupFooter.hide()
+            const aco = this.automationChoicesViewController.automationControlObject
+            syncStorageSet('ACO', aco, () => {
+                TutorialsModel.updateAutomationControlObject(aco)
+                UserEventListnerHandler.setTutorialStatusCache(VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL);
+                this.automationChoicesViewController.dismiss()
+                this.automationChoicesViewController = null
+                this.#showTutorialStepAuto()
+                this.#switchToAutoFollowingTutorialView()
+            })
+        } else {
+            //alert user
+        }
     }
 
     #switchToAndShowStepAtIndex(stepIndex) {
@@ -251,7 +325,8 @@ class FollowTutorialViewController {
         const currentStep = TutorialsModel.getCurrentStep();
         c(currentStep)
         if (TutorialsModel.checkIfCurrentURLMatchesPageURL()) {
-            this.#switchToManualFollowingTutorialView()
+            isManualFollowingTutorial() && this.#switchToManualFollowingTutorialView()
+            isAutoFollowingTutorial() && this.#switchToAutoFollowingTutorialView()
             this.#switchToAndShowStepAtIndex(TutorialsModel.getCurrentTutorial().currentStepIndex);
         } else {
             this.#onEnteredWrongPage(currentStep);
@@ -274,7 +349,7 @@ class FollowTutorialViewController {
         if (!isNotNull(TutorialsModel.getCurrentTutorial())) {
             data[VALUES.TUTORIAL_STATUS.STATUS] = VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL;
             syncStorageSetBatch(data, () => {
-                this.setOrUpdateChooseTutorialsPopupUIFromModel()
+                this.setOrUpdateWorkflowsPopupFromModel()
                 globalCache = new GlobalCache();
             });
         }
@@ -288,13 +363,14 @@ class FollowTutorialViewController {
                 globalCache = new GlobalCache();
             });
         } else {
+            c('hide')
             data[VALUES.TUTORIAL_STATUS.STATUS] = VALUES.TUTORIAL_STATUS.STOPPED_FROM_OTHER_PAGE;
             syncStorageSetBatch(data);
             this.mainPopUpContainer.hide();
         }
     }
 
-    setOrUpdateChooseTutorialsPopupUIFromModel() {
+    setOrUpdateWorkflowsPopupFromModel() {
         this.mainPopUpContainer.show()
         this.mainPopupFooter.hide()
         TutorialsModel.forEachTutorial((tutorial, index) => {
@@ -305,6 +381,7 @@ class FollowTutorialViewController {
     //INCOMPLETE
     #onEnteredWrongPage(currentStep) {
         c('wrong page' + currentStep)
+        this.#switchToWrongPageView()
 
         // for (let i = 0; i < tutorialObj.steps.length; i++) {
         //     const currentStep = tutorialObj.steps[i];
@@ -364,11 +441,17 @@ class FollowTutorialViewController {
 
     #onPopUpNextStepButtonClicked() {
         const currentStep = TutorialsModel.getCurrentStep();
-        if (currentStep.actionType === VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK || "STEP_ACTION_TYPE_CLICK") {
+        Step.callFunctionOnActionType(currentStep.actionType, () => {
             const step = ClickAction.getDefaultClick(currentStep.actionObject);
             const element = $(jqueryElementStringFromDomPath(step.path))[0];
             simulateClick(element);
-        }
+        }, () => {
+
+        }, () => {
+            //input
+        }, () => {
+            this.#autoRedirect()
+        })
     }
 
     #manualRedirect() {
@@ -394,16 +477,6 @@ class FollowTutorialViewController {
         }, 3000);
     }
 
-    #updateStepInstructionUIHelper() {
-        if (isStringEmpty(TutorialsModel.getCurrentStep().name)) {
-            TutorialsModel.getCurrentStep().name = `Step ${TutorialsModel.getCurrentStep().index}`;
-        }
-        if (isStringEmpty(TutorialsModel.getCurrentStep().description)) {
-            TutorialsModel.getCurrentStep().description = `Select the highlighted box`;
-        }
-        popUpStepName.html(TutorialsModel.getCurrentStep().name);
-        popUpStepDescription.html(TutorialsModel.getCurrentStep().description);
-    }
 
     //------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------
@@ -411,28 +484,57 @@ class FollowTutorialViewController {
     //------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------
     #showTutorialStepAuto() {
-        this.#chooseFunctionAccordingToCurrentStepType(this.#autoClick, this.#autoClick, this.#autoRedirect, this.#autoInput, this.#autoSelect, this.#autoSideInstruction)
+        this.#chooseFunctionAccordingToCurrentStepType(
+            this.#autoClick.bind(this),
+            this.#autoClick.bind(this),
+            this.#autoRedirect.bind(this),
+            this.#autoInput.bind(this),
+            this.#autoSelect.bind(this),
+            this.#autoSideInstruction.bind(this)
+        )
     }
 
+    #automateActionAttempt = 0
     #autoClick() {
-        //const step = get from model (user specified)
-        // if (step.useAnythingInTable || TutorialsModel.getCurrentStep().automationInterrupt) {
-        //     //stop automation
-        //     UserEventListnerHandler.setIsAutomationInterrupt(true);
-        //     manualStep();
-        //     return;
-        // }
-        // const element = $(jqueryElementStringFromDomPath(step.path))[0];
-        // Highlighter.highlight(step.path, true, Highlighter.HIGHLIGHT_TYPES.ALERT, () => {
-        //     simulateClick(element);
-        //     this.#incrementCurrentStepHelper();
-        // });
+        const step = TutorialsModel.getCurrentStep()
+        const aco = TutorialsModel.getAutomationControlObject()
+        if (step.useAnythingInTable || step.automationInterrupt) {
+            //stop automation
+            UserEventListnerHandler.setIsAutomationInterrupt(true);
+            this.#manualStep();
+            return;
+        }
+        var optionIndex = 0
+        aco.automationChoices.forEach((pair, index) => {
+            if (pair.index === TutorialsModel.getCurrentStepIndex()) {
+                optionIndex = pair.optionIndex ?? 0
+            }
+        })
+        autoClickElementNotFoundHelper.bind(this)()
+
+        function autoClickElementNotFoundHelper() {
+            const path = ClickAction.getPath(step.actionObject, optionIndex)
+            const element = $(jqueryElementStringFromDomPath(path))[0];
+            if (isNotNull(element)) {
+                this.#automateActionAttempt = 0
+                simulateClick(element);
+                this.#incrementCurrentStepHelper();
+            } else {
+                if (this.#automateActionAttempt > 5) {
+                    console.error('automation attempt failed on step' + JSON.stringify(step))
+                } else {
+                    this.#automateActionAttempt += 1
+                    setTimeout(autoClickElementNotFoundHelper.bind(this), 200);
+                }
+            }
+        }
     }
+
 
 
     #autoRedirect() {
         const url = TutorialsModel.getCurrentStep().actionObject.url;
-        TutorialsModel.getCurrentTutorial().currentStep += 1;
+        this.#showNextStep()
         location.replace(url);
     }
 
@@ -568,7 +670,7 @@ class FollowTutorialViewController {
         Highlighter.highlighterViewControllerSpecificUIDelegate = null
     }
 
-    //Pure UI methods
+
     #addTutorialButton(tutorial, index) {
         const tutorialID = tutorial.id
         this.mainPopupScrollArea.append(`
@@ -629,12 +731,15 @@ class FollowTutorialViewController {
         }
     }
 
+    //UI switching controls
     #switchToMainWorkflowListView() {
+        c('main')
+        this.mainPopUpContainer.show()
         if (this.mainPopupScrollArea.children().length > 0) {
             this.mainPopupFooter.hide()
             this.mainPopupScrollArea.children().show()
         } else {
-            this.setOrUpdateChooseTutorialsPopupUIFromModel()
+            this.setOrUpdateWorkflowsPopupFromModel()
         }
         this.highlightInstructionWindow.hide()
     }
@@ -642,8 +747,39 @@ class FollowTutorialViewController {
     #switchToManualFollowingTutorialView() {
         this.mainPopupScrollArea.children().hide()
         this.mainPopupFooter.show()
+        this.popUpNextStepButton.show()
+        this.stopOptionsStopButton.show()
+        this.automationChoicesCancelButton.hide()
+        this.automationChoicesDoneButton.hide()
 
         this.popUpStepName.html('');
         this.popUpStepDescription.html('');
+    }
+
+    #switchToAutoFollowingTutorialView() {
+        this.mainPopupScrollArea.children().hide()
+        this.mainPopupFooter.show()
+        this.popUpNextStepButton.hide()
+        this.stopOptionsStopButton.show()
+        this.automationChoicesCancelButton.hide()
+        this.automationChoicesDoneButton.hide()
+    }
+
+    #switchToAutomationChoicesView() {
+        this.mainPopupScrollArea.children().hide()
+        this.mainPopupFooter.show()
+        this.popUpNextStepButton.hide()
+        this.stopOptionsStopButton.hide()
+        this.automationChoicesCancelButton.show()
+        this.automationChoicesDoneButton.show()
+    }
+
+    #switchToWrongPageView() {
+        this.mainPopupScrollArea.children().hide()
+        this.mainPopupFooter.show()
+        this.popUpNextStepButton.hide()
+        this.stopOptionsStopButton.show()
+        this.automationChoicesCancelButton.hide()
+        this.automationChoicesDoneButton.hide()
     }
 }

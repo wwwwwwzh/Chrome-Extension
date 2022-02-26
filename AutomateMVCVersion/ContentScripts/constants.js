@@ -437,21 +437,13 @@ function getInstructionWindowLayout(element) {
     return layout;
 }
 
-//TODO: move to specific controller
-function movePopupIfOverlap(popup, highlightInstructionWindow) {
-    const mainPopupRect = popup[0].getBoundingClientRect();
-    const instructionWindow = highlightInstructionWindow[0].getBoundingClientRect();
-    const overlap = !(mainPopupRect.right < instructionWindow.left ||
-        mainPopupRect.left > instructionWindow.right ||
-        mainPopupRect.bottom < instructionWindow.top ||
-        mainPopupRect.top > instructionWindow.bottom)
-
-    if (overlap) {
-        //TODO: 
-        //mainPopUpContainer.css({})
-    }
+function isManualFollowingTutorial() {
+    return UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL
 }
 
+function isAutoFollowingTutorial() {
+    return UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL
+}
 
 
 

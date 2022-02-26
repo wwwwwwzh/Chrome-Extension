@@ -463,6 +463,7 @@ class RecordTutorialViewController {
     #loadMenuForStep(atIndex) {
         const step = TutorialsModel.getStepOfCurrentTutorialAtIndex(atIndex);
         c('loading' + step)
+        this.#hideCreateTutorialMenu()
         this.#clearOptionsListAndRelatedMenuItems();
         this.#clearMenu();
         this.#switchMenu(step.actionType, true, false);
@@ -474,6 +475,7 @@ class RecordTutorialViewController {
         this.actionTypeSelector.val(step.actionType);
         this.#setMaterialInputValue(this.stepNameInput, step.name)
         this.#setMaterialInputValue(this.stepDescriptionInput, step.description)
+        this.#setMaterialInputValue(this.stepCustomURLInput, step.url)
 
         const actionObject = step.actionObject
         Step.callFunctionOnActionType(step.actionType, () => {
@@ -542,7 +544,10 @@ class RecordTutorialViewController {
         this.#switchMenuUIHelper(clearStepOptions, createEmptyStepOptionSnapshot)
         Step.callFunctionOnActionType(
             selection,
-            this.#showClickMenu.bind(this),
+            () => {
+                this.#showClickMenu()
+                this.highlightSwitch.prop('checked', true)
+            },
             this.#showClickAndRedirectMenu.bind(this),
             this.#showInputMenu.bind(this),
             this.#showRedirectMenu.bind(this),
@@ -744,7 +749,7 @@ class RecordTutorialViewController {
             })
             return new InputAction(selectedElementPath, inputTexts, VALUES.INPUT_TYPES.TEXT, null);
         }, () => {
-            return new RedirectAction(this.stepRedirectURLInput);
+            return new RedirectAction(this.stepRedirectURLInput.val());
         }, () => {
             return new SelectAction(selectedElementPath, [], false);
         }, () => {
@@ -868,7 +873,7 @@ class RecordTutorialViewController {
         this.#disableHighlight()
         if (this.#isCreatingNewTutorial) {
             this.#syncTutorialInfoFromUI(() => {
-                this.#hideCreateTutorialMenu()
+
                 this.#isCreatingNewTutorial = false
                 switchToEditStepAtIndex.bind(this)()
             })

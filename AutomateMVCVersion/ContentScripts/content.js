@@ -27,7 +27,7 @@ chrome.runtime.onMessage.addListener(
             removeLastHighlight()
         }
         if (isNotNull(request.onActivated) && request.onActivated) {
-            checkStatus();
+            extension.checkStatus();
         }
         if (isNotNull(request.newTutorial) && request.newTutorial) {
             //recordingContainer.show();

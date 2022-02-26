@@ -69,7 +69,7 @@
     padding: var(--padding-big);
     background-color: rgba(255,165,0,0.4);
     border-radius: 6px;
-    z-index: 2147483647;
+    z-index: 2147483646;
     font-family: sans-serif;
 }
 
@@ -236,7 +236,7 @@
 .w-workflow-list-cell-type-button {
     position: relative;
     display: inline-block;
-    width: 50%;
+    flex: 1;
     padding: 6px 0px 6px 0px;
     cursor: pointer;
     align-items: center;
@@ -263,6 +263,21 @@
 
 .w-more-info-icon {
     height: 12px;
+}
+
+
+.w-automation-choices-choice-button {
+    font-family: Roboto, RobotoDraft, Helvetica, Arial, sans-serif;
+    background-color: white;
+    padding-left: 3px;
+}
+
+.w-automation-choices-choice-button:hover {
+    background-color: #e2e2e2;
+}
+
+.w-automation-choices-choice-button:active {
+    background-color: #c7c7c7;
 }
 
 

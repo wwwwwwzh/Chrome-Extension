@@ -11,7 +11,7 @@ class ExtensionController {
 
     constructor() {
         //this.#setUpIframeListner();
-        this.#checkStatus();
+        this.checkStatus();
     }
 
 
@@ -38,7 +38,7 @@ class ExtensionController {
         }
     }
 
-    #checkStatus() {
+    checkStatus() {
         chrome.storage.sync.get(VALUES.TUTORIAL_STATUS.STATUS, (result) => {
             const savedStatus = result[VALUES.TUTORIAL_STATUS.STATUS];
             const cacheStatus = UserEventListnerHandler.tutorialStatusCache;
@@ -46,10 +46,8 @@ class ExtensionController {
             if ((cacheStatus === savedStatus) && (savedStatus !== VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL)) return;
             if (cacheStatus === VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL) {
                 switch (savedStatus) {
-                    case VALUES.TUTORIAL_STATUS.STOPPED_FROM_OTHER_PAGE:
-                        this.#hideFollowingPanel()
-                        break
-                    case VALUES.TUTORIAL_STATUS.IS_RECORDING: case VALUES.TUTORIAL_STATUS.IS_CREATING_NEW_TUTORIAL:
+                    case VALUES.TUTORIAL_STATUS.IS_RECORDING:
+                    case VALUES.TUTORIAL_STATUS.IS_CREATING_NEW_TUTORIAL:
                         this.showRecordingPanel(savedStatus)
                         break;
                     case VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
@@ -58,6 +56,20 @@ class ExtensionController {
                         break;
                     default:
                         this.#suggestTutorialIfExists(savedStatus)
+                        break;
+                }
+            } else if (cacheStatus === VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL ||
+                cacheStatus === VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL) {
+                switch (savedStatus) {
+                    case VALUES.TUTORIAL_STATUS.IS_RECORDING:
+                    case VALUES.TUTORIAL_STATUS.IS_CREATING_NEW_TUTORIAL:
+                        this.showRecordingPanel(savedStatus)
+                        break;
+                    case VALUES.TUTORIAL_STATUS.STOPPED_FROM_OTHER_PAGE:
+                        this.followTutorialViewController.stopCurrentTutorial()
+                        break;
+                    default:
+                        //this.#suggestTutorialIfExists(savedStatus)
                         break;
                 }
             }

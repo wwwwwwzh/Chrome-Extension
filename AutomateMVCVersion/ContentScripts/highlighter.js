@@ -178,7 +178,7 @@ class Highlighter {
 
         const layout = getInstructionWindowLayout(element);
         Highlighter.highlighterViewControllerSpecificUIDelegate.highlightInstructionWindow.css(layout.css);
-        movePopupIfOverlap(Highlighter.highlighterViewControllerSpecificUIDelegate.mainPopUpContainer, Highlighter.highlighterViewControllerSpecificUIDelegate.highlightInstructionWindow);
+        Highlighter.highlighterViewControllerSpecificUIDelegate.movePopupIfOverlap(layout);
         Highlighter.highlighterViewControllerSpecificUIDelegate.updateStepInstructionUIHelper();
 
         if (Highlighter.#updateCount < 2) {

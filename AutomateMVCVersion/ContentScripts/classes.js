@@ -193,7 +193,7 @@ class UserEventListnerHandler {
             }
         }
 
-        if (UserEventListnerHandler.isOnRightPage && (UserEventListnerHandler.isAutomationInterrupt || (UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL))) {
+        if (UserEventListnerHandler.isOnRightPage && (UserEventListnerHandler.isAutomationInterrupt || isManualFollowingTutorial())) {
             if (!UserEventListnerHandler.isLisentingFollowing) {
                 UserEventListnerHandler.#addGlobalEventListenersWhenFollowing();
                 UserEventListnerHandler.isLisentingFollowing = true;

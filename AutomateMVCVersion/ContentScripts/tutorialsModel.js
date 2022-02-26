@@ -7,6 +7,7 @@ class TutorialsModel {
     static #tutorials = []
     static #tutorialsQuerySnapshot
 
+    static #automationControlObject = { automationChoices: [] }
     /**
      * 
      */
@@ -19,11 +20,11 @@ class TutorialsModel {
 
     static getCurrentStep() {
         const currentTutorial = TutorialsModel.getCurrentTutorial();
-        return currentTutorial.steps[currentTutorial.currentStepIndex];
+        return currentTutorial?.steps[currentTutorial.currentStepIndex];
     }
 
     static getCurrentStepIndex() {
-        return TutorialsModel.getCurrentTutorial().currentStepIndex;
+        return TutorialsModel.getCurrentTutorial()?.currentStepIndex;
     }
 
     static getLastStepIndexForTutorial(tutorialIndex = 0) {
@@ -91,8 +92,8 @@ class TutorialsModel {
     }
 
     static #checkIfReloadIsNeeded(reloadFunc = () => { }, noReloadFunc = () => { }) {
-        if (UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL ||
-            UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL) {
+        if (isManualFollowingTutorial() ||
+            isAutoFollowingTutorial()) {
             noReloadFunc()
             return
         }
@@ -180,14 +181,14 @@ class TutorialsModel {
                 TutorialsModel.initializeFromFirestore(callback)
             }
         }, () => {
-            chrome.storage.sync.get([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL, VALUES.STORAGE.ALL_OTHER_TUTORIALS], async (result) => {
+            chrome.storage.sync.get([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL, VALUES.STORAGE.ALL_OTHER_TUTORIALS, "ACO"], async (result) => {
                 const currentTutorial = result[VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL];
                 if (isNotNull(currentTutorial)) {
-
                     const allOtherTutorials = result[VALUES.STORAGE.ALL_OTHER_TUTORIALS];
                     TutorialsModel.#tutorials = [currentTutorial]
                     isNotNull(allOtherTutorials) && !isArrayEmpty(allOtherTutorials) && TutorialsModel.#tutorials.push(allOtherTutorials)
                     console.log('loading ' + TutorialsModel.#tutorials.length + ' tutorials from storage')
+                    TutorialsModel.#automationControlObject = result['ACO']
                     callback();
                 } else {
                     console.log('loadFromQuerySnapshot')
@@ -195,6 +196,14 @@ class TutorialsModel {
                 }
             });
         })
+    }
+
+    static updateAutomationControlObject(aco) {
+        TutorialsModel.#automationControlObject = aco
+    }
+
+    static getAutomationControlObject() {
+        return TutorialsModel.#automationControlObject
     }
 
     /**

@@ -43,10 +43,10 @@
                 "./ContentScripts/classes.js",
                 "./ContentScripts/tutorialsModel.js",
                 "./ContentScripts/automationControlObject.js",
-                "./ContentScripts/tutorialsModel.js",
+                "./ContentScripts/automationChoicesViewController.js",
                 "./ContentScripts/snapshotView.js",
                 "./ContentScripts/recordTutorialViewController.js",
-                "./ContentScripts/automationChoicesViewController.js",
+                "./ContentScripts/followTutorialViewController.js",
                 "./ContentScripts/extensionController.js",
                 "./ContentScripts/content.js"
             ]
