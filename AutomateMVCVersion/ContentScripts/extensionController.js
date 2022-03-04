@@ -58,20 +58,6 @@ class ExtensionController {
                         this.#suggestTutorialIfExists(savedStatus)
                         break;
                 }
-            } else if (cacheStatus === VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL ||
-                cacheStatus === VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL) {
-                switch (savedStatus) {
-                    case VALUES.TUTORIAL_STATUS.IS_RECORDING:
-                    case VALUES.TUTORIAL_STATUS.IS_CREATING_NEW_TUTORIAL:
-                        this.showRecordingPanel(savedStatus)
-                        break;
-                    case VALUES.TUTORIAL_STATUS.STOPPED_FROM_OTHER_PAGE:
-                        this.followTutorialViewController.stopCurrentTutorial()
-                        break;
-                    default:
-                        //this.#suggestTutorialIfExists(savedStatus)
-                        break;
-                }
             }
         })
     }

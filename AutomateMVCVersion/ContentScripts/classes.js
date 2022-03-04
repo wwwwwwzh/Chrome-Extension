@@ -1,15 +1,4 @@
 
-
-
-/**
- * Placeholder action class for initialization of step object
- */
-class NullAction {
-    static getPath() {
-        return null
-    }
-}
-
 class RedirectAction {
     constructor(url) {
         this.url = url;
@@ -28,7 +17,7 @@ class RedirectAction {
 
 
 class ClickAction {
-    constructor(clicks) {
+    constructor(clicks = []) {
         this.clicks = clicks
     }
 
@@ -37,6 +26,7 @@ class ClickAction {
     }
 
     static getPath(clickAction, index = 0) {
+        if (isArrayEmpty(clickAction?.clicks)) return null
         return clickAction?.clicks[index]?.path
     }
 
@@ -173,11 +163,7 @@ class UserEventListnerHandler {
         UserEventListnerHandler.#onChange();
     }
 
-    static #addGlobalEventListenersWhenRecording() {
-        $('*').on('blur focus focusin focusout load resize scroll unload dblclick mousedown mouseup mousemove mouseover mouseout mouseenter mouseleave change select submit keydown keypress keyup error',
-            UserEventListnerHandler.#preventDefaultHelper);
-        $('*').on('click', UserEventListnerHandler.#onClickHelper);
-    }
+
 
     static #onChange() {
         //add or remove when recording or not recording
@@ -206,18 +192,25 @@ class UserEventListnerHandler {
         }
     }
 
+    static #addGlobalEventListenersWhenRecording() {
+        // $('*').on('blur focus focusin focusout load resize scroll unload dblclick mousedown mouseup mousemove mouseover mouseout mouseenter mouseleave change select submit keydown keypress keyup error',
+        //     UserEventListnerHandler.#preventDefaultHelper);
+        // $('*').on('click', UserEventListnerHandler.#onClickHelper);
+
+        //neew solution from: https://stackoverflow.com/questions/1755815/disable-all-click-events-on-page-javascript
+        document.addEventListener("click", UserEventListnerHandler.#onClickHelper, true);
+    }
+
     static #removeGlobalEventListenersWhenRecording() {
-        $('*').off('blur focus focusin focusout load resize scroll unload dblclick mousedown mouseup mousemove mouseover mouseout mouseenter mouseleave change select submit keydown keypress keyup error',
-            UserEventListnerHandler.#preventDefaultHelper);
-        $('*').off('click', UserEventListnerHandler.#onClickHelper);
+        document.removeEventListener("click", UserEventListnerHandler.#onClickHelper, true);
     }
 
     static #addGlobalEventListenersWhenFollowing() {
-        $('*').on('click', UserEventListnerHandler.#onClickHelper);
+        document.addEventListener("click", UserEventListnerHandler.#onClickHelper, true);
     }
 
     static #removeGlobalEventListenersWhenFollowing() {
-        $('*').off('click', UserEventListnerHandler.#onClickHelper);
+        document.removeEventListener("click", UserEventListnerHandler.#onClickHelper, true);
     }
 
     static removeAllListners() {

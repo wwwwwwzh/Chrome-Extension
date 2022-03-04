@@ -182,7 +182,7 @@ $(() => {
         if (!isNotNull(currentStepObj)) {
             const indexKey = VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX;
             chrome.storage.sync.get([indexKey], result => {
-                currentStepObj = new Step(result[indexKey], VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL, new NullAction(), "", "");
+                currentStepObj = new Step(result[indexKey], VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL, new ClickAction(), "", "");
                 callback();
             })
         } else {
@@ -249,8 +249,6 @@ $(() => {
                         currentStepObj.actionObject = new SelectAction([], null, false);
                     }, () => {
                         currentStepObj.actionObject = new SideInstructionAction([]);
-                    }, () => {
-                        currentStepObj.actionObject = new NullAction();
                     });
 
             }

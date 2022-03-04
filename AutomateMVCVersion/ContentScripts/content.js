@@ -26,9 +26,6 @@ chrome.runtime.onMessage.addListener(
         if (isNotNull(request.removeHighlight) && request.removeHighlight) {
             removeLastHighlight()
         }
-        if (isNotNull(request.onActivated) && request.onActivated) {
-            extension.checkStatus();
-        }
         if (isNotNull(request.newTutorial) && request.newTutorial) {
             //recordingContainer.show();
             extension.showRecordingPanel(VALUES.TUTORIAL_STATUS.IS_CREATING_NEW_TUTORIAL);

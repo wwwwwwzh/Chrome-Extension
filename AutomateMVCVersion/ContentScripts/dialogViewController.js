@@ -4,7 +4,9 @@ class DialogBox {
     }
 
     #initializeUI() {
-
+        $('body').append(`
+        
+        `);
     }
 
     #deinitializeUI() {

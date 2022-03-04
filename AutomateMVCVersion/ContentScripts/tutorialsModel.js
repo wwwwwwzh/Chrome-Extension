@@ -378,13 +378,13 @@ class Step {
      * 
      * @param {number} index 
      * @param {number} actionType 
-     * @param {RedirectAction | ClickAction | InputAction | SelectAction | SideInstructionAction | NullAction} actionObject 
+     * @param {RedirectAction | ClickAction | InputAction | SelectAction | SideInstructionAction} actionObject 
      * @param {[string]} possibleReasonsForElementNotFound
      */
     constructor(
         index = 0,
-        actionType = VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL,
-        actionObject = {},
+        actionType = VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK,
+        actionObject = null,
         name = '',
         description = '',
         url = globalCache.currentUrl,
@@ -411,14 +411,11 @@ class Step {
             () => { return RedirectAction.getPath(step.actionObject, index) },
             () => { return SelectAction.getPath(step.actionObject, index) },
             () => { return SideInstructionAction.getPath(step.actionObject, index) },
-            () => { return NullAction.getPath(step.actionObject, index) },
         )
     }
 
-    static callFunctionOnActionType(actionType, clickFunc, carFunc, inputFunc, redirectFunc, selectFunc, instructionFunc, nullFunc = null, defaultFunc = null) {
+    static callFunctionOnActionType(actionType, clickFunc, carFunc, inputFunc, redirectFunc, selectFunc, instructionFunc, defaultFunc = null) {
         switch (actionType) {
-            case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL:
-                return nullFunc?.();
             case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK: case "STEP_ACTION_TYPE_CLICK":
                 return clickFunc?.();
             case VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK_REDIRECT:
@@ -442,8 +439,7 @@ class Step {
             ClickAction.isClickActionCompleted(step.actionObject) ||
             InputAction.isInputCompleted(step.actionObject) ||
             SelectAction.isSelectCompleted(step.actionObject) ||
-            SideInstructionAction.isSideInstructionCompleted(step.actionObject)) &&
-            step.actionType !== VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL
+            SideInstructionAction.isSideInstructionCompleted(step.actionObject))
         )
     }
 }

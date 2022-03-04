@@ -3,118 +3,160 @@ class RecordTutorialViewController {
     static #RECORDING_PANEL_HTML_SIMPLE() {
         return `
             <div class="w-recording-panel-container">
+                <link rel="stylesheet" href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css">
                 <div id="w-recording-menu-draggable-area" class="w-common-item w-popup-draggable"></div>
                 <div class="w-recording-panel-main-container">
                     <!-- basic panel -->
                     <section id="w-recording-panel-basic-upper-container">
-                        <!-- upper panel -->
-                        <div class="w-horizontal-scroll-container" id="w-recording-panel-basic-upper-header">
-                            <!-- header --> 
-                            <div id="select-action-type-container" class="w-horizontal-scroll-item-container common-action-container">
-                                <select name="action-type" id="select-action-type-select">
-                                    <option value="${VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL}">Select Step Type</option>
+                        <label class="w-material-input-container recording-full-width tutorial-action-container mdc-text-field mdc-text-field--outlined">
+                            <span class="mdc-notched-outline">
+                                <span class="mdc-notched-outline__leading"></span>
+                                <span class="mdc-notched-outline__notch">
+                                    <span class="mdc-floating-label" id="my-label-id">Tutorial Name</span>
+                                </span>
+                                <span class="mdc-notched-outline__trailing"></span>
+                            </span>
+                            <input type="text" class="w-material-input mdc-text-field__input" aria-labelledby="my-label-id" id="tutorial-name-input">
+                        </label>
+                        <label class="w-material-input-container recording-full-width tutorial-action-container mdc-text-field mdc-text-field--outlined mdc-text-field--textarea mdc-text-field--no-label">
+                            <span class="mdc-notched-outline">
+                                <span class="mdc-notched-outline__leading"></span>
+                                <span class="mdc-notched-outline__notch">
+                                    <span class="mdc-floating-label" id="my-label-id">Tutorial Description</span>
+                                </span>
+                                <span class="mdc-notched-outline__trailing"></span>
+                            </span>
+                            <span class="mdc-text-field__resizer">
+                                <textarea id="tutorial-description-input" class="mdc-text-field__input" rows="8" cols="40" aria-label="Label"></textarea>
+                            </span>
+                        </label>
+
+                        <label class="w-material-input-container recording-full-width common-action-container mdc-text-field mdc-text-field--outlined">
+                            <span class="mdc-notched-outline">
+                                <span class="mdc-notched-outline__leading"></span>
+                                <span class="mdc-notched-outline__notch">
+                                    <span class="mdc-floating-label" id="my-label-id">Step Name</span>
+                                </span>
+                                <span class="mdc-notched-outline__trailing"></span>
+                            </span>
+                            <input type="text" class="w-material-input mdc-text-field__input" aria-labelledby="my-label-id" id="step-name-input">
+                        </label>
+                        <label class="w-material-input-container recording-full-width common-action-container mdc-text-field mdc-text-field--outlined mdc-text-field--textarea mdc-text-field--no-label">
+                            <span class="mdc-notched-outline">
+                                <span class="mdc-notched-outline__leading"></span>
+                                <span class="mdc-notched-outline__notch">
+                                    <span class="mdc-floating-label" id="my-label-id">Step Description</span>
+                                </span>
+                                <span class="mdc-notched-outline__trailing"></span>
+                            </span>
+                            <span class="mdc-text-field__resizer">
+                                <textarea id="step-description-input" class="mdc-text-field__input" rows="8" cols="40" aria-label="Label"></textarea>
+                            </span>
+                        </label>
+                        <div class="w-horizontal-container recording-full-width">
+                            <div id="select-action-type-container" class="w-horizontal-item-container recording-full-width common-action-container">
+                                <select name="action-type" id="select-action-type-select" required>
                                     <option value="${VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_REDIRECT}">Redirect (Open another page directly)</option>
                                     <!-- <option value="${VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK_REDIRECT}">Click and redirect (Open another page by clicking)</option> -->
                                     <option value="${VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK}">Click</option>
                                     <option value="${VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_INPUT}">Input</option>
                                     <!-- <option value="${VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SELECT}">Select</option> -->
-                                    <option value="${VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SIDE_INSTRUCTION}">Instruction</option>
+                                    <option value="${VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_SIDE_INSTRUCTION}">Note</option>
                                 </select>
                             </div>
-                            <div id="w-recording-panel-is-recording-switch-container" class="w-horizontal-scroll-item-container w-horizontal-scroll-container common-action-container">
-                                <p id="is-highlighting-indicator" class="w-horizontal-scroll-item-container">Not Highlighting</p>
-                                <label id="is-recording-switch-label" class="w-horizontal-scroll-item-container">
+                            <div id="w-recording-panel-is-recording-switch-container" class="w-horizontal-item-container recording-full-width w-horizontal-container common-action-container">
+                                <p id="is-highlighting-indicator" class="w-horizontal-item-container">Not Highlighting</p>
+                                <label id="is-recording-switch-label" class="w-horizontal-item-container">
                                     <input type="checkbox" id="highlight-switch">
                                     <span id="is-recording-switch-slider"></span>
                                 </label>
                             </div>
                         </div>
-                        <div id="w-recording-panel-basic-upper-content-container" class="w-horizontal-scroll-container">
-                            <!-- content -->
-                            <div id="w-recording-panel-basic-upper-left" class="w-horizontal-scroll-item-container">
-                                <!-- left -->
-                                <div class="w-material-input-container">
-                                    <input class="w-material-input" id="tutorial-name-input" type="text" autocomplete="off" value="">
-                                    <label class="w-material-input-placeholder-text">
-                                        <div class="w-material-input-text">Tutorial Name</div>
-                                    </label>
-                                </div>
-                                <div class="w-material-input-container">
-                                    <input class="w-material-input" id="tutorial-description-input" type="text" autocomplete="off" value="">
-                                    <label class="w-material-input-placeholder-text">
-                                        <div class="w-material-input-text">Tutorial Description</div>
-                                    </label>
-                                </div>
-                                <div class="w-material-input-container common-action-container">
-                                    <input class="w-material-input" id="step-name-input" type="text" autocomplete="off" value="">
-                                    <label class="w-material-input-placeholder-text">
-                                        <div class="w-material-input-text">Step Name</div>
-                                    </label>
-                                </div>
-                                <div class="w-material-input-container common-action-container">
-                                    <input class="w-material-input" id="step-description-input" type="text" autocomplete="off" value="">
-                                    <label class="w-material-input-placeholder-text">
-                                        <div class="w-material-input-text">Step Description</div>
-                                    </label>
-                                </div>
-                                <div class="w-material-input-container common-action-container">
-                                    <input class="w-material-input" id="step-custom-url-input" type="text" autocomplete="off" value="">
-                                    <label class="w-material-input-placeholder-text">
-                                        <div class="w-material-input-text">Custom URL</div>
-                                    </label>
-                                </div>
+                    </section>
+                    <section id="w-recording-panel-more-options-container">
+                        <div id="w-recording-panel-more-options-button">
+                            ▶ More Options
+                        </div>
+                        <div id="more-options-content-container">
+                            <div id="w-recording-panel-more-options-inputs-container" class="more-options-container">
+                                <label class="w-material-input-container recording-full-width redirect-action-container car-action-container mdc-text-field mdc-text-field--outlined">
+                                    <span class="mdc-notched-outline">
+                                        <span class="mdc-notched-outline__leading"></span>
+                                        <span class="mdc-notched-outline__notch">
+                                            <span class="mdc-floating-label" id="my-label-id">Redirect URL</span>
+                                        </span>
+                                        <span class="mdc-notched-outline__trailing"></span>
+                                    </span>
+                                    <input id="step-redirect-url-input" type="text" class="w-material-input mdc-text-field__input" aria-labelledby="my-label-id">
+                                </label>
+                                <label class="w-material-input-container recording-full-width click-action-container mdc-text-field mdc-text-field--outlined">
+                                    <span class="mdc-notched-outline">
+                                        <span class="mdc-notched-outline__leading"></span>
+                                        <span class="mdc-notched-outline__notch">
+                                            <span class="mdc-floating-label" id="my-label-id">Option Name</span>
+                                        </span>
+                                        <span class="mdc-notched-outline__trailing"></span>
+                                    </span>
+                                    <input id="step-option-name" type="text" class="w-material-input mdc-text-field__input" aria-labelledby="my-label-id">
+                                </label>
+                                <label class="w-material-input-container recording-full-width click-action-container mdc-text-field mdc-text-field--outlined">
+                                    <span class="mdc-notched-outline">
+                                        <span class="mdc-notched-outline__leading"></span>
+                                        <span class="mdc-notched-outline__notch">
+                                            <span class="mdc-floating-label" id="my-label-id">Option Description</span>
+                                        </span>
+                                        <span class="mdc-notched-outline__trailing"></span>
+                                    </span>
+                                    <input id="step-option-description" type="text" class="w-material-input mdc-text-field__input" aria-labelledby="my-label-id">
+                                </label>
+                                <label class="w-material-input-container recording-full-width input-action-container mdc-text-field mdc-text-field--outlined">
+                                    <span class="mdc-notched-outline">
+                                        <span class="mdc-notched-outline__leading"></span>
+                                        <span class="mdc-notched-outline__notch">
+                                            <span class="mdc-floating-label" id="my-label-id">Input Text</span>
+                                        </span>
+                                        <span class="mdc-notched-outline__trailing"></span>
+                                    </span>
+                                    <input id="step-option-input" type="text" class="w-material-input mdc-text-field__input" aria-labelledby="my-label-id">
+                                </label>
+                                <label class="w-material-input-container recording-full-width common-action-container mdc-text-field mdc-text-field--outlined">
+                                    <span class="mdc-notched-outline">
+                                        <span class="mdc-notched-outline__leading"></span>
+                                        <span class="mdc-notched-outline__notch">
+                                            <span class="mdc-floating-label" id="my-label-id">Custom URL</span>
+                                        </span>
+                                        <span class="mdc-notched-outline__trailing"></span>
+                                    </span>
+                                    <input id="step-custom-url-input" type="text" class="w-material-input mdc-text-field__input" aria-labelledby="my-label-id">
+                                </label>
                             </div>
-                            <div id="w-recording-panel-basic-upper-right" class="w-horizontal-scroll-item-container">
-                                <!-- right -->
-                                <div class="w-material-input-container redirect-action-container car-action-container">
-                                    <input class="w-material-input" id="step-redirect-url-input" type="text" autocomplete="off" value="">
-                                    <label class="w-material-input-placeholder-text">
-                                        <div class="w-material-input-text">Redirect URL</div>
-                                    </label>
+                            <section id="w-recording-panel-basic-selected-container" class="more-options-container w-horizontal-scroll-container click-action-container input-action-container select-action-container instruction-action-container car-action-container">
+                            </section>
+                            <section id="w-recording-panel-basic-table-container" class="more-options-container w-horizontal-scroll-container click-action-container">
+                            </section>
+                            <section id="w-recording-panel-step-options-container" class="more-options-container w-horizontal-scroll-container click-action-container input-action-container select-action-container car-action-container">
+                                <div class="w-horizontal-scroll-item-container next-step-button-round-container">
+                                    <div id="add-new-step-option-round-button" class="w-round-button">
+                                    <div></div>
+                                    </div>
                                 </div>
-                                <div class="w-material-input-container click-action-container car-action-container">
-                                    <input class="w-material-input" id="step-option-name" type="text" autocomplete="off" value="">
-                                    <label class="w-material-input-placeholder-text">
-                                        <div class="w-material-input-text">Option Name</div>
-                                    </label>
-                                </div>
-                                <div class="w-material-input-container click-action-container car-action-container">
-                                    <input class="w-material-input" id="step-option-description" type="text" autocomplete="off" value="">
-                                    <label class="w-material-input-placeholder-text">
-                                        <div class="w-material-input-text">Option Description</div>
-                                    </label>
-                                </div>
-                                <div class="w-material-input-container input-action-container">
-                                    <input class="w-material-input" id="step-option-input" type="text" autocomplete="off" value="">
-                                    <label class="w-material-input-placeholder-text">
-                                        <div class="w-material-input-text">Input Text</div>
-                                    </label>
-                                </div>
-                            </div>
+                            </section>
                         </div>
                     </section>
-                    <section id="w-recording-panel-basic-selected-container" class="w-horizontal-scroll-container-orange click-action-container input-action-container select-action-container instruction-action-container car-action-container">
-                    </section>
-                    <section id="w-recording-panel-basic-table-container" class="w-horizontal-scroll-container-orange click-action-container">
-                    </section>
-                    <section id="w-recording-panel-step-options-container" class="w-horizontal-scroll-container click-action-container input-action-container select-action-container car-action-container">
-                        <div class="w-horizontal-scroll-item-container next-step-button-round-container">
-                            <div id="add-new-step-option-round-button" class="w-round-button">
-                            <div></div>
-                            </div>
-                        </div>
-                    </section>
-                    <section id="w-recording-panel-basic-steps-container" class="w-horizontal-scroll-container-orange">
+                    <section id="w-recording-panel-basic-steps-container" class="w-horizontal-scroll-container">
                         <div class="w-horizontal-scroll-item-container next-step-button-round-container">
                             <div id="add-new-step-round-button" class="w-round-button">
-                            <div></div>
+                                <div></div>
                             </div>
                         </div>
                     </section>
                     <section id="w-recording-panel-basic-buttons-container">
-                        <div id="create-new-step-button">New Step</div>
-                        <div id="discard-recording-button">Discard Recording</div>
-                        <div id="finish-recording-button">Finish</div>
+                        <div class="mdc-button mdc-button--raised" id="discard-recording-button">
+                            <span class="mdc-button__label">Discard</span>
+                        </div>
+                        <div class="mdc-button mdc-button--raised" id="finish-recording-button">
+                            <span class="mdc-button__label">Finish</span>
+                        </div>
                     </section>
                 </div>
                 <section class="recording-panel-advanced-section-container">
@@ -156,6 +198,7 @@ class RecordTutorialViewController {
 
     //Local Variables
     #isUsingAdvancedRecordingPanel = false
+    #isUsingMoreOptions = false
     #hasAdvancedRecordingPanelBeenInitialized = false
     #isCreatingNewTutorial = true
 
@@ -199,6 +242,7 @@ class RecordTutorialViewController {
             const selection = parseInt(this.actionTypeSelector.val());
             this.#switchMenu(selection);
         })
+
 
         this.recordUpperContainer = $('#w-recording-panel-basic-upper-content-container');
         this.tutorialNameInput = $('#tutorial-name-input');
@@ -248,7 +292,27 @@ class RecordTutorialViewController {
             this.stepInputOptionText.attr("value", this.stepInputOptionText.val());
         });
 
+        const textFieldElements = [].slice.call(document.querySelectorAll('.mdc-text-field'));
+        textFieldElements.forEach((textFieldEl) => {
+            new mdc.textField.MDCTextField(textFieldEl);
+        });
 
+        this.moreOptionsContainer = $('#w-recording-panel-more-options-container')
+        this.moreOptionsContentContainer = $('#more-options-content-container')
+
+        this.moreOptionsButton = $('#w-recording-panel-more-options-button');
+        this.moreOptionsButton.on('click', () => {
+            if (this.#isUsingMoreOptions) {
+                this.moreOptionsContentContainer.hide()
+                this.#isUsingMoreOptions = false
+            } else {
+                this.moreOptionsContentContainer.show()
+                this.#isUsingMoreOptions = true
+            }
+        })
+        this.moreOptionsContainer.hide()
+
+        this.moreOptionsInputsContainer = $('#w-recording-panel-more-options-inputs-container');
         this.selectedElementContainer = $('#w-recording-panel-basic-selected-container');
         this.selectedTableContainer = $('#w-recording-panel-basic-table-container');
 
@@ -264,10 +328,7 @@ class RecordTutorialViewController {
             this.#clearOptionRelatedMenuItems()
         })
 
-        this.createNewStepButton = $('#create-new-step-button');
-        this.createNewStepButton.on('click', () => {
-            this.#onCreateNewStep()
-        })
+        this.moreOptionsContentContainer.hide()
 
         this.stepsContainer = $('#w-recording-panel-basic-steps-container');
         this.addNewStepRoundButton = $('#add-new-step-round-button');
@@ -402,11 +463,12 @@ class RecordTutorialViewController {
         storeSelectedElementOrNearestTableIfExists()
 
         //Highlight
-        if (jQElement.is('a')) {
-            Highlighter.highlight(jQElement.parent());
-        } else {
-            Highlighter.highlight(jQElement);
-        }
+        // if (jQElement.is('a')) {
+        //     Highlighter.highlight(jQElement.parent());
+        // } else {
+        //     Highlighter.highlight(jQElement);
+        // }
+        Highlighter.highlight(jQElement);
 
         //update recording panel
         this.#updateSelectedElementDomPathView(globalCache.domPath ?? [], nearestTablePath)
@@ -462,17 +524,21 @@ class RecordTutorialViewController {
     // UI Control
     #loadMenuForStep(atIndex) {
         const step = TutorialsModel.getStepOfCurrentTutorialAtIndex(atIndex);
-        c('loading' + step)
+        c('loading' + JSON.stringify(step))
         this.#hideCreateTutorialMenu()
         this.#clearOptionsListAndRelatedMenuItems();
         this.#clearMenu();
-        this.#switchMenu(step.actionType, true, false);
-        this.#createStepOptionsCacheFromActionObject(step.actionObject);
-        this.#loadMenuForStepUIHelper(step)
+        this.#switchMenu(step.actionType, true, !isNotNull(step.actionObject));
+        //if actionObject is null, it's a newly created empty step, skip actual loading
+        if (isNotNull(step.actionObject)) {
+            this.#createStepOptionsCacheFromActionObject(step.actionObject);
+            this.#loadMenuInputsForStep(step)
+        }
     }
 
-    #loadMenuForStepUIHelper(step) {
-        this.actionTypeSelector.val(step.actionType);
+    #loadMenuInputsForStep(step) {
+        c(step.actionType)
+
         this.#setMaterialInputValue(this.stepNameInput, step.name)
         this.#setMaterialInputValue(this.stepDescriptionInput, step.description)
         this.#setMaterialInputValue(this.stepCustomURLInput, step.url)
@@ -502,6 +568,7 @@ class RecordTutorialViewController {
     }
 
     #createStepOptionsCacheFromActionObject(actionObject) {
+        if (!isNotNull(actionObject)) return
         actionObject.clicks && actionObject.clicks.forEach((click, index) => {
             this.#currentStepOptionsCache[index] = {
                 clickOptionName: click.name,
@@ -541,20 +608,38 @@ class RecordTutorialViewController {
      * @param {*} selection 
      */
     #switchMenu(selection, clearStepOptions = true, createEmptyStepOptionSnapshot = true) {
+        this.actionTypeSelector.val(selection);
         this.#switchMenuUIHelper(clearStepOptions, createEmptyStepOptionSnapshot)
         Step.callFunctionOnActionType(
             selection,
             () => {
                 this.#showClickMenu()
-                this.highlightSwitch.prop('checked', true)
+                this.#turnHighlightSwitchOn()
             },
             this.#showClickAndRedirectMenu.bind(this),
-            this.#showInputMenu.bind(this),
+            () => {
+                this.#showInputMenu()
+                this.#turnHighlightSwitchOn()
+            },
             this.#showRedirectMenu.bind(this),
             this.#showSelectMenu.bind(this),
-            this.#showSideInstructionMenu.bind(this),
-            this.#showNullMenu.bind(this)
+            () => {
+                this.#showSideInstructionMenu()
+                this.#turnHighlightSwitchOn()
+            }
         );
+    }
+
+    #turnHighlightSwitchOn() {
+        this.highlightSwitch.prop('checked', true)
+        UserEventListnerHandler.setRecordingIsHighlighting(true)
+        this.isHighlightingIndicator.html('Highlighting')
+    }
+
+    #turnHighlightSwitchOff() {
+        this.highlightSwitch.prop('checked', false)
+        UserEventListnerHandler.setRecordingIsHighlighting(false)
+        this.isHighlightingIndicator.html('Not Hihglighting')
     }
 
     #switchMenuUIHelper(clearStepOptions, createEmptyStepOptionSnapshot) {
@@ -565,15 +650,15 @@ class RecordTutorialViewController {
     }
 
     #showCreateTutorialMenu() {
-        this.tutorialNameInput.parent().show()
-        this.tutorialDescriptionInput.parent().show()
+        $('.tutorial-action-container').show()
         this.actionTypeSelector.parent().hide()
+        this.moreOptionsContainer.hide()
     }
 
     #hideCreateTutorialMenu() {
-        this.tutorialNameInput.parent().hide()
-        this.tutorialDescriptionInput.parent().hide()
+        $('.tutorial-action-container').hide()
         this.actionTypeSelector.parent().show()
+        this.moreOptionsContainer.show()
     }
 
     #setMaterialInputValue(inputElement, inputText = '') {
@@ -606,14 +691,7 @@ class RecordTutorialViewController {
     }
 
     #hideUpperPanel() {
-        $('.redirect-action-container, .input-action-container, .car-action-container, .click-action-container, .select-action-container, .common-action-container, .instruction-action-container').hide();
-    }
-
-
-
-    #showNullMenu() {
-        this.#hideUpperPanel()
-        this.actionTypeSelector.parent().show()
+        $('#more-options-content-container .redirect-action-container, .input-action-container, .car-action-container, .click-action-container, .select-action-container, .common-action-container, .instruction-action-container').hide();
     }
 
     #showClickMenu() {
@@ -664,7 +742,7 @@ class RecordTutorialViewController {
     }
 
     #onCreateNewStep() {
-        this.#disableHighlight()
+        this.#turnHighlightSwitchOff()
         if (this.#isCreatingNewTutorial) {
             this.#syncTutorialInfoFromUI(() => {
                 this.#hideCreateTutorialMenu()
@@ -675,10 +753,22 @@ class RecordTutorialViewController {
             this.#syncCurrentStepFromUI(createNewStepHelper.bind(this))
         }
 
-        function createNewStepHelper() {
+        function createNewStepHelper(currentStep) {
             const stepId = TutorialsModel.onCreateNewStep()
-            this.#createEmptyStepSnapshot(TutorialsModel.getLastStepIndexForTutorial(), stepId)
-            this.#loadMenuForStep(TutorialsModel.getLastStepIndexForTutorial())
+            TutorialsModel.saveActiveTutorialToStorage(() => {
+                currentStep && clickHighlightedElement(currentStep)
+                this.#createEmptyStepSnapshot(TutorialsModel.getLastStepIndexForTutorial(), stepId)
+                this.#loadMenuForStep(TutorialsModel.getLastStepIndexForTutorial())
+            })
+
+        }
+
+        function clickHighlightedElement(currentStep) {
+            if (currentStep.actionType === VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK) {
+                const click = ClickAction.getDefaultClick(currentStep.actionObject);
+                const element = $(jqueryElementStringFromDomPath(click.path))[0];
+                simulateClick(element);
+            }
         }
     }
 
@@ -694,12 +784,12 @@ class RecordTutorialViewController {
         })
     }
 
-    #syncCurrentStepFromUI(callback = () => { }) {
+    #syncCurrentStepFromUI(callback) {
         this.#saveCurrentOptionFromUIToCache(this.#currentStepOptionsIndex)
         const currentStep = this.#getStepInfoFromInput(TutorialsModel.getCurrentStepIndex())
         TutorialsModel.saveStep(currentStep, TutorialsModel.getCurrentStepIndex(), true, () => {
             this.#updateStepSnapshot()
-            callback()
+            callback && callback(currentStep)
         })
     }
 
@@ -754,8 +844,6 @@ class RecordTutorialViewController {
             return new SelectAction(selectedElementPath, [], false);
         }, () => {
             return new SideInstructionAction(selectedElementPath);
-        }, () => {
-            return new NullAction();
         })
         var step = new Step(
             stepIndex,
@@ -870,7 +958,7 @@ class RecordTutorialViewController {
     #onStepSnapshotClicked(id) {
         const index = SnapshotView.getSnapshotIndex(id)
         if (index === TutorialsModel.getCurrentStepIndex()) return
-        this.#disableHighlight()
+        this.#turnHighlightSwitchOff()
         if (this.#isCreatingNewTutorial) {
             this.#syncTutorialInfoFromUI(() => {
 
@@ -888,15 +976,8 @@ class RecordTutorialViewController {
         }
     }
 
-    #disableHighlight() {
-        UserEventListnerHandler.setRecordingIsHighlighting(false)
-        this.highlightSwitch.prop('checked', false)
-    }
-
-
-
     #createEmptyStepSnapshot(atIndex, id) {
-        this.#createStepSnapshot(atIndex, { name: 'Step Name', id, url: globalCache.currentUrl }, SnapshotView.TYPE.RECORDING_STEP)
+        this.#createStepSnapshot(atIndex, { id, url: globalCache.currentUrl }, SnapshotView.TYPE.RECORDING_STEP)
     }
 
 
@@ -1001,7 +1082,7 @@ class RecordTutorialViewController {
     #createSnapshotsContainerAndTutorialTitle(tutorial, parentContainer) {
         const snapshotHTML = SnapshotView.getViewHTML({ ...tutorial, type: SnapshotView.TYPE.TUTORIAL_TITLE })
         parentContainer.prepend(`
-        <div id="advanced-tutorials-container-${tutorial.id}" class="w-horizontal-scroll-container-orange w-recording-panel-advanced-steps-container">
+        <div id="advanced-tutorials-container-${tutorial.id}" class="w-horizontal-scroll-container w-recording-panel-advanced-steps-container">
             ${snapshotHTML}
         </div>
         `);

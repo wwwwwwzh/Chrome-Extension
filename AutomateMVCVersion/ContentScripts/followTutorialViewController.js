@@ -163,9 +163,6 @@ class FollowTutorialViewController {
     #checkStatus(status) {
         UserEventListnerHandler.setTutorialStatusCache(status)
         switch (status) {
-            case VALUES.TUTORIAL_STATUS.STOPPED_FROM_OTHER_PAGE:
-                this.stopCurrentTutorial()
-                break
             case VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL:
                 TutorialsModel.smartInit(() => {
                     this.#showCurrentStep(status)
@@ -175,9 +172,6 @@ class FollowTutorialViewController {
                 TutorialsModel.smartInit(() => {
                     this.#showCurrentStep(status)
                 })
-                break;
-            case VALUES.TUTORIAL_STATUS.LOADED:
-
                 break;
             case VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL:
                 TutorialsModel.smartInit(() => {
@@ -363,7 +357,6 @@ class FollowTutorialViewController {
                 globalCache = new GlobalCache();
             });
         } else {
-            c('hide')
             data[VALUES.TUTORIAL_STATUS.STATUS] = VALUES.TUTORIAL_STATUS.STOPPED_FROM_OTHER_PAGE;
             syncStorageSetBatch(data);
             this.mainPopUpContainer.hide();
@@ -381,6 +374,7 @@ class FollowTutorialViewController {
     //INCOMPLETE
     #onEnteredWrongPage(currentStep) {
         c('wrong page' + currentStep)
+        this.#onMainPopupCloseButtonClicked()
         this.#switchToWrongPageView()
 
         // for (let i = 0; i < tutorialObj.steps.length; i++) {
@@ -776,10 +770,13 @@ class FollowTutorialViewController {
 
     #switchToWrongPageView() {
         this.mainPopupScrollArea.children().hide()
-        this.mainPopupFooter.show()
-        this.popUpNextStepButton.hide()
-        this.stopOptionsStopButton.show()
-        this.automationChoicesCancelButton.hide()
-        this.automationChoicesDoneButton.hide()
+        this.mainPopupFooter.hide()
+
+        const ongoingWorkflowURL = TutorialsModel.getCurrentStep().url
+        this.mainPopupScrollArea.append(`
+        <div>
+            You have an ongoing workflow at ${ongoingWorkflowURL}
+        </div>
+        `)
     }
 }

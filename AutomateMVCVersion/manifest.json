@@ -37,6 +37,7 @@
                 "./packages/jquery-3.6.0.min.js",
                 "./packages/jquery.box-shadow-animator.min.js",
                 "./packages/firebase.js",
+                "./packages/material-components-web.min.js",
                 "./ContentScripts/constants.js",
                 "./ContentScripts/dragAndDropHandler.js",
                 "./ContentScripts/highlighter.js",

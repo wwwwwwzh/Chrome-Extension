@@ -26,7 +26,7 @@ class SnapshotView {
                             <div id="${content.id}" class="w-horizontal-scroll-item-container w-horizontal-scroll-container w-recording-panel-steps-step-indicator-container">
                                 <div class="step-snapshot-container w-horizontal-scroll-item-container">
                                     <!-- snapshot -->
-                                    <label class="step-snapshot-name-label">${content.name ?? ''}</label>
+                                    <label class="step-snapshot-name-label">${content.name ?? 'Step Name'}</label>
                                     <label class="step-snapshot-description-label">${content.description ?? ''}</label>
                                 </div>
                                 <div class="w-horizontal-scroll-item-next-indicator-container w-horizontal-scroll-item-container">
@@ -39,14 +39,14 @@ class SnapshotView {
             case SnapshotView.TYPE.TUTORIAL_TITLE:
                 return `<div class="w-horizontal-scroll-item-container w-horizontal-scroll-container w-recording-panel-steps-step-indicator-container">
                             <div class="step-snapshot-container w-horizontal-scroll-item-container">
-                                <label class="tutorial-title-snapshot-name-label">${content.name ?? ''}</label>
+                                <label class="tutorial-title-snapshot-name-label">${content.name ?? 'Tutorial Name'}</label>
                             </div>
                         </div>`
             default:
                 return `<div id="${content.id}" class="w-horizontal-scroll-item-container w-horizontal-scroll-container w-recording-panel-steps-step-indicator-container">
                             <div class="step-snapshot-container w-horizontal-scroll-item-container">
                                 <!-- snapshot -->
-                                <label class="step-snapshot-name-label">${content.name ?? ''}</label>
+                                <label class="step-snapshot-name-label">${content.name ?? 'Step Name'}</label>
                                 <label class="step-snapshot-description-label">${content.description ?? ''}</label>
                             </div>
                             <div class="w-horizontal-scroll-item-next-indicator-container w-horizontal-scroll-item-container">
