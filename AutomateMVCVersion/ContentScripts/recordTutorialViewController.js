@@ -2,13 +2,13 @@ class RecordTutorialViewController {
     //Constants
     static #RECORDING_PANEL_HTML_SIMPLE() {
         return `
-            <div class="w-recording-panel-container">
+            <div id="w-recording-panel-container" class="w-recording-panel-container-normal">
                 <link rel="stylesheet" href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css">
                 <div id="w-recording-menu-draggable-area" class="w-common-item w-popup-draggable"></div>
                 <div class="w-recording-panel-main-container">
                     <!-- basic panel -->
                     <section id="w-recording-panel-basic-upper-container">
-                        <label class="w-material-input-container recording-full-width tutorial-action-container mdc-text-field mdc-text-field--outlined">
+                        <label id="tutorial-name-input-container" class="w-material-input-container recording-full-width tutorial-action-container mdc-text-field mdc-text-field--outlined">
                             <span class="mdc-notched-outline">
                                 <span class="mdc-notched-outline__leading"></span>
                                 <span class="mdc-notched-outline__notch">
@@ -16,9 +16,9 @@ class RecordTutorialViewController {
                                 </span>
                                 <span class="mdc-notched-outline__trailing"></span>
                             </span>
-                            <input type="text" class="w-material-input mdc-text-field__input" aria-labelledby="my-label-id" id="tutorial-name-input">
+                            <input id="tutorial-name-input" type="text" class="w-material-input mdc-text-field__input" aria-labelledby="my-label-id" >
                         </label>
-                        <label class="w-material-input-container recording-full-width tutorial-action-container mdc-text-field mdc-text-field--outlined mdc-text-field--textarea mdc-text-field--no-label">
+                        <label id="tutorial-description-input-container" class="w-material-input-container recording-full-width tutorial-action-container mdc-text-field mdc-text-field--outlined mdc-text-field--textarea mdc-text-field--no-label">
                             <span class="mdc-notched-outline">
                                 <span class="mdc-notched-outline__leading"></span>
                                 <span class="mdc-notched-outline__notch">
@@ -31,7 +31,7 @@ class RecordTutorialViewController {
                             </span>
                         </label>
 
-                        <label class="w-material-input-container recording-full-width common-action-container mdc-text-field mdc-text-field--outlined">
+                        <label id="step-name-input-container" class="w-material-input-container recording-full-width common-action-container mdc-text-field mdc-text-field--outlined">
                             <span class="mdc-notched-outline">
                                 <span class="mdc-notched-outline__leading"></span>
                                 <span class="mdc-notched-outline__notch">
@@ -39,9 +39,9 @@ class RecordTutorialViewController {
                                 </span>
                                 <span class="mdc-notched-outline__trailing"></span>
                             </span>
-                            <input type="text" class="w-material-input mdc-text-field__input" aria-labelledby="my-label-id" id="step-name-input">
+                            <input id="step-name-input" type="text" class="w-material-input mdc-text-field__input" aria-labelledby="my-label-id" >
                         </label>
-                        <label class="w-material-input-container recording-full-width common-action-container mdc-text-field mdc-text-field--outlined mdc-text-field--textarea mdc-text-field--no-label">
+                        <label id="step-description-input-container" class="w-material-input-container recording-full-width common-action-container mdc-text-field mdc-text-field--outlined mdc-text-field--textarea mdc-text-field--no-label">
                             <span class="mdc-notched-outline">
                                 <span class="mdc-notched-outline__leading"></span>
                                 <span class="mdc-notched-outline__notch">
@@ -79,7 +79,7 @@ class RecordTutorialViewController {
                         </div>
                         <div id="more-options-content-container">
                             <div id="w-recording-panel-more-options-inputs-container" class="more-options-container">
-                                <label class="w-material-input-container recording-full-width redirect-action-container car-action-container mdc-text-field mdc-text-field--outlined">
+                                <label id="step-redirect-url-input-container" class="w-material-input-container recording-full-width redirect-action-container car-action-container mdc-text-field mdc-text-field--outlined">
                                     <span class="mdc-notched-outline">
                                         <span class="mdc-notched-outline__leading"></span>
                                         <span class="mdc-notched-outline__notch">
@@ -89,7 +89,7 @@ class RecordTutorialViewController {
                                     </span>
                                     <input id="step-redirect-url-input" type="text" class="w-material-input mdc-text-field__input" aria-labelledby="my-label-id">
                                 </label>
-                                <label class="w-material-input-container recording-full-width click-action-container mdc-text-field mdc-text-field--outlined">
+                                <label id="step-option-name-container" class="w-material-input-container recording-full-width click-action-container mdc-text-field mdc-text-field--outlined">
                                     <span class="mdc-notched-outline">
                                         <span class="mdc-notched-outline__leading"></span>
                                         <span class="mdc-notched-outline__notch">
@@ -99,7 +99,7 @@ class RecordTutorialViewController {
                                     </span>
                                     <input id="step-option-name" type="text" class="w-material-input mdc-text-field__input" aria-labelledby="my-label-id">
                                 </label>
-                                <label class="w-material-input-container recording-full-width click-action-container mdc-text-field mdc-text-field--outlined">
+                                <label id="step-option-description-container" class="w-material-input-container recording-full-width click-action-container mdc-text-field mdc-text-field--outlined">
                                     <span class="mdc-notched-outline">
                                         <span class="mdc-notched-outline__leading"></span>
                                         <span class="mdc-notched-outline__notch">
@@ -109,7 +109,7 @@ class RecordTutorialViewController {
                                     </span>
                                     <input id="step-option-description" type="text" class="w-material-input mdc-text-field__input" aria-labelledby="my-label-id">
                                 </label>
-                                <label class="w-material-input-container recording-full-width input-action-container mdc-text-field mdc-text-field--outlined">
+                                <label id="step-option-input-container" class="w-material-input-container recording-full-width input-action-container mdc-text-field mdc-text-field--outlined">
                                     <span class="mdc-notched-outline">
                                         <span class="mdc-notched-outline__leading"></span>
                                         <span class="mdc-notched-outline__notch">
@@ -119,7 +119,7 @@ class RecordTutorialViewController {
                                     </span>
                                     <input id="step-option-input" type="text" class="w-material-input mdc-text-field__input" aria-labelledby="my-label-id">
                                 </label>
-                                <label class="w-material-input-container recording-full-width common-action-container mdc-text-field mdc-text-field--outlined">
+                                <label id="step-custom-url-input-container" class="w-material-input-container recording-full-width common-action-container mdc-text-field mdc-text-field--outlined">
                                     <span class="mdc-notched-outline">
                                         <span class="mdc-notched-outline__leading"></span>
                                         <span class="mdc-notched-outline__notch">
@@ -174,6 +174,7 @@ class RecordTutorialViewController {
     highlightSwitch;
     actionTypeSelector;
     recordUpperContainer;
+    mdcTextFields = {}
     tutorialNameInput;
     tutorialDescriptionInput;
     stepNameInput;
@@ -224,7 +225,7 @@ class RecordTutorialViewController {
         const body = $('body');
         body.append(this.#getAllContentHTML());
 
-        this.recordingContainer = $('.w-recording-panel-container').first();
+        this.recordingContainer = $('#w-recording-panel-container');
         this.recordingMenuDraggableArea = $('#w-recording-menu-draggable-area');
         makeElementDraggable(this.recordingMenuDraggableArea[0], this.recordingContainer[0]);
 
@@ -235,12 +236,14 @@ class RecordTutorialViewController {
             const checked = this.highlightSwitch.prop('checked');
             UserEventListnerHandler.setRecordingIsHighlighting(checked)
             this.isHighlightingIndicator.html(checked ? 'Highlighting' : 'Not Highlighting')
+            UserActionLogger.log(UserActionLogger.ACTION_TYPE.RECORDING.CLICK_HIGHLIGHT, { status: checked })
         })
 
         this.actionTypeSelector = $('#select-action-type-select');
         this.actionTypeSelector.on('change', () => {
             const selection = parseInt(this.actionTypeSelector.val());
             this.#switchMenu(selection);
+            UserActionLogger.log(UserActionLogger.ACTION_TYPE.RECORDING.STEP_TYPE_FOCUS_OUT, { selection })
         })
 
 
@@ -256,45 +259,81 @@ class RecordTutorialViewController {
         this.stepInputOptionText = $('#step-option-input');
 
         this.tutorialNameInput.on("keyup", () => {
-            this.tutorialNameInput.attr("value", this.tutorialNameInput.val());
+            this.#onInputFieldChangedByUser(this.tutorialNameInput, this.tutorialNameInput.val(), UserActionLogger.ACTION_TYPE.RECORDING.EDIT_TUTORIAL_NAME)
+        });
+
+        this.tutorialNameInput.on("focusout", () => {
+            UserActionLogger.log(UserActionLogger.ACTION_TYPE.RECORDING.TUTORIAL_NAME_FOCUS_OUT, { text: this.tutorialNameInput.val() })
         });
 
         this.tutorialDescriptionInput.on("keyup", () => {
-            this.tutorialDescriptionInput.attr("value", this.tutorialDescriptionInput.val());
+            this.#onInputFieldChangedByUser(this.tutorialDescriptionInput, this.tutorialDescriptionInput.val(), UserActionLogger.ACTION_TYPE.RECORDING.EDIT_TUTORIAL_DESCRIPTION)
+        });
+
+        this.tutorialDescriptionInput.on("focusout", () => {
+            UserActionLogger.log(UserActionLogger.ACTION_TYPE.RECORDING.TUTORIAL_DESCRIPTION_FOCUS_OUT, { text: this.tutorialDescriptionInput.val() })
         });
 
         this.stepNameInput.on("keyup", () => {
-            this.stepNameInput.attr("value", this.stepNameInput.val());
+            this.#onInputFieldChangedByUser(this.stepNameInput, this.stepNameInput.val(), UserActionLogger.ACTION_TYPE.RECORDING.EDIT_STEP_NAME)
+        });
+
+        this.stepNameInput.on("focusout", () => {
+            UserActionLogger.log(UserActionLogger.ACTION_TYPE.RECORDING.STEP_NAME_FOCUS_OUT, { text: this.stepNameInput.val(), stepIndex: TutorialsModel.getCurrentStepIndex() })
         });
 
         this.stepDescriptionInput.on("keyup", () => {
-            this.stepDescriptionInput.attr("value", this.stepDescriptionInput.val());
+            this.#onInputFieldChangedByUser(this.stepDescriptionInput, this.stepDescriptionInput.val(), UserActionLogger.ACTION_TYPE.RECORDING.EDIT_STEP_DESCRIPTION)
         });
 
-        this.#setMaterialInputValue(this.stepCustomURLInput, globalCache.currentUrl)
+        this.stepDescriptionInput.on("focusout", () => {
+            UserActionLogger.log(UserActionLogger.ACTION_TYPE.RECORDING.STEP_DESCRIPTION_FOCUS_OUT, { text: this.stepDescriptionInput.val(), stepIndex: TutorialsModel.getCurrentStepIndex() })
+        });
+
+
         this.stepCustomURLInput.on("keyup", () => {
             this.stepCustomURLInput.attr("value", this.stepCustomURLInput.val());
+        });
+
+        this.stepCustomURLInput.on("focusout", () => {
+            UserActionLogger.log(UserActionLogger.ACTION_TYPE.RECORDING.STEP_OPTION_URL_FOCUS_OUT, { text: this.stepCustomURLInput.val(), stepIndex: TutorialsModel.getCurrentStepIndex() })
         });
 
         this.stepRedirectURLInput.on("keyup", () => {
             this.stepRedirectURLInput.attr("value", this.stepRedirectURLInput.val());
         });
 
+        this.stepRedirectURLInput.on("focusout", () => {
+            UserActionLogger.log(UserActionLogger.ACTION_TYPE.RECORDING.STEP_REDIRECT_URL_FOCUS_OUT, { text: this.stepRedirectURLInput.val(), stepIndex: TutorialsModel.getCurrentStepIndex() })
+        });
+
         this.stepClickOptionName.on("keyup", () => {
             this.stepClickOptionName.attr("value", this.stepClickOptionName.val());
+        });
+
+        this.stepClickOptionName.on("focusout", () => {
+            UserActionLogger.log(UserActionLogger.ACTION_TYPE.RECORDING.STEP_OPTION_NAME_FOCUS_OUT, { text: this.stepClickOptionName.val() })
         });
 
         this.stepClickOptionDescription.on("keyup", () => {
             this.stepClickOptionDescription.attr("value", this.stepClickOptionDescription.val());
         });
 
+        this.stepClickOptionDescription.on("focusout", () => {
+            UserActionLogger.log(UserActionLogger.ACTION_TYPE.RECORDING.STEP_OPTION_DESCRIPTION_FOCUS_OUT, { text: this.stepClickOptionDescription.val() })
+        });
+
         this.stepInputOptionText.on("keyup", () => {
             this.stepInputOptionText.attr("value", this.stepInputOptionText.val());
         });
 
-        const textFieldElements = [].slice.call(document.querySelectorAll('.mdc-text-field'));
-        textFieldElements.forEach((textFieldEl) => {
-            new mdc.textField.MDCTextField(textFieldEl);
+        this.stepInputOptionText.on("focusout", () => {
+            UserActionLogger.log(UserActionLogger.ACTION_TYPE.RECORDING.STEP_OPTION_INPUT_FOCUS_OUT, { text: this.stepInputOptionText.val() })
+        });
+
+        document.querySelectorAll('.mdc-text-field').forEach((textField) => {
+            const mdcTextField = new mdc.textField.MDCTextField(textField);
+            this.mdcTextFields[attributeToCamelCase(textField.id)] = mdcTextField
         });
 
         this.moreOptionsContainer = $('#w-recording-panel-more-options-container')
@@ -309,6 +348,7 @@ class RecordTutorialViewController {
                 this.moreOptionsContentContainer.show()
                 this.#isUsingMoreOptions = true
             }
+            UserActionLogger.log(UserActionLogger.ACTION_TYPE.RECORDING.CLICK_MORE_OPTION, { showMoreOptions: this.#isUsingMoreOptions })
         })
         this.moreOptionsContainer.hide()
 
@@ -338,12 +378,12 @@ class RecordTutorialViewController {
 
         this.discardTutorialButton = $('#discard-recording-button');
         this.discardTutorialButton.on('click', () => {
-            this.#onDiscardTutorial()
+            this.#onDiscardTutorialButtonClicked()
         })
 
         this.finishTutorialButton = $('#finish-recording-button');
         this.finishTutorialButton.on('click', () => {
-            this.#onFinishTutorial()
+            this.#onFinishTutorialButtonClicked()
         })
 
         //advanced
@@ -357,11 +397,14 @@ class RecordTutorialViewController {
         this.#hideUpperPanel();
     }
 
-
+    #onInputFieldChangedByUser(inputElement, text, actionTypeForLogger, otherLogs) {
+        inputElement.attr("value", text);
+        //UserActionLogger.log(actionTypeForLogger, { text, ...otherLogs })
+    }
 
     async #onToogleAdvancedRecordingButton() {
         if (!this.#isUsingAdvancedRecordingPanel) {
-            this.recordingContainer.removeClass('w-recording-panel-container');
+            this.recordingContainer.removeClass('w-recording-panel-container-normal');
             this.recordingContainer.addClass('w-recording-panel-advanced-container');
             this.toogleAdvancedRecordingButton.removeClass('recording-panel-toogle-advanced-button');
             this.toogleAdvancedRecordingButton.addClass('recording-panel-toogle-advanced-button-advanced');
@@ -374,7 +417,7 @@ class RecordTutorialViewController {
             })
         } else {
             this.recordingContainer.removeClass('w-recording-panel-advanced-container');
-            this.recordingContainer.addClass('w-recording-panel-container');
+            this.recordingContainer.addClass('w-recording-panel-container-normal');
             this.toogleAdvancedRecordingButton.removeClass('recording-panel-toogle-advanced-button-advanced');
             this.toogleAdvancedRecordingButton.addClass('recording-panel-toogle-advanced-button');
             this.#isUsingAdvancedRecordingPanel = false;
@@ -407,13 +450,14 @@ class RecordTutorialViewController {
     }
 
     #deInitializeUI() {
-        $('.w-recording-panel-container').remove()
+        this.recordingContainer.remove()
         $('#w-highlight-instruction-window').remove()
     }
 
     //TutorialsModelFollowingTutorialDelegate
 
     //UserEventListnerHandlerDelegate
+    //logging is done inside user event handler
     onClick() {
         if (UserEventListnerHandler.isLisentingRecording) {
             this.#onClickWhenRecording();
@@ -421,12 +465,15 @@ class RecordTutorialViewController {
     }
 
     checkIfShouldPreventDefault(event) {
-        return UserEventListnerHandler.isLisentingRecording && !$.contains(this.recordingContainer[0], event.target)
+        const dialogContainer = document.getElementById('w-dialog-container')
+        return UserEventListnerHandler.recordingIsHighlighting &&
+            !$.contains(this.recordingContainer[0], event.target) &&
+            !(dialogContainer && $.contains(dialogContainer, event.target))
     }
 
     checkIfShouldProcessEvent(event) {
-        return (event.target !== globalCache.currentElement &&
-            !$.contains(this.recordingContainer[0], event.target))
+        return event.target !== globalCache.currentElement &&
+            this.checkIfShouldPreventDefault(event)
     }
 
     //HighlighterViewControllerSpecificUIDelegate
@@ -456,7 +503,6 @@ class RecordTutorialViewController {
     #onClickWhenRecording() {
         //get element
         const jQElement = $(globalCache.currentElement);
-        syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, globalCache.domPath);
 
         let nearestTable
         var nearestTablePath
@@ -507,6 +553,7 @@ class RecordTutorialViewController {
                 <input type="checkbox" id="use-anything-in-table-chcker" name="use-list" checked></input>
                 `)
                 this.useAnythingInTableChecker = $('#use-anything-in-table-chcker');
+                this.useAnythingInTableChecker.prop('checked', false)
             }
             this.selectedTableContainer.append(`
             <div class="selected-item-path-container w-horizontal-scroll-item-container">
@@ -534,14 +581,13 @@ class RecordTutorialViewController {
             this.#createStepOptionsCacheFromActionObject(step.actionObject);
             this.#loadMenuInputsForStep(step)
         }
+        this.#setMaterialInputValue(this.stepCustomURLInput, step.url)
     }
 
     #loadMenuInputsForStep(step) {
-        c(step.actionType)
-
         this.#setMaterialInputValue(this.stepNameInput, step.name)
         this.#setMaterialInputValue(this.stepDescriptionInput, step.description)
-        this.#setMaterialInputValue(this.stepCustomURLInput, step.url)
+
 
         const actionObject = step.actionObject
         Step.callFunctionOnActionType(step.actionType, () => {
@@ -664,12 +710,13 @@ class RecordTutorialViewController {
     #setMaterialInputValue(inputElement, inputText = '') {
         inputElement.val(inputText)
         inputElement.attr("value", inputText);
+        this.mdcTextFields[attributeToCamelCase(inputElement.attr('id')) + 'Container'].value = inputText
     }
 
     #clearMenu() {
         this.#setMaterialInputValue(this.stepNameInput)
         this.#setMaterialInputValue(this.stepDescriptionInput)
-        //this.#setMaterialInputValue(this.stepCustomURLInput)
+        this.#setMaterialInputValue(this.stepCustomURLInput)
         this.#setMaterialInputValue(this.stepRedirectURLInput)
         this.#clearOptionsListAndRelatedMenuItems()
         this.selectedElementContainer.empty()
@@ -728,17 +775,40 @@ class RecordTutorialViewController {
         this.#switchToEditTutorialTitleSnapshot()
     }
 
+    #onDiscardTutorialButtonClicked() {
+        DialogBox.present(
+            'You cannot recover this recording once discarded',
+            'Are you sure you want to discard this recording',
+            true,
+            this.#onDiscardTutorial.bind(this))
+    }
+
     #onDiscardTutorial() {
-        UserEventListnerHandler.setTutorialStatusCache(VALUES.TUTORIAL_STATUS.LOADED)
+        UserEventListnerHandler.setTutorialStatusCache(VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL)
         UserEventListnerHandler.setRecordingIsHighlighting(false)
         TutorialsModel.discardRecordingTutorial()
         this.dismiss()
     }
 
-    #onFinishTutorial() {
-        if (this.#checkfTutorialIsComplete) {
-            this.#postTutorialToFirebase()
+    async #onFinishTutorialButtonClicked() {
+        if (this.#isCreatingNewTutorial) {
+            this.#syncTutorialInfoFromUI(async () => {
+                if (RecorderTutorialCompletionChecker.isTutorialComplete()) {
+                    await this.#onFinishTutorial()
+                }
+            })
+        } else {
+            this.#syncCurrentStepFromUI(async () => {
+                if (RecorderTutorialCompletionChecker.isTutorialComplete()) {
+                    await this.#onFinishTutorial()
+                }
+            })
         }
+    }
+
+    async #onFinishTutorial() {
+        await this.#postTutorialToFirebase()
+        this.#onDiscardTutorial()
     }
 
     #onCreateNewStep() {
@@ -777,7 +847,6 @@ class RecordTutorialViewController {
             name: this.tutorialNameInput.val(),
             description: this.tutorialDescriptionInput.val()
         }
-        c('acs')
         TutorialsModel.saveTutorialBasicInfo(info, () => {
             this.#updateTutorialTitleSnapshot()
             callback()
@@ -846,6 +915,7 @@ class RecordTutorialViewController {
             return new SideInstructionAction(selectedElementPath);
         })
         var step = new Step(
+            stepId,
             stepIndex,
             actionType,
             actionObject,
@@ -854,7 +924,6 @@ class RecordTutorialViewController {
             this.#processInputURLToFinalURLString(),
             false,
             [],
-            stepId
         )
         c('synced from UI: ' + JSON.stringify(step))
         return step
@@ -1124,20 +1193,25 @@ class RecordTutorialViewController {
         const docRef = await addDoc(collection(ExtensionController.SHARED_FIRESTORE_REF, VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL), {
             name: tutorial.name,
             description: tutorial.description
-        });
+        })
         const docId = docRef.id;
         var allUrls = new Set()
+
+        const batch = writeBatch(ExtensionController.SHARED_FIRESTORE_REF);
         tutorial.steps.forEach((step, index) => {
-            this.#postStepToFirebase(step, docId)
+            batch.set(doc(
+                ExtensionController.SHARED_FIRESTORE_REF,
+                VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL,
+                docId,
+                "Steps",
+                step.id
+            ), JSON.parse(JSON.stringify(step)))
             allUrls.add(step.url)
         })
+        await batch.commit();
         await updateDoc(docRef, {
             all_urls: Array.from(allUrls),
         })
-    }
-
-    async #postStepToFirebase(step, docId) {
-        await addDoc(collection(ExtensionController.SHARED_FIRESTORE_REF, VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL, docId, "Steps"), JSON.parse(JSON.stringify(step)));
     }
 
     dismiss() {
@@ -1146,23 +1220,5 @@ class RecordTutorialViewController {
         TutorialsModel.tutorialsModelFollowingTutorialDelegate = null
         UserEventListnerHandler.userEventListnerHandlerDelegate = null
         Highlighter.highlighterViewControllerSpecificUIDelegate = null
-    }
-}
-
-class TutorialInfoError {
-    constructor(type) {
-        this.type = type
-    }
-
-    message() {
-        return 'Tutorial missing' + this.type.message
-    }
-}
-
-class StepError {
-    constructor(stepIndex, message, type) {
-        this.stepIndex = stepIndex
-        this.message = message
-        this.type = type
     }
 }

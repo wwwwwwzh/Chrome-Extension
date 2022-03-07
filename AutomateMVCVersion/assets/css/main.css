@@ -367,7 +367,7 @@
 /* recording --------------------------------------------------------------*/
 /* -------------------------------------------------------------- */
 
-.w-recording-panel-container {
+.w-recording-panel-container-normal {
     all: initial;
     bottom: 12px;
     left: 12px;
@@ -913,4 +913,15 @@
 #w-recording-panel-basic-buttons-container {
     display: flex;
     justify-content: space-between
+}
+
+#w-dialog-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
 }

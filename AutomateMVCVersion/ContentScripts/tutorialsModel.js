@@ -91,7 +91,7 @@ class TutorialsModel {
         callback()
     }
 
-    static #checkIfReloadIsNeeded(reloadFunc = () => { }, noReloadFunc = () => { }) {
+    static #checkIfReloadFromCloudIsNeeded(reloadFunc = () => { }, noReloadFunc = () => { }) {
         if (isManualFollowingTutorial() ||
             isAutoFollowingTutorial()) {
             noReloadFunc()
@@ -101,7 +101,7 @@ class TutorialsModel {
         chrome.storage.sync.get([TutorialsModel.LAST_SAVED_TIMESTAMP_KEY, TutorialsModel.URL_ASSOCIATED_WITH_CURRENT_TUTORIAL_QUERY_SNAPSHOT_KEY], (result) => {
             const lastSavedTimestamp = result[TutorialsModel.LAST_SAVED_TIMESTAMP_KEY]
             const urlAssociatedWithCurrentTutorialsQuerySnapshot = result[TutorialsModel.URL_ASSOCIATED_WITH_CURRENT_TUTORIAL_QUERY_SNAPSHOT_KEY]
-            const isPassedReloadTime = (((Date.now() / 60000 | 0) - (lastSavedTimestamp / 60000 | 0)) > 3)
+            const isPassedReloadTime = (((Date.now() / 60000 | 0) - (lastSavedTimestamp / 60000 | 0)) > 1)
             // c('last' + urlAssociatedWithCurrentTutorialsQuerySnapshot + '   |now:' + globalCache.currentUrl)
             const isReload = urlAssociatedWithCurrentTutorialsQuerySnapshot !== globalCache.currentUrl || isPassedReloadTime
             if (isReload) {
@@ -166,8 +166,8 @@ class TutorialsModel {
     }
 
     static async smartInit(callback) {
-        TutorialsModel.#checkIfReloadIsNeeded(() => {
-            c('reloading from firestore')
+        TutorialsModel.#checkIfReloadFromCloudIsNeeded(() => {
+            c('reloading from cloud')
             if (UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_RECORDING ||
                 UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_CREATING_NEW_TUTORIAL) {
                 chrome.storage.sync.get([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL], async (result) => {
@@ -293,8 +293,7 @@ class TutorialsModel {
 
     static onCreateNewStep() {
         const id = uuidv4();
-        const step = new Step();
-        step.id = id;
+        const step = new Step(id);
         if (TutorialsModel.getLastStepIndexForTutorial() < 0) {
             TutorialsModel.#tutorials[0].steps.push(step);
         } else {
@@ -322,6 +321,7 @@ class TutorialsModel {
 
     static discardRecordingTutorial() {
         TutorialsModel.#tutorials.shift()
+        TutorialsModel.saveToStorage()
     }
 
 
@@ -382,6 +382,7 @@ class Step {
      * @param {[string]} possibleReasonsForElementNotFound
      */
     constructor(
+        id,
         index = 0,
         actionType = VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_CLICK,
         actionObject = null,
@@ -389,8 +390,7 @@ class Step {
         description = '',
         url = globalCache.currentUrl,
         automationInterrupt = false,
-        possibleReasonsForElementNotFound = [],
-        id = null) {
+        possibleReasonsForElementNotFound = []) {
         this.index = index;
         this.actionType = actionType;
         this.actionObject = actionObject;

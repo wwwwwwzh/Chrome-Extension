@@ -137,6 +137,8 @@ class UserEventListnerHandler {
     static userEventListnerHandlerDelegate
     static isLisentingRecording = false;
     static isLisentingFollowing = false;
+
+    //global status that determine if listeners should be added or removed
     static isAutomationInterrupt = false;
     static isOnRightPage = true;
     static tutorialStatusCache = VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL;
@@ -190,6 +192,20 @@ class UserEventListnerHandler {
                 UserEventListnerHandler.isLisentingFollowing = false;
             }
         }
+
+        if (DEBUG_OPTION && VALUES.DEBUG_MASKS.DEBUG_LOGGING) {
+            if (isRecordingTutorial()) {
+                if (!UserEventListnerHandler.isLisentingRecording) {
+                    UserEventListnerHandler.#addGlobalEventListenersWhenRecording();
+                    UserEventListnerHandler.isLisentingRecording = true;
+                }
+            } else {
+                if (UserEventListnerHandler.isLisentingRecording) {
+                    UserEventListnerHandler.#removeGlobalEventListenersWhenRecording();
+                    UserEventListnerHandler.isLisentingRecording = false;
+                }
+            }
+        }
     }
 
     static #addGlobalEventListenersWhenRecording() {
@@ -198,19 +214,19 @@ class UserEventListnerHandler {
         // $('*').on('click', UserEventListnerHandler.#onClickHelper);
 
         //neew solution from: https://stackoverflow.com/questions/1755815/disable-all-click-events-on-page-javascript
-        document.addEventListener("click", UserEventListnerHandler.#onClickHelper, true);
+        document.addEventListener("click", UserEventListnerHandler.#clickListener, true);
     }
 
     static #removeGlobalEventListenersWhenRecording() {
-        document.removeEventListener("click", UserEventListnerHandler.#onClickHelper, true);
+        document.removeEventListener("click", UserEventListnerHandler.#clickListener, true);
     }
 
     static #addGlobalEventListenersWhenFollowing() {
-        document.addEventListener("click", UserEventListnerHandler.#onClickHelper, true);
+        document.addEventListener("click", UserEventListnerHandler.#clickListener, true);
     }
 
     static #removeGlobalEventListenersWhenFollowing() {
-        document.removeEventListener("click", UserEventListnerHandler.#onClickHelper, true);
+        document.removeEventListener("click", UserEventListnerHandler.#clickListener, true);
     }
 
     static removeAllListners() {
@@ -218,10 +234,30 @@ class UserEventListnerHandler {
         UserEventListnerHandler.#removeGlobalEventListenersWhenRecording();
     }
 
-    static #onClickHelper(event) {
+    static #clickListener(event) {
         UserEventListnerHandler.#preventDefaultHelper(event);
         if (UserEventListnerHandler.userEventListnerHandlerDelegate.checkIfShouldProcessEvent(event)) {
             UserEventListnerHandler.#processEventHelper(event.target);
+        }
+        UserEventListnerHandler.#logHelper(event.target)
+    }
+
+    static #logHelper(target) {
+        switch (UserEventListnerHandler.tutorialStatusCache) {
+            case VALUES.TUTORIAL_STATUS.IS_RECORDING:
+                const dialogContainer = document.getElementById('w-dialog-container')
+                const recordingPanelContainer = document.getElementById('w-recording-panel-container')
+                if (!$.contains(recordingPanelContainer, target) &&
+                    !(dialogContainer && $.contains(dialogContainer, target))) {
+                    UserActionLogger.log(UserActionLogger.ACTION_TYPE.RECORDING.HIGHLIGHT, { element: getShortDomPathStack(target), isHighlighting: UserEventListnerHandler.recordingIsHighlighting })
+                }
+
+                break;
+            case VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL:
+                //UserActionLogger.log(UserActionLogger.ACTION_TYPE.RECORDING.HIGHLIGHT, { element: getShortDomPathStack(event.target), isHighlighting: UserEventListnerHandler.recordingIsHighlighting })
+                break;
+            default:
+                break;
         }
     }
 
@@ -231,8 +267,9 @@ class UserEventListnerHandler {
             globalCache.domPath = getCompleteDomPathStack(target);
         }
         console.log(`clicking: ${globalCache.domPath}`);
+
         globalCache.currentElement = target;
-        UserEventListnerHandler.#onClickUniversalHandler();
+        UserEventListnerHandler.userEventListnerHandlerDelegate.onClick()
     }
 
     static #preventDefaultHelper(event) {
@@ -242,10 +279,6 @@ class UserEventListnerHandler {
             event.stopImmediatePropagation();
             return false
         }
-    }
-
-    static async #onClickUniversalHandler() {
-        UserEventListnerHandler.userEventListnerHandlerDelegate.onClick()
     }
 }
 

@@ -52,54 +52,70 @@
 //     );
 // }
 
-function newPose(ICC, rotation, angle, position) {
-    const left = [[Math.cos(rotation), -Math.sin(rotation), 0], [Math.sin(rotation), Math.cos(rotation), 0], [0, 0, 1]]
-    const right = [[position.x - ICC.x], [position.y - ICC.y], [angle]]
-    return add(multiply(left, right), [[ICC.x], [ICC.y], [rotation]])
-}
+// function newPose(ICC, rotation, angle, position) {
+//     const left = [[Math.cos(rotation), -Math.sin(rotation), 0], [Math.sin(rotation), Math.cos(rotation), 0], [0, 0, 1]]
+//     const right = [[position.x - ICC.x], [position.y - ICC.y], [angle]]
+//     return add(multiply(left, right), [[ICC.x], [ICC.y], [rotation]])
+// }
 
-function add(a, b) {
-    var aNumRows = a.length, aNumCols = a[0].length,
-        bNumRows = b.length, bNumCols = b[0].length,
-        m = new Array(aNumRows);  // initialize array of rows
-    for (var r = 0; r < aNumRows; ++r) {
-        m[r] = new Array(aNumRows); // initialize the current row
-        for (var c = 0; c < aNumCols; ++c) {
-            m[r][c] = a[r][c] + b[r][c];             // initialize the current cell
+// function add(a, b) {
+//     var aNumRows = a.length, aNumCols = a[0].length,
+//         bNumRows = b.length, bNumCols = b[0].length,
+//         m = new Array(aNumRows);  // initialize array of rows
+//     for (var r = 0; r < aNumRows; ++r) {
+//         m[r] = new Array(aNumRows); // initialize the current row
+//         for (var c = 0; c < aNumCols; ++c) {
+//             m[r][c] = a[r][c] + b[r][c];             // initialize the current cell
+//         }
+//     }
+//     return m;
+// }
+
+// function multiply(a, b) {
+//     var aNumRows = a.length, aNumCols = a[0].length,
+//         bNumRows = b.length, bNumCols = b[0].length,
+//         m = new Array(aNumRows);  // initialize array of rows
+//     for (var r = 0; r < aNumRows; ++r) {
+//         m[r] = new Array(bNumCols); // initialize the current row
+//         for (var c = 0; c < bNumCols; ++c) {
+//             m[r][c] = 0;             // initialize the current cell
+//             for (var i = 0; i < aNumCols; ++i) {
+//                 m[r][c] += a[r][i].toFixed(2) * b[i][c].toFixed(2);
+//             }
+//         }
+//     }
+//     return m;
+// }
+
+// function angleToHeading(angle) {
+//     return [Math.cos(angle), Math.sin(angle)]
+// }
+
+// function goStraight(position, angle, length) {
+//     return [position.x + length * Math.cos(angle), position.y + length * Math.sin(angle)]
+// }
+
+// const ICC = { x: 0, y: 0.4 }
+// const rotation = Math.sqrt(2) / 8
+// const angle = 0
+// const position = { x: -0.026, y: -0.00958 }
+// const pose = newPose(ICC, rotation, angle, position)
+// console.log(pose)
+// console.log(angleToHeading(pose[2][0]))
+// console.log(goStraight({ x: pose[0][0], y: pose[1][0] }, pose[2][0], -0.1))
+
+function attributeToCamelCase(originalName) {
+    var camelName = ''
+    for (var i = 0; i < originalName.length; i++) {
+        const char = originalName.charAt(i)
+        if (char === '-') {
+            camelName += (originalName.charAt(i + 1)?.toUpperCase())
+            i++
+        } else {
+            camelName += (char)
         }
     }
-    return m;
+    return camelName
 }
 
-function multiply(a, b) {
-    var aNumRows = a.length, aNumCols = a[0].length,
-        bNumRows = b.length, bNumCols = b[0].length,
-        m = new Array(aNumRows);  // initialize array of rows
-    for (var r = 0; r < aNumRows; ++r) {
-        m[r] = new Array(bNumCols); // initialize the current row
-        for (var c = 0; c < bNumCols; ++c) {
-            m[r][c] = 0;             // initialize the current cell
-            for (var i = 0; i < aNumCols; ++i) {
-                m[r][c] += a[r][i].toFixed(2) * b[i][c].toFixed(2);
-            }
-        }
-    }
-    return m;
-}
-
-function angleToHeading(angle) {
-    return [Math.cos(angle), Math.sin(angle)]
-}
-
-function goStraight(position, angle, length) {
-    return [position.x + length * Math.cos(angle), position.y + length * Math.sin(angle)]
-}
-
-const ICC = { x: 0, y: 0.4 }
-const rotation = Math.sqrt(2) / 8
-const angle = 0
-const position = { x: 0, y: 0 }
-const pose = newPose(ICC, rotation, angle, position)
-console.log(pose)
-console.log(angleToHeading(pose[2][0]))
-console.log(goStraight({ x: pose[0][0], y: pose[1][0] }, pose[2][0], -0.1))
+console.log(attributeToCamelCase('sdf-sdffs-sfd'))

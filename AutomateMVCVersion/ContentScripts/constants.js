@@ -23,6 +23,10 @@ const firebaseConfig = {
 
 
 const VALUES = {
+    DEBUG_MASKS: {
+        DEBUG_LOGGING: 0b0001,
+        PRODUCTION_LOGGING: 0b0010,
+    },
     INPUT_TYPES: {
         TEXT: "INPUT_TYPES_TEXT",
         URL: "INPUT_TYPES_URL",
@@ -63,6 +67,8 @@ const VALUES = {
         SIMPLE_TUTORIAL_STEPS: "Steps",
         SIMPLE_TUTORIAL_ALL_URLS: "all_urls",
         STEP_INDEX: "index",
+        USER_LOG: "User Log",
+        ALL_LOGS: "All log"
     },
     FIRESTORE_QUERY_TYPES: {
         ARRAY_CONTAINS: "array-contains",
@@ -82,13 +88,10 @@ const VALUES = {
         IS_RECORDING: 2,
         IS_CREATING_NEW_TUTORIAL: 20,
         IS_MANUALLY_FOLLOWING_TUTORIAL: 3,
-        IS_PAUSING_FOLLOWING_TUTORIAL: 8,
-        IS_REQUIRING_OPTIONAL_INFO: 9,
-        IS_REQUIRING_MANDATORY_INFO: 10,
+        IS_INTERRUPTED_FROM_AUTOMATION: 9,
         IS_AUTO_FOLLOWING_TUTORIAL: 4,
-        STOPPED_FROM_OTHER_PAGE: 5,
-        LOADED: 1,
-        BEFORE_INIT_NULL: 0
+
+        BEFORE_INIT_NULL: 0,
     },
     STEP_ACTION_TYPE: {
         STEP_ACTION_TYPE_NULL: 0,
@@ -445,6 +448,10 @@ function isAutoFollowingTutorial() {
     return UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL
 }
 
+function isRecordingTutorial() {
+    return UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_RECORDING
+}
+
 
 
 //MARK: Library functions
@@ -525,4 +532,17 @@ function uuidv4() {
     return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
         (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
     );
+}
+function attributeToCamelCase(originalName) {
+    var camelName = ''
+    for (var i = 0; i < originalName.length; i++) {
+        const char = originalName.charAt(i)
+        if (char === '-') {
+            camelName += (originalName.charAt(i + 1)?.toUpperCase())
+            i++
+        } else {
+            camelName += (char)
+        }
+    }
+    return camelName
 }

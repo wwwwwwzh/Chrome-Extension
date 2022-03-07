@@ -14,7 +14,6 @@ chrome.runtime.onInstalled.addListener(() => {
     syncStorageSet("CURRENT_STEP_OBJ", null);
     syncStorageSet("CURRENT_SELECTED_ELEMENT", null);
     syncStorageSet('REVISIT_PAGE_COUNT', 0);
-    syncStorageSet(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, null)
     syncStorageSet(VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL, null)
     syncStorageSet(VALUES.STORAGE.ALL_OTHER_TUTORIALS, null)
 });

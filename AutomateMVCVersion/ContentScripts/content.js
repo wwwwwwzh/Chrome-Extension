@@ -1,6 +1,8 @@
 let extension
 let globalCache
 
+const DEBUG_OPTION = 0b0001
+
 $(() => {
     globalCache = new GlobalCache()
     extension = new ExtensionController()

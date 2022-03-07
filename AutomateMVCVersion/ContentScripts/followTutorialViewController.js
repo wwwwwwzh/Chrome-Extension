@@ -356,11 +356,12 @@ class FollowTutorialViewController {
                 this.#switchToMainWorkflowListView()
                 globalCache = new GlobalCache();
             });
-        } else {
-            data[VALUES.TUTORIAL_STATUS.STATUS] = VALUES.TUTORIAL_STATUS.STOPPED_FROM_OTHER_PAGE;
-            syncStorageSetBatch(data);
-            this.mainPopUpContainer.hide();
         }
+        // else {
+        //     data[VALUES.TUTORIAL_STATUS.STATUS] = VALUES.TUTORIAL_STATUS.STOPPED_FROM_OTHER_PAGE;
+        //     syncStorageSetBatch(data);
+        //     this.mainPopUpContainer.hide();
+        // }
     }
 
     setOrUpdateWorkflowsPopupFromModel() {

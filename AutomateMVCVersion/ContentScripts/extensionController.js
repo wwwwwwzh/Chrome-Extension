@@ -104,7 +104,6 @@ class ExtensionController {
     }
 
     #hideFollowingPanel() {
-        UserEventListnerHandler.setTutorialStatusCache(VALUES.TUTORIAL_STATUS.LOADED);
         this.followTutorialViewController && this.followTutorialViewController.dismiss()
         this.followTutorialViewController = null
     }
