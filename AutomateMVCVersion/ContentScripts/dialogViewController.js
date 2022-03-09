@@ -15,15 +15,13 @@ class DialogBox {
                     aria-modal="true"
                     aria-labelledby="my-dialog-title"
                     aria-describedby="my-dialog-content">
-                    ${title ?
-                `<h2 class="mdc-dialog__title" id="my-dialog-title">
-                        ${title}
-                    </h2>` : ''}
+                    ${title ? `<h2 class="mdc-dialog__title" id="my-dialog-title">${title}</h2>` : ''}
                     <div class="mdc-dialog__content" id="my-dialog-content">
                         ${message}
                     </div>
                     <div class="mdc-dialog__actions">
-                        ${cancelable ? `<button type="button" class="mdc-button mdc-dialog__button" data-mdc-dialog-action="cancel" id="w-dialog-cancel-button">
+                        ${cancelable ?
+                `<button type="button" class="mdc-button mdc-dialog__button" data-mdc-dialog-action="cancel" id="w-dialog-cancel-button">
                             <div class="mdc-button__ripple"></div>
                             <span class="mdc-button__label">Cancel</span>
                         </button>` : ''}
@@ -41,17 +39,14 @@ class DialogBox {
 
         DialogBox.#mdcDialog = new mdc.dialog.MDCDialog(document.querySelector('.mdc-dialog'));
         DialogBox.#mdcDialog.open()
-        DialogBox.#jQueryDialog = $('#w-dialog-container')
-        $('#w-dialog-discard-button').on('click', () => {
-            okAction()
+        DialogBox.#mdcDialog.listen('MDCDialog:closed', () => {
             DialogBox.#jQueryDialog.remove()
             DialogBox.#mdcDialog = null
             DialogBox.#jQueryDialog = null
         })
-        $('#w-dialog-cancel-button')?.on('click', () => {
-            DialogBox.#jQueryDialog.remove()
-            DialogBox.#mdcDialog = null
-            DialogBox.#jQueryDialog = null
+        DialogBox.#jQueryDialog = $('#w-dialog-container')
+        $('#w-dialog-discard-button').on('click', () => {
+            okAction()
         })
     }
 }

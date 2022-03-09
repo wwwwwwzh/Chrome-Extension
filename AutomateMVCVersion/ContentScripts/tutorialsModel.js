@@ -278,7 +278,7 @@ class TutorialsModel {
      */
     static onCreateNewRecording() {
         TutorialsModel.#tutorials.unshift(new TutorialObject());
-        const stepId = TutorialsModel.onCreateNewStep(true);
+        const stepId = TutorialsModel.onCreateNewStep();
         TutorialsModel.saveToStorage();
         return stepId
     }
@@ -388,7 +388,7 @@ class Step {
         actionObject = null,
         name = '',
         description = '',
-        url = globalCache.currentUrl,
+        url = null,
         automationInterrupt = false,
         possibleReasonsForElementNotFound = []) {
         this.index = index;

@@ -336,6 +336,8 @@ class RecordTutorialViewController {
             this.mdcTextFields[attributeToCamelCase(textField.id)] = mdcTextField
         });
 
+        this.#setMaterialInputValue(this.stepCustomURLInput, globalCache.currentUrl)
+
         this.moreOptionsContainer = $('#w-recording-panel-more-options-container')
         this.moreOptionsContentContainer = $('#more-options-content-container')
 
@@ -375,6 +377,7 @@ class RecordTutorialViewController {
         this.addNewStepRoundButton.on('click', () => {
             this.#onCreateNewStep()
         })
+        this.addNewStepRoundButton.hide()
 
         this.discardTutorialButton = $('#discard-recording-button');
         this.discardTutorialButton.on('click', () => {
@@ -437,7 +440,7 @@ class RecordTutorialViewController {
                     if (TutorialsModel.getCurrentStepIndex() === -1) {
                         this.#switchToEditTutorialTitleSnapshot()
                     } else {
-                        this.#loadMenuForStep(TutorialsModel.getLastStepIndexForTutorial())
+                        this.#switchToEditStepAtIndex(TutorialsModel.getLastStepIndexForTutorial())
                     }
 
                 })
@@ -465,10 +468,11 @@ class RecordTutorialViewController {
     }
 
     checkIfShouldPreventDefault(event) {
+        const target = event.target
         const dialogContainer = document.getElementById('w-dialog-container')
         return UserEventListnerHandler.recordingIsHighlighting &&
-            !$.contains(this.recordingContainer[0], event.target) &&
-            !(dialogContainer && $.contains(dialogContainer, event.target))
+            !aContainsOrIsBNode(target, this.recordingContainer[0]) &&
+            !(dialogContainer && aContainsOrIsBNode(target, dialogContainer))
     }
 
     checkIfShouldProcessEvent(event) {
@@ -572,6 +576,7 @@ class RecordTutorialViewController {
     #loadMenuForStep(atIndex) {
         const step = TutorialsModel.getStepOfCurrentTutorialAtIndex(atIndex);
         c('loading' + JSON.stringify(step))
+        t()
         this.#hideCreateTutorialMenu()
         this.#clearOptionsListAndRelatedMenuItems();
         this.#clearMenu();
@@ -581,7 +586,7 @@ class RecordTutorialViewController {
             this.#createStepOptionsCacheFromActionObject(step.actionObject);
             this.#loadMenuInputsForStep(step)
         }
-        this.#setMaterialInputValue(this.stepCustomURLInput, step.url)
+        this.#setMaterialInputValue(this.stepCustomURLInput, isStringEmpty(step.url) ? globalCache.currentUrl : step.url)
     }
 
     #loadMenuInputsForStep(step) {
@@ -708,8 +713,8 @@ class RecordTutorialViewController {
     }
 
     #setMaterialInputValue(inputElement, inputText = '') {
-        inputElement.val(inputText)
-        inputElement.attr("value", inputText);
+        // inputElement.val(inputText)
+        // inputElement.attr("value", inputText);
         this.mdcTextFields[attributeToCamelCase(inputElement.attr('id')) + 'Container'].value = inputText
     }
 
@@ -974,6 +979,7 @@ class RecordTutorialViewController {
         this.#showCreateTutorialMenu()
         TutorialsModel.changeCurrentTutorialStepIndexTo(-1)
         this.#isCreatingNewTutorial = true
+        this.addNewStepRoundButton.hide()
 
         const info = TutorialsModel.getCurrentTutorial()
 
@@ -991,17 +997,27 @@ class RecordTutorialViewController {
         const nextStepSnapshot = nextStep ? $(`#${nextStep.id}`) : null;
         const id = snapshot.id
         if (prevStepSnapshot?.length > 0 && prevStep?.url === snapshot.url) {
-            prevStepSnapshot.parent().append(SnapshotView.getViewHTML({ ...snapshot, type }))
+            //append to existing page
+            const pageContainer = prevStepSnapshot.parent().parent()
+            pageContainer.children().eq(1).append(SnapshotView.getViewHTML({ ...snapshot, type }))
+            this.#updatePageContainersOnCreateNewStep(pageContainer)
         } else if (nextStepSnapshot?.length > 0 && nextStep?.url === snapshot.url) {
-            nextStepSnapshot.parent().prepend(SnapshotView.getViewHTML({ ...snapshot, type }))
+            //prepend to existing page
+            const pageContainer = nextStepSnapshot.parent().parent()
+            pageContainer.children().eq(1).prepend(SnapshotView.getViewHTML({ ...snapshot, type }))
+            this.#updatePageContainersOnCreateNewStep(pageContainer)
         } else {
+            //new page container
             snapshot.type = SnapshotView.TYPE.RECORDING_STEP_AND_URL_CONTAINER
             const snapshotHTML = SnapshotView.getViewHTML(snapshot)
             if (prevStepSnapshot?.length > 0) {
+                //insert after previous page container
                 prevStepSnapshot.parent().parent().after(snapshotHTML);
             } else if (nextStepSnapshot?.length > 0) {
+                //insert before previous page container
                 nextStepSnapshot.parent().parent().before(snapshotHTML);
             } else {
+                //no existing step, add before button
                 if (type === SnapshotView.TYPE.RECORDING_STEP) {
                     this.addNewStepRoundButton.parent().before(snapshotHTML)
                 } else if (type === SnapshotView.TYPE.STEP_FROM_OTHER) {
@@ -1011,6 +1027,11 @@ class RecordTutorialViewController {
                 }
             }
         }
+
+        this.#addStepSnapshotListeners(id)
+    }
+
+    #addStepSnapshotListeners(id) {
         const element = document.getElementById(id)
         element.addEventListener("mouseenter", () => {
             const step = TutorialsModel.getCurrentTutorial().steps[SnapshotView.getSnapshotIndex(id)]
@@ -1019,9 +1040,13 @@ class RecordTutorialViewController {
         element.addEventListener("mouseleave", () => {
             Highlighter.removeLastHighlight()
         })
-        element.addEventListener('click', (e) => {
+        element.addEventListener('click', () => {
             this.#onStepSnapshotClicked(id)
         })
+    }
+
+    #updatePageContainersOnCreateNewStep(pageContainer) {
+        pageContainer.children().first().css({ width: pageContainer.width() })
     }
 
     #onStepSnapshotClicked(id) {
@@ -1029,20 +1054,18 @@ class RecordTutorialViewController {
         if (index === TutorialsModel.getCurrentStepIndex()) return
         this.#turnHighlightSwitchOff()
         if (this.#isCreatingNewTutorial) {
-            this.#syncTutorialInfoFromUI(() => {
-
-                this.#isCreatingNewTutorial = false
-                switchToEditStepAtIndex.bind(this)()
-            })
+            this.#syncTutorialInfoFromUI(() => { this.#switchToEditStepAtIndex(index) })
         } else {
-            this.#syncCurrentStepFromUI(switchToEditStepAtIndex.bind(this))
+            this.#syncCurrentStepFromUI(() => { this.#switchToEditStepAtIndex(index) })
         }
+    }
 
-        function switchToEditStepAtIndex() {
-            TutorialsModel.changeCurrentTutorialStepIndexTo(index)
-            c(index)
-            this.#loadMenuForStep(index)
-        }
+    #switchToEditStepAtIndex(index) {
+        TutorialsModel.changeCurrentTutorialStepIndexTo(index)
+        c('switchToEditStepAtIndex' + index)
+        this.#isCreatingNewTutorial = false
+        this.addNewStepRoundButton.show()
+        this.#loadMenuForStep(index)
     }
 
     #createEmptyStepSnapshot(atIndex, id) {

@@ -247,8 +247,8 @@ class UserEventListnerHandler {
             case VALUES.TUTORIAL_STATUS.IS_RECORDING:
                 const dialogContainer = document.getElementById('w-dialog-container')
                 const recordingPanelContainer = document.getElementById('w-recording-panel-container')
-                if (!$.contains(recordingPanelContainer, target) &&
-                    !(dialogContainer && $.contains(dialogContainer, target))) {
+                if (!aContainsOrIsBNode(target, recordingPanelContainer) &&
+                    !(dialogContainer && aContainsOrIsBNode(target, dialogContainer))) {
                     UserActionLogger.log(UserActionLogger.ACTION_TYPE.RECORDING.HIGHLIGHT, { element: getShortDomPathStack(target), isHighlighting: UserEventListnerHandler.recordingIsHighlighting })
                 }
 

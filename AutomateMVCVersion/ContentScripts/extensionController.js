@@ -71,10 +71,22 @@ class ExtensionController {
     #showSuggestionPopup(status) {
         $('body').append(`
             <div id="w-suggestion-popup">
-                Suggestions
+                Looking for this?
             </div>
         `)
         this.#floatingSuggestionPopup = $('#w-suggestion-popup')
+        setTimeout(() => {
+            this.#floatingSuggestionPopup.css({
+                left: '50px',
+                transition: 'left 0.3s cubic-bezier(.19,.81,.69,.99)',
+            })
+        }, 100)
+        setTimeout(() => {
+            this.#floatingSuggestionPopup.css({
+                left: '0px',
+                transition: 'left 0.1s cubic-bezier(.7,.03,.15,.99)',
+            })
+        }, 400)
         this.#floatingSuggestionPopup.on('click', () => {
             this.#showFollowingPanel(status)
             this.#floatingSuggestionPopup.remove()

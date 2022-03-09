@@ -2,44 +2,46 @@ class FollowTutorialViewController {
     //Constants
     static #WORKFLOW_LIST_POPUP_HTML_SIMPLE() {
         return `
-        <div class="w-workflow-list-popup">
+        <div class="w-workflow-list-popup w-workflow-list-popup-normal">
             <div id="w-main-draggable-area" class="w-popup-draggable"></div>
             <div class="w-workflow-list-popup-header">
+                <label id="w-draggable-symbol-container">✥</label>
                 <div class="w-search-bar-container">
                     <input class="w-search-bar" type="text" title="Search">
                     <img class="w-search-icon" src="./assets/imgs/icons/search.svg" title="Search">
                 </div>
             </div>
             <div class="w-close-button" id="w-workflow-list-popup-close-button"></div>
+            
             <div class="w-workflow-list-popup-scroll-area"></div>
 
             <div class="w-workflow-list-popup-footer">
-                <div id="w-stop-options-stop-button" class="w-workflow-list-cell-type-button w-workflow-list-popup-footer-cell">
-                    <title class="w-workflow-list-cell-type-button-name">Stop</title>
+                <div id="w-popup-cancel-button" class="w-workflow-list-cell-type-button w-workflow-list-popup-footer-cell">
+                    <title class="w-workflow-list-cell-type-button-name">Cancel</title>
                     <div class="w-more-info-icon-container">
                         <img class="w-more-info-icon" src="./assets/imgs/icons/question-mark.svg"
-                            title="">
+                            title="Cancel workflow">
                     </div>
                 </div>
                 <div id="w-popup-next-step-button" class="w-workflow-list-cell-type-button">
                     <title class="w-workflow-list-cell-type-button-name">Next</title>
                     <div class="w-more-info-icon-container">
                         <img class="w-more-info-icon" src="./assets/imgs/icons/question-mark.svg"
-                            title="">
+                            title="Jump to next step automatically">
                     </div>
                 </div>
                 <div id="w-automation-choices-cancel-button" class="w-workflow-list-cell-type-button w-workflow-list-popup-footer-cell">
                     <title class="w-workflow-list-cell-type-button-name">Cancel</title>
                     <div class="w-more-info-icon-container">
                         <img class="w-more-info-icon" src="./assets/imgs/icons/question-mark.svg"
-                            title="">
+                            title="Go back to workflow menu">
                     </div>
                 </div>
                 <div id="w-automation-choices-done-button" class="w-workflow-list-cell-type-button">
                     <title class="w-workflow-list-cell-type-button-name">Done</title>
                     <div class="w-more-info-icon-container">
                         <img class="w-more-info-icon" src="./assets/imgs/icons/question-mark.svg"
-                            title="">
+                            title="Start workflow automation">
                     </div>
                 </div>
             </div>
@@ -69,7 +71,7 @@ class FollowTutorialViewController {
     popUpStepDescription;
     mainPopupFooter
     popUpNextStepButton;
-    stopOptionsStopButton;
+    popUpCancelButton;
     automationChoicesCancelButton;
     automationChoicesDoneButton;
 
@@ -96,6 +98,7 @@ class FollowTutorialViewController {
         this.mainPopUpContainer = $('.w-workflow-list-popup');
         this.mainDraggableArea = $('#w-main-draggable-area');
         makeElementDraggable(this.mainDraggableArea[0], this.mainPopUpContainer[0]);
+        makeElementDraggable(document.getElementById('w-draggable-symbol-container'), this.mainPopUpContainer[0]);
 
         document.getElementsByClassName('w-search-icon')[0].src = this.searchIconURL
         $('.w-more-info-icon').attr('src', this.questionMarkURL)
@@ -110,8 +113,8 @@ class FollowTutorialViewController {
         this.popUpNextStepButton = $("#w-popup-next-step-button");
         this.popUpNextStepButton.on('click', this.#onPopUpNextStepButtonClicked.bind(this))
 
-        this.stopOptionsStopButton = $('#w-stop-options-stop-button');
-        this.stopOptionsStopButton.on('click', this.stopCurrentTutorial.bind(this));
+        this.popUpCancelButton = $('#w-popup-cancel-button');
+        this.popUpCancelButton.on('click', this.stopCurrentTutorial.bind(this));
 
         this.automationChoicesCancelButton = $('#w-automation-choices-cancel-button');
         this.automationChoicesCancelButton.on('click', this.#onAutomationChoicesCanceled.bind(this))
@@ -134,7 +137,7 @@ class FollowTutorialViewController {
     #onMainPopupCloseButtonClicked() {
         if (this.#isMainPopUpCollapsed) {
             this.mainPopUpContainer.removeClass('w-workflow-list-popup-collapsed');
-            this.mainPopUpContainer.addClass('w-workflow-list-popup');
+            this.mainPopUpContainer.addClass('w-workflow-list-popup-normal');
             this.mainCloseButton.removeClass('w-close-button-collapsed');
             this.mainCloseButton.addClass('w-close-button');
             this.mainPopUpContainer.find('.w-should-reopen').show();
@@ -145,7 +148,7 @@ class FollowTutorialViewController {
             this.mainPopUpContainer.find(':visible').each((i, element) => {
                 $(element).addClass('w-should-reopen');
             })
-            this.mainPopUpContainer.removeClass('w-workflow-list-popup');
+            this.mainPopUpContainer.removeClass('w-workflow-list-popup-normal');
             this.mainPopUpContainer.addClass('w-workflow-list-popup-collapsed');
             this.mainPopUpContainer.children().hide();
             this.mainCloseButton.removeClass('w-close-button');
@@ -201,8 +204,7 @@ class FollowTutorialViewController {
 
     checkIfShouldProcessEvent(event) {
         return (event.target !== globalCache.currentElement &&
-
-            !$.contains(this.mainPopUpContainer[0], event.target))
+            !aContainsOrIsBNode(event.target, this.mainPopUpContainer[0]))
     }
 
     //HighlighterViewControllerSpecificUIDelegate
@@ -290,10 +292,12 @@ class FollowTutorialViewController {
     }
 
     #switchToAndShowStepAtIndex(stepIndex) {
+        //check if finished
         if (stepIndex >= TutorialsModel.getCurrentTutorial().steps.length) {
             this.stopCurrentTutorial();
             return;
         }
+        //update model and show current step
         TutorialsModel.changeCurrentTutorialStepIndexTo(stepIndex, () => {
             const type = UserEventListnerHandler.tutorialStatusCache;
             if (type === VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL) {
@@ -302,6 +306,9 @@ class FollowTutorialViewController {
             if (type === VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL) {
                 this.#showTutorialStepAuto();
             }
+
+            document.querySelectorAll('.w-workflow-list-cell-highlighted').forEach((element) => { element.classList.remove('w-workflow-list-cell-highlighted') })
+            document.getElementById('w-workflow-popup-workflow-step-' + stepIndex).classList.add('w-workflow-list-cell-highlighted')
         })
     }
 
@@ -317,7 +324,7 @@ class FollowTutorialViewController {
      */
     #showCurrentStep() {
         const currentStep = TutorialsModel.getCurrentStep();
-        c(currentStep)
+        c('current step:' + currentStep)
         if (TutorialsModel.checkIfCurrentURLMatchesPageURL()) {
             isManualFollowingTutorial() && this.#switchToManualFollowingTutorialView()
             isAutoFollowingTutorial() && this.#switchToAutoFollowingTutorialView()
@@ -417,6 +424,7 @@ class FollowTutorialViewController {
             this.#manualSelect.bind(this),
             this.#manualSideInstruction.bind(this)
         );
+
     }
 
     //------------------------------------------------------------------------------------------------------------
@@ -728,7 +736,6 @@ class FollowTutorialViewController {
 
     //UI switching controls
     #switchToMainWorkflowListView() {
-        c('main')
         this.mainPopUpContainer.show()
         if (this.mainPopupScrollArea.children().length > 0) {
             this.mainPopupFooter.hide()
@@ -739,32 +746,41 @@ class FollowTutorialViewController {
         this.highlightInstructionWindow.hide()
     }
 
-    #switchToManualFollowingTutorialView() {
+    #switchToFollowTutorialViewCommon() {
         this.mainPopupScrollArea.children().hide()
         this.mainPopupFooter.show()
-        this.popUpNextStepButton.show()
-        this.stopOptionsStopButton.show()
+        this.popUpCancelButton.show()
         this.automationChoicesCancelButton.hide()
         this.automationChoicesDoneButton.hide()
-
         this.popUpStepName.html('');
         this.popUpStepDescription.html('');
+        TutorialsModel.getCurrentTutorial().steps.forEach((step, index) => {
+            this.mainPopupScrollArea.append(`
+                <div class="w-workflow-list-cell" id="w-workflow-popup-workflow-step-${index}">
+                    <div class="w-workflow-list-cell-upper-container">
+                        <div class="w-workflow-list-cell-attribute-icon"></div>
+                        <div class="w-workflow-list-cell-name">${'Step ' + addOne(index) + ' ' + step.name}</div>
+                    </div>
+                </div>
+            `)
+        })
+    }
+
+    #switchToManualFollowingTutorialView() {
+        this.#switchToFollowTutorialViewCommon()
+        this.popUpNextStepButton.show()
     }
 
     #switchToAutoFollowingTutorialView() {
-        this.mainPopupScrollArea.children().hide()
-        this.mainPopupFooter.show()
+        this.#switchToFollowTutorialViewCommon()
         this.popUpNextStepButton.hide()
-        this.stopOptionsStopButton.show()
-        this.automationChoicesCancelButton.hide()
-        this.automationChoicesDoneButton.hide()
     }
 
     #switchToAutomationChoicesView() {
         this.mainPopupScrollArea.children().hide()
         this.mainPopupFooter.show()
         this.popUpNextStepButton.hide()
-        this.stopOptionsStopButton.hide()
+        this.popUpCancelButton.hide()
         this.automationChoicesCancelButton.show()
         this.automationChoicesDoneButton.show()
     }

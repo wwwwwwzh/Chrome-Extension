@@ -16,34 +16,34 @@ class RecorderTutorialCompletionChecker {
 
     static isStepComplete(step) {
         if (isStringEmpty(step.name)) {
-            DialogBox.present(`Missing step name at step ${step.index + 1}`)
+            DialogBox.present(`Missing step name at step ${addOne(step.index)}`)
             return false
         }
         return RecorderTutorialCompletionChecker.isActionObjectComplete(step)
     }
 
     static isActionObjectComplete(step) {
-        c('step:' + step)
         const actionObject = { ...step.actionObject, stepIndex: step.index }
         return Step.callFunctionOnActionType(step.actionType,
-            () => { RecorderTutorialCompletionChecker.isClickActionComplete(actionObject) },
+            () => { return RecorderTutorialCompletionChecker.isClickActionComplete(actionObject) },
             null,
-            () => { RecorderTutorialCompletionChecker.isInputActionComplete(actionObject) },
-            () => { RecorderTutorialCompletionChecker.isRedirectActionComplete(actionObject) },
+            () => { return RecorderTutorialCompletionChecker.isInputActionComplete(actionObject) },
+            () => { return RecorderTutorialCompletionChecker.isRedirectActionComplete(actionObject) },
             null,
-            () => { RecorderTutorialCompletionChecker.isSideInstructionActionComplete(actionObject) })
+            () => { return RecorderTutorialCompletionChecker.isSideInstructionActionComplete(actionObject) })
     }
 
     static isClickActionComplete(clickAction) {
-        c('clickAction' + clickAction)
-        const stepIndex = clickAction.stepIndex
-        const clicks = clickAction.clicks
+        var { clicks, stepIndex } = clickAction
         if (isArrayEmpty(clicks)) {
-            DialogBox.present(`Missing action at step ${stepIndex}`)
+            DialogBox.present(`Missing action at step ${addOne(stepIndex)}`)
             return false
         }
         if (clicks.length === 1) {
-            return RecorderTutorialCompletionChecker.isClickGuideComplete(clicks[0], false)
+            var click = clicks[0]
+            click.optionIndex = 0
+            click.stepIndex = stepIndex
+            return RecorderTutorialCompletionChecker.isClickGuideComplete(click, false)
         }
         var areClicksComplete = true
         for (let index = 0; index < clicks.length; index++) {
@@ -57,15 +57,14 @@ class RecorderTutorialCompletionChecker {
     }
 
     static isClickGuideComplete(clickGuide, mandatoryName = true) {
-        c('clickGuide' + clickGuide)
         if (mandatoryName) {
             if (isStringEmpty(clickGuide.name)) {
-                DialogBox.present(`Missing name for click option ${clickGuide.optionIndex} at step ${clickGuide.stepIndex}`)
+                DialogBox.present(`Missing name for click option ${addOne(clickGuide.optionIndex)} at step ${addOne(clickGuide.stepIndex)}`)
                 return false
             }
         }
         if (isArrayEmpty(clickGuide.path)) {
-            DialogBox.present(`Missing element to click for click option ${clickGuide.optionIndex} at step ${clickGuide.stepIndex}`)
+            DialogBox.present(`Missing element to click for click option ${addOne(clickGuide.optionIndex)} at step ${addOne(clickGuide.stepIndex)}`)
             return false
         }
         return true

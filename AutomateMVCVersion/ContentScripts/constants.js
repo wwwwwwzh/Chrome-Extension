@@ -500,6 +500,10 @@ function arrayContains(a, b) {
     return contains;
 }
 
+function aContainsOrIsBNode(a, b) {
+    return $.contains(b, a) || a.isSameNode(b)
+}
+
 function min(a, b) {
     return a > b ? b : a;
 }
@@ -533,6 +537,7 @@ function uuidv4() {
         (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
     );
 }
+
 function attributeToCamelCase(originalName) {
     var camelName = ''
     for (var i = 0; i < originalName.length; i++) {
@@ -545,4 +550,12 @@ function attributeToCamelCase(originalName) {
         }
     }
     return camelName
+}
+
+function addOne(num) {
+    return num + 1
+}
+
+function safeString(string, safe) {
+    return isStringEmpty(string) ? safe : string
 }
