@@ -179,7 +179,7 @@ class FollowTutorialViewController {
             case VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL:
                 TutorialsModel.smartInit(() => {
                     TutorialsModel.forEachTutorial((tutorial, index) => {
-                        this.#addTutorialButton(tutorial, index)
+                        this.#addTutorialSnapshotButton(tutorial, index)
                     })
                 })
                 break;
@@ -239,10 +239,26 @@ class FollowTutorialViewController {
         const firstStepOnPageIndex = TutorialsModel.getFirstStepIndexOnCurrentPage();
         if (firstStepOnPageIndex > -1) {
             this.#switchToAndShowStepAtIndex(firstStepOnPageIndex);
-            if (TutorialsModel.getCurrentStep().possibleReasonsForElementNotFound.length > 0) {
-                //show in highlight instruction window why might the cause of error be
+            const possibleReasonsForElementNotFound = TutorialsModel.getCurrentStep().possibleReasonsForElementNotFound
+            var message = '1. You didn\'t click within the highlighted area\n2. The webpage has been updated. Please use the report button'
+            if (possibleReasonsForElementNotFound.length > 0) {
+                possibleReasonsForElementNotFound.forEach((reason, index) => {
+                    message += index + 2 + '. ' + reason + '\n'
+                })
             }
+            DialogBox.present(message,
+                'Instruction for this step wasn\'t loaded properly. Here are some possible reasons.',
+                true,
+                'Report',
+                () => {
+                    this.#showReportView()
+                })
+
         }
+    }
+
+    #showReportView() {
+
     }
 
     //Controls
@@ -375,7 +391,7 @@ class FollowTutorialViewController {
         this.mainPopUpContainer.show()
         this.mainPopupFooter.hide()
         TutorialsModel.forEachTutorial((tutorial, index) => {
-            this.#addTutorialButton(tutorial, index)
+            this.#addTutorialSnapshotButton(tutorial, index)
         })
     }
 
@@ -674,7 +690,7 @@ class FollowTutorialViewController {
     }
 
 
-    #addTutorialButton(tutorial, index) {
+    #addTutorialSnapshotButton(tutorial, index) {
         const tutorialID = tutorial.id
         this.mainPopupScrollArea.append(`
                 <div class="w-workflow-list-cell" id=\"${tutorialID}\">
@@ -737,6 +753,7 @@ class FollowTutorialViewController {
     //UI switching controls
     #switchToMainWorkflowListView() {
         this.mainPopUpContainer.show()
+        this.mainPopupScrollArea.children('.w-workflow-popup-workflow-step').remove()
         if (this.mainPopupScrollArea.children().length > 0) {
             this.mainPopupFooter.hide()
             this.mainPopupScrollArea.children().show()
@@ -755,14 +772,23 @@ class FollowTutorialViewController {
         this.popUpStepName.html('');
         this.popUpStepDescription.html('');
         TutorialsModel.getCurrentTutorial().steps.forEach((step, index) => {
-            this.mainPopupScrollArea.append(`
-                <div class="w-workflow-list-cell" id="w-workflow-popup-workflow-step-${index}">
-                    <div class="w-workflow-list-cell-upper-container">
-                        <div class="w-workflow-list-cell-attribute-icon"></div>
-                        <div class="w-workflow-list-cell-name">${'Step ' + addOne(index) + ' ' + step.name}</div>
-                    </div>
-                </div>
-            `)
+            this.#addStepSnapshotButton(step, index)
+        })
+    }
+
+    #addStepSnapshotButton(step, index) {
+        const { name } = step
+        this.mainPopupScrollArea.append(`
+        <div class="w-workflow-list-cell w-workflow-popup-workflow-step" id="w-workflow-popup-workflow-step-${index}">
+            <div class="w-workflow-list-cell-upper-container">
+                <div class="w-workflow-list-cell-attribute-icon"></div>
+                <div class="w-workflow-list-cell-name">${'Step ' + addOne(index) + ' ' + name}</div>
+            </div>
+        </div>
+        `)
+        const element = document.getElementById(`w-workflow-popup-workflow-step-${index}`)
+        element.addEventListener('click', () => {
+
         })
     }
 
@@ -792,7 +818,7 @@ class FollowTutorialViewController {
         const ongoingWorkflowURL = TutorialsModel.getCurrentStep().url
         this.mainPopupScrollArea.append(`
         <div>
-            You have an ongoing workflow at ${ongoingWorkflowURL}
+            You have an ongoing workflow at <a href="${ongoingWorkflowURL}">${ongoingWorkflowURL}</a>
         </div>
         `)
     }

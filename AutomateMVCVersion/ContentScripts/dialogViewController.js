@@ -3,10 +3,10 @@ class DialogBox {
     static #mdcDialog = null
     static #jQueryDialog = null
 
-    static present(message, title, cancelable = false, okAction = () => { }) {
+    static present(message, title, cancelable = false, mainButtonText = 'OK', mainAction = () => { }) {
         if (DialogBox.#jQueryDialog) return
         $('body').append(`
-        <div id="w-dialog-container">
+        <div id="w-dialog-container" style="display: none;">
             <link rel="stylesheet" href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css">
             <div class="mdc-dialog">
                 <div class="mdc-dialog__container">
@@ -27,7 +27,7 @@ class DialogBox {
                         </button>` : ''}
                         <button type="button" class="mdc-button mdc-dialog__button" data-mdc-dialog-action="discard" id="w-dialog-discard-button">
                             <div class="mdc-button__ripple"></div>
-                            <span class="mdc-button__label">OK</span>
+                            <span class="mdc-button__label">${mainButtonText}</span>
                         </button>
                     </div>
                     </div>
@@ -38,7 +38,7 @@ class DialogBox {
         `);
 
         DialogBox.#mdcDialog = new mdc.dialog.MDCDialog(document.querySelector('.mdc-dialog'));
-        DialogBox.#mdcDialog.open()
+
         DialogBox.#mdcDialog.listen('MDCDialog:closed', () => {
             DialogBox.#jQueryDialog.remove()
             DialogBox.#mdcDialog = null
@@ -46,7 +46,10 @@ class DialogBox {
         })
         DialogBox.#jQueryDialog = $('#w-dialog-container')
         $('#w-dialog-discard-button').on('click', () => {
-            okAction()
+            mainAction()
         })
+        DialogBox.#jQueryDialog.show()
+        DialogBox.#mdcDialog.open()
+
     }
 }

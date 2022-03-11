@@ -785,6 +785,7 @@ class RecordTutorialViewController {
             'You cannot recover this recording once discarded',
             'Are you sure you want to discard this recording',
             true,
+            'Discard',
             this.#onDiscardTutorial.bind(this))
     }
 
