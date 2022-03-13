@@ -122,7 +122,7 @@ class TutorialsModel {
      * smartInit is preferred
      * @param {*} callback 
      */
-    static async initializeFromFirestore(callback = () => { }) {
+    static async #initializeFromFirestore(callback = () => { }) {
         await TutorialsModel.#getTutorialsQuerySnapshotFromFirestore()
         TutorialsModel.#tutorials = [];
         await TutorialsModel.#loadFromQuerySnapshot(callback)
@@ -172,13 +172,13 @@ class TutorialsModel {
                 UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_CREATING_NEW_TUTORIAL) {
                 chrome.storage.sync.get([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL], async (result) => {
                     const currentTutorial = result[VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL];
-                    TutorialsModel.initializeFromFirestore(() => {
+                    TutorialsModel.#initializeFromFirestore(() => {
                         TutorialsModel.#tutorials.unshift(currentTutorial)
                         TutorialsModel.saveToStorage(callback);
                     })
                 });
             } else {
-                TutorialsModel.initializeFromFirestore(callback)
+                TutorialsModel.#initializeFromFirestore(callback)
             }
         }, () => {
             chrome.storage.sync.get([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL, VALUES.STORAGE.ALL_OTHER_TUTORIALS, "ACO"], async (result) => {
@@ -207,37 +207,7 @@ class TutorialsModel {
     }
 
     /**
-     * Initialize tutorials from chrome.storage.sync. Use cases might include refreshing pages or 
-     * going to new pages. smartInit is preferred
-     * @param {*} callback 
-     */
-    static loadFromStorage(callback = () => { }) {
-        chrome.storage.sync.get([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL, VALUES.STORAGE.ALL_OTHER_TUTORIALS], (result) => {
-            const currentTutorial = result[VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL];
-            const allOtherTutorials = result[VALUES.STORAGE.ALL_OTHER_TUTORIALS];
-            TutorialsModel.#tutorials = [currentTutorial] ?? []
-            allOtherTutorials && TutorialsModel.#tutorials.push(allOtherTutorials)
-
-            console.log('loading ' + TutorialsModel.#tutorials.length + ' tutorials from storage')
-            callback();
-        });
-    }
-
-    /**
-     * Initialize only the first tutorial.
-     * @param {*} callback 
-     */
-    static loadActiveTutorialFromStorage(callback = () => { }) {
-        chrome.storage.sync.get([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL], (result) => {
-            const currentTutorial = result[VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL];
-            TutorialsModel.#tutorials = [currentTutorial];
-            callback();
-        });
-    }
-
-    /**
      * Save all tutorials to chrome.storage.sync
-     * @param {*} callback 
      */
     static saveToStorage(callback = () => { }) {
         console.log('saving ' + TutorialsModel.#tutorials.length + ' tutorials to storage')
@@ -249,7 +219,6 @@ class TutorialsModel {
 
     /**
      * Save current active tutorial to storage
-     * @param {*} callback 
      */
     static saveActiveTutorialToStorage(callback = () => { }) {
         console.log('saving active tutorial to storage' + TutorialsModel.#tutorials[0])
@@ -292,7 +261,7 @@ class TutorialsModel {
     }
 
     static onCreateNewStep() {
-        const id = uuidv4();
+        const id = uuidv4fourDigit();
         const step = new Step(id);
         if (TutorialsModel.getLastStepIndexForTutorial() < 0) {
             TutorialsModel.#tutorials[0].steps.push(step);
@@ -358,6 +327,18 @@ class TutorialsModel {
     static revertCurrentTutorialToInitialState() {
         TutorialsModel.changeCurrentTutorialStepIndexTo(0)
     }
+
+    static onTutorialFinished(callback) {
+        TutorialsModel.#checkIfReloadFromCloudIsNeeded(() => {
+            c('reloading from cloud')
+            TutorialsModel.#initializeFromFirestore(callback)
+        }, () => {
+            c('reverting current tutorial to initial state')
+            TutorialsModel.revertCurrentTutorialToInitialState()
+            callback()
+        })
+    }
+
 
 }
 

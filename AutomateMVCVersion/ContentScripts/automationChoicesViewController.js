@@ -4,10 +4,8 @@ class AutomationChoicesViewController {
     constructor(automationChoicesViewControllerDelegate) {
         this.automationChoicesViewControllerDelegate = automationChoicesViewControllerDelegate
         this.#constructAutomationControlObject()
-        if (!this.automationControlObject.areThereChoices) {
-            this.automationChoicesViewControllerDelegate.onNoAutomationChoiceDetected()
-            this.dismiss()
-        } else {
+
+        if (this.automationControlObject.areThereChoices) {
             this.#initializeUI()
         }
     }

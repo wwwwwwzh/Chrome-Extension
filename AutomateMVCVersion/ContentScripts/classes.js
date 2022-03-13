@@ -135,8 +135,7 @@ class UserEventListnerHandler {
      * And methods: onClick(), checkIfShouldProcessEvent(event), checkIfShouldPreventDefault(event)
      */
     static userEventListnerHandlerDelegate
-    static isLisentingRecording = false;
-    static isLisentingFollowing = false;
+    static isLisenting = false;
 
     //global status that determine if listeners should be added or removed
     static isAutomationInterrupt = false;
@@ -170,69 +169,56 @@ class UserEventListnerHandler {
     static #onChange() {
         //add or remove when recording or not recording
         if (UserEventListnerHandler.recordingIsHighlighting) {
-            if (!UserEventListnerHandler.isLisentingRecording) {
-                UserEventListnerHandler.#addGlobalEventListenersWhenRecording();
-                UserEventListnerHandler.isLisentingRecording = true;
+            if (!UserEventListnerHandler.isLisenting) {
+                UserEventListnerHandler.#addGlobalEventListeners();
+                UserEventListnerHandler.isLisenting = true;
             }
         } else {
-            if (UserEventListnerHandler.isLisentingRecording) {
-                UserEventListnerHandler.#removeGlobalEventListenersWhenRecording();
-                UserEventListnerHandler.isLisentingRecording = false;
+            if (UserEventListnerHandler.isLisenting) {
+                UserEventListnerHandler.#removeGlobalEventListeners();
+                UserEventListnerHandler.isLisenting = false;
             }
         }
 
         if (UserEventListnerHandler.isOnRightPage && (UserEventListnerHandler.isAutomationInterrupt || isManualFollowingTutorial())) {
-            if (!UserEventListnerHandler.isLisentingFollowing) {
-                UserEventListnerHandler.#addGlobalEventListenersWhenFollowing();
-                UserEventListnerHandler.isLisentingFollowing = true;
+            if (!UserEventListnerHandler.isLisenting) {
+                UserEventListnerHandler.#addGlobalEventListeners();
+                UserEventListnerHandler.isLisenting = true;
             }
         } else {
-            if (UserEventListnerHandler.isLisentingFollowing) {
-                UserEventListnerHandler.#removeGlobalEventListenersWhenFollowing();
-                UserEventListnerHandler.isLisentingFollowing = false;
+            if (UserEventListnerHandler.isLisenting) {
+                UserEventListnerHandler.#removeGlobalEventListeners();
+                UserEventListnerHandler.isLisenting = false;
             }
         }
 
-        if (DEBUG_OPTION && VALUES.DEBUG_MASKS.DEBUG_LOGGING) {
-            if (isRecordingTutorial()) {
-                if (!UserEventListnerHandler.isLisentingRecording) {
-                    UserEventListnerHandler.#addGlobalEventListenersWhenRecording();
-                    UserEventListnerHandler.isLisentingRecording = true;
+        if (DEBUG_OPTION & VALUES.DEBUG_MASKS.DEBUG_LOGGING) {
+            if (isRecordingTutorial() || isAutoFollowingTutorial() || isManualFollowingTutorial()) {
+                if (!UserEventListnerHandler.isLisenting) {
+                    UserEventListnerHandler.#addGlobalEventListeners();
+                    UserEventListnerHandler.isLisenting = true;
                 }
             } else {
-                if (UserEventListnerHandler.isLisentingRecording) {
-                    UserEventListnerHandler.#removeGlobalEventListenersWhenRecording();
-                    UserEventListnerHandler.isLisentingRecording = false;
+                if (UserEventListnerHandler.isLisenting) {
+                    UserEventListnerHandler.#removeGlobalEventListeners();
+                    UserEventListnerHandler.isLisenting = false;
                 }
             }
         }
     }
 
-    static #addGlobalEventListenersWhenRecording() {
+    static #addGlobalEventListeners() {
         // $('*').on('blur focus focusin focusout load resize scroll unload dblclick mousedown mouseup mousemove mouseover mouseout mouseenter mouseleave change select submit keydown keypress keyup error',
         //     UserEventListnerHandler.#preventDefaultHelper);
         // $('*').on('click', UserEventListnerHandler.#onClickHelper);
-
         //neew solution from: https://stackoverflow.com/questions/1755815/disable-all-click-events-on-page-javascript
         document.addEventListener("click", UserEventListnerHandler.#clickListener, true);
     }
 
-    static #removeGlobalEventListenersWhenRecording() {
+    static #removeGlobalEventListeners() {
         document.removeEventListener("click", UserEventListnerHandler.#clickListener, true);
     }
 
-    static #addGlobalEventListenersWhenFollowing() {
-        document.addEventListener("click", UserEventListnerHandler.#clickListener, true);
-    }
-
-    static #removeGlobalEventListenersWhenFollowing() {
-        document.removeEventListener("click", UserEventListnerHandler.#clickListener, true);
-    }
-
-    static removeAllListners() {
-        UserEventListnerHandler.#removeGlobalEventListenersWhenFollowing();
-        UserEventListnerHandler.#removeGlobalEventListenersWhenRecording();
-    }
 
     static #clickListener(event) {
         UserEventListnerHandler.#preventDefaultHelper(event);

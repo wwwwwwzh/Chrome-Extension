@@ -462,7 +462,7 @@ class RecordTutorialViewController {
     //UserEventListnerHandlerDelegate
     //logging is done inside user event handler
     onClick() {
-        if (UserEventListnerHandler.isLisentingRecording) {
+        if (UserEventListnerHandler.isLisenting) {
             this.#onClickWhenRecording();
         }
     }
