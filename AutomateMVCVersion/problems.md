@@ -9,7 +9,7 @@ function initTutorialsFromCloud() {
 }
 ```
 
-The next step is to persist the tutorial when the tutorial involves multiple webpages. First, loadTutorialsFromCloud function will also store tutorials to chrome storage. 
+The next step is to persist the tutorial when the tutorial involves multiple webpages. 
 
 ```javascript
 function initTutorialsFromCloud() {
@@ -20,18 +20,20 @@ function initTutorialsFromCloud() {
 ```
 
 Then tutorials need to be loaded at the right time. When the user enters another page, it can be that th user is following a tutorial or it's just another new page. Thus we need a user status singleton object and persist it in background. 
+
 ```javascript
 class UserStatus {
     static status: NOT_FOLLOWING_TUTORIAL | AUTO_FOLLOWING | MANUAL_FOLLOWING
 }
 ```
-When a webpage is loaded, the first thing to do is to check status. If it's not following, a initTutorialFromCloud happens. If it's following, then a initTutorialFromStorage happens. 
 
-However, if the user is refreshing the page when not following the tutorial, it's costly to load from cloud. Instead, a check function that checks if website has changed or certain wait timer has expired is used.
+When a webpage is loaded, the first thing is to check status. If it's NOT_FOLLOWING_TUTORIAL, a initTutorialFromCloud happens. If it's following, then a initTutorialFromStorage happens. 
+
+However, if the user is refreshing the page when not following any tutorial, it's costly to load from cloud. Instead, a check function that checks if website has changed or certain wait timer has expired is used.
 
 ```javascript
 function checkIfReloadFromCloudIsNeeded() {
-    return isWebsiteChanged || isTimerExpired
+    return isWebsiteChanged || isTimerExpired || otherCriteria
 }
 ```
 
@@ -49,8 +51,10 @@ function smartInit {
 }
 ```
 
+This can also handle recording and following right after recording correctly.
+
 # Event Listener Management
-Another problem involves listening to events both during following and recording. In normal web development, event listeners are bound to specific UI element (buttons, link, etc.). However, the extension needs to listen to every click and input event. When following tutorial, the extension checks if the right element is clicked. When recording, it has to both record the element being clicked on and "hijack" the event from propagating. This is mainly because the default event on an element might be a page redirect. If default behavior is allowed, the recorder can't preview this particular step while editing. 
+Another problem involves listening to events both during following and recording. In normal web development, event listeners are bound to specific UI element (buttons, link, etc.). However, the extension needs to listen to every click and input event. When following tutorial, the extension checks if the right element is clicked. When recording, it has to both record the element being clicked on and "hijack" the event from propagating. This is mainly because the default event on an element might be a page redirect. If default behavior is allowed, the recorder can't preview this particular step correctly while editing. 
 
 This can be divided into 2 subproblems:
 1. when and what listener should be added
@@ -65,7 +69,7 @@ STATUS: {
     IS_AUTO_FOLLOWING_TUTORIAL,
 },
 ```
-IS_RECORDING and IS_MANUALLY_FOLLOWING_TUTORIAL means a global event listener is needed. IS_RECORDING also needs hijacking. DOING_NOTHING means listener should be removed.
+IS_RECORDING and IS_MANUALLY_FOLLOWING_TUTORIAL means a listener is needed. IS_RECORDING also needs hijacking. DOING_NOTHING means listener should be removed.
 
 This can be implemented by simply adding and removing listeners when state changes. However, state change occurs in many classes and occurs often. Thus, listener handling should be added the UserState class. Whenever the state changes, an onChange function is called and checks what listener should be added or removed. 
 
@@ -74,7 +78,10 @@ A minor problem is the UserState class doesn't and shouldn't know how to impleme
 ```js
 class UserState {
     static delegate
-    static userStateCache = TUTORIAL_STATUS.BEFORE_INIT;
+    static userStateCache = STATUS.DOING_NOTHING;
+
+    // this is needed because user might be recording but wants to see default behaviors.
+    // a highlight toogle is used in recording panel UI to set this
     static isRecorderHighlighting = false
 
     static setUserStateCache(userState) {
@@ -87,8 +94,7 @@ class UserState {
         UserState.#onChange();
     }
 
-    //other state setting functions
-
+    //other state setting functions (eg. during automation, there might be a required textfiled and a listener is needed, but right after the field is completed, listener should be removed since automation shouldn't listen to events)
 
     static #onChange() {
         //call addGlobalEventListeners or removeGlobalEventListeners depending on state
