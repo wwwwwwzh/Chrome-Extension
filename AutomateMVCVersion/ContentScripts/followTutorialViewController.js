@@ -193,7 +193,7 @@ class FollowTutorialViewController {
 
     //UserEventListnerHandlerDelegate
     onClick() {
-        if (isManualFollowingTutorial() || eventHandler.isAutomationInterrupt) {
+        if (isManualFollowingTutorial() || UserEventListnerHandler.isAutomationInterrupt) {
             this.onClickWhenFollowingTutorial();
         }
     }
@@ -268,6 +268,9 @@ class FollowTutorialViewController {
             this.#switchToAutomationChoicesView()
             TutorialsModel.changeActiveTutorialToChosen(tutorialID)
             this.automationChoicesViewController = new AutomationChoicesViewController(this)
+            if (!this.automationChoicesViewController.automationControlObject.areThereChoices) {
+                this.#onNoAutomationChoiceDetected()
+            }
         } else {
             //UI
             this.#switchToManualFollowingTutorialView()
@@ -276,9 +279,10 @@ class FollowTutorialViewController {
         }
     }
 
-    onNoAutomationChoiceDetected() {
+    #onNoAutomationChoiceDetected() {
         this.mainPopupFooter.hide()
         UserEventListnerHandler.setTutorialStatusCache(VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL);
+        this.automationChoicesViewController.dismiss()
         this.automationChoicesViewController = null
         this.#showTutorialStepAuto()
     }
@@ -303,7 +307,7 @@ class FollowTutorialViewController {
                 this.#switchToAutoFollowingTutorialView()
             })
         } else {
-            //alert user
+            DialogBox.present('Please complete all choices')
         }
     }
 
@@ -363,20 +367,21 @@ class FollowTutorialViewController {
 
         const data = {};
         data[VALUES.STORAGE.REVISIT_PAGE_COUNT] = 0;
-        if (!isNotNull(TutorialsModel.getCurrentTutorial())) {
-            data[VALUES.TUTORIAL_STATUS.STATUS] = VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL;
-            syncStorageSetBatch(data, () => {
-                this.setOrUpdateWorkflowsPopupFromModel()
-                globalCache = new GlobalCache();
-            });
-        }
+        // if (!isNotNull(TutorialsModel.getCurrentTutorial())) {
+        //     data[VALUES.TUTORIAL_STATUS.STATUS] = VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL;
+        //     syncStorageSetBatch(data, () => {
+        //         this.setOrUpdateWorkflowsPopupFromModel()
+        //         globalCache = new GlobalCache();
+        //     });
+        // }
         if (TutorialsModel.checkIfCurrentURLMatchesPageURL()) {
             //stop from within page
             data[VALUES.TUTORIAL_STATUS.STATUS] = VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL;
             syncStorageSetBatch(data, () => {
-                TutorialsModel.revertCurrentTutorialToInitialState();
+                //TutorialsModel.revertCurrentTutorialToInitialState();
                 UserEventListnerHandler.setTutorialStatusCache(VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL)
-                this.#switchToMainWorkflowListView()
+                TutorialsModel.onTutorialFinished(this.#switchToMainWorkflowListView.bind(this))
+
                 globalCache = new GlobalCache();
             });
         }
@@ -387,12 +392,22 @@ class FollowTutorialViewController {
         // }
     }
 
+    /**
+     * show the popup without footer
+     * iterate through all tutorials and create snapshot buttons on main popup
+     * if no tutorial exists, close the popup
+     */
     setOrUpdateWorkflowsPopupFromModel() {
         this.mainPopUpContainer.show()
         this.mainPopupFooter.hide()
+        var areThereTutorials = false
         TutorialsModel.forEachTutorial((tutorial, index) => {
+            areThereTutorials = true
             this.#addTutorialSnapshotButton(tutorial, index)
         })
+        if (!areThereTutorials) {
+            this.dismiss()
+        }
     }
 
     //INCOMPLETE
