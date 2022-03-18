@@ -36,6 +36,7 @@ class UserActionLogger {
     static #lastTimestamp = 0
     static #currentTimestampStackStartTimestamp = 0
 
+
     static log(type, blob, callback = () => { }) {
         if (!((DEBUG_OPTION && VALUES.DEBUG_MASKS.DEBUG_LOGGING) || (DEBUG_OPTION && VALUES.DEBUG_MASKS.PRODUCTION_LOGGING))) return
         UserActionLogger.cache.push({
