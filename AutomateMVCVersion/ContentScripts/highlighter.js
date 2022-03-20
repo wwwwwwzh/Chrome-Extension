@@ -43,8 +43,11 @@ class Highlighter {
             removeLastHighlight && Highlighter.removeLastHighlight();
             jQElement.addClass('w-highlight-box w-highlight-box-specifier');
             (Highlighter.#ALERT_MASK & type) && Highlighter.#alertElement(jQElement);
-            (Highlighter.#SCROLL_MASK & type) && Highlighter.#scrollToElement(jQElement, callback)
-            Highlighter.highlighterViewControllerSpecificUIDelegate.useInstructionWindow && Highlighter.#updateHighlightInstructionWindow(jQElement);
+            (Highlighter.#SCROLL_MASK & type) && Highlighter.#scrollToElement(jQElement, () => {
+                Highlighter.highlighterViewControllerSpecificUIDelegate.useInstructionWindow && Highlighter.#updateHighlightInstructionWindow(jQElement);
+                callback()
+            })
+            !(Highlighter.#SCROLL_MASK & type) && Highlighter.highlighterViewControllerSpecificUIDelegate.useInstructionWindow && Highlighter.#updateHighlightInstructionWindow(jQElement);
         }
 
         function getjQElementFromPathAndNullCheck() {
@@ -93,18 +96,30 @@ class Highlighter {
     }
 
     static #scrollToElement(jQElementToHighlight, callback) {
-        Highlighter.#currentJQScrollingParent = $(getScrollParent(jQElementToHighlight[0], false));
-        var offset = 0;
-        const eleOffset = jQElementToHighlight.offset();
-        const scrollParentOffset = Highlighter.#currentJQScrollingParent.offset();
-        if (isNotNull(eleOffset) && isNotNull(scrollParentOffset)) {
-            offset = parseInt(eleOffset.top) - parseInt(scrollParentOffset.top) - window.innerHeight / 2
-        }
-        Highlighter.#currentJQScrollingParent.animate({
-            scrollTop: `+=${offset}px`
-        }, globalCache.interval).promise().then(() => {
-            callback();
-        })
+        jQElementToHighlight[0].scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+        });
+        callback()
+        var scrollTimeout;
+        addEventListener('scroll', function (e) {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(function () {
+                callback()
+            }, 100);
+        });
+        // Highlighter.#currentJQScrollingParent = $(getScrollParent(jQElementToHighlight[0], false));
+        // var offset = 0;
+        // const eleOffset = jQElementToHighlight.offset();
+        // const scrollParentOffset = Highlighter.#currentJQScrollingParent.offset();
+        // if (isNotNull(eleOffset) && isNotNull(scrollParentOffset)) {
+        //     offset = parseInt(eleOffset.top) - parseInt(scrollParentOffset.top) - window.innerHeight / 2
+        // }
+        // Highlighter.#currentJQScrollingParent.animate({
+        //     scrollTop: offset
+        // }, 500).promise().then(() => {
+        //     callback();
+        // })
     }
 
 
