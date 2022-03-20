@@ -8,14 +8,18 @@ Recording of such tutorial is easy and intuitive. Following tutorials can be eit
 # Examples
 ## Following Tutorials
 ### Manual
-![ ](./assets/Intro-Videos/followMeGithubFollowing.mp4)
-![ ](./assets/Intro-Videos/followMeGradescopeFollowing.mov)
+https://user-images.githubusercontent.com/36484215/159187591-ebbc77ed-f2e0-4cab-8c0e-523810321fb7.mp4
+
+https://user-images.githubusercontent.com/36484215/159187596-d376e8fa-0d43-4579-bc5f-dbed5b6c570f.mov
+
 
 ### Automatic
 Automatically follow both tutorials
-![ ](./assets/Intro-Videos/followMeAutoFollowing.mov)
+
+https://user-images.githubusercontent.com/36484215/159186983-99aaa145-df49-4904-bda0-602cd14fd022.mov
 
 ## Recording Turorials
 Recording the Github token generation tutorial
-![ ](./assets/Intro-Videos/followMeGithubRecording.mp4)
+
+https://user-images.githubusercontent.com/36484215/159187594-b1306947-3ac8-4476-b5b1-d9f794def6fa.mp4
 
