@@ -373,15 +373,10 @@
     cursor: grab;
 }
 
-.w-wrong-page-redirect-button {
-    all: initial;
-    display: block;
-    max-width: var(--popup-innerWidth);
+.w-wrong-page-message-container {
+    width: var(--popup-innerWidth);
     overflow-wrap: break-word;
-    color: black;
-    margin-top: 20px;
-    padding: 6px;
-    line-height: normal;
+    white-space: normal;
 }
 
 .w-workflow-list-popup-footer {
@@ -404,6 +399,48 @@
 .w-workflow-list-popup-footer-cell:hover {
     background-color: rgb(253, 96, 96);
 }
+
+
+
+
+.w-rating-stars-container {
+	position: relative;
+    width: fit-content;
+    
+    height: fit-content;
+    margin: auto;
+    margin-top: 30px;
+    text-align: center;
+    display: flex;
+}
+.w-rating-star-container {
+	position: relative;
+    width: 30px;
+    height: 30px;
+}
+.checked {
+    cursor: pointer;
+	position: absolute;
+    color: orange;
+    left: 0px;
+    top: 0px;
+}
+.unchecked {
+    cursor: pointer;
+	position: absolute;
+    left: 0px;
+    top: 0px;
+}
+
+
+
+
+
+
+
+
+
+
 /* -------------------------------------------------------------- */
 /* recording --------------------------------------------------------------*/
 /* -------------------------------------------------------------- */

@@ -214,22 +214,22 @@ function jQueryinsertAt(parent, index, child) {
 }
 /**
  * 
- * @param {*} shouldSelect jQuery element
- * @param {*} isSelecting jQuery element. Will automaticaclly select the first
+ * @param {*} shouldSelect array path
+ * @param {*} isSelecting array path
  * @returns 
  */
 function isSelectedOnRightElement(isSelectingPath, shouldSelectPath) {
     var isSelecting = isSelectingPath; //jQuery single element
     var shouldSelect = shouldSelectPath; //jQuery object from selector
     var type = SELECTOR_TYPES.EXACT;
-    for (let i = 0; i < shouldSelectPath.length; i++) {
-        if (shouldSelectPath[i].includes('=')) {
-            // regex selector
-            isSelecting = $(jqueryElementStringFromDomPath(isSelectingPath)).get(0);
-            shouldSelect = $(jqueryElementStringFromDomPath(shouldSelectPath));
-            type = SELECTOR_TYPES.REGEX;
-        }
-    }
+    // for (let i = 0; i < shouldSelectPath.length; i++) {
+    //     if (shouldSelectPath[i].includes('=')) {
+    //         // regex selector
+    //         isSelecting = $(jqueryElementStringFromDomPath(isSelectingPath)).get(0);
+    //         shouldSelect = $(jqueryElementStringFromDomPath(shouldSelectPath));
+    //         type = SELECTOR_TYPES.REGEX;
+    //     }
+    // }
     var isSelectedOnRightElement = false;
     switch (type) {
         case SELECTOR_TYPES.EXACT:
@@ -244,6 +244,10 @@ function isSelectedOnRightElement(isSelectingPath, shouldSelectPath) {
             break;
         default:
             break;
+    }
+
+    if (!TutorialsModel.checkIfCurrentURLMatchesPageURL()) {
+        isSelectedOnRightElement = false;
     }
 
     return isSelectedOnRightElement;
@@ -335,9 +339,26 @@ function getNearestTableOrList(element) {
     return null;
 }
 
+function regexFromUrl(url) {
+    let subs = url.split('/')
+    var regex = subs[0] + '//' + subs[2]
+    for (let index = 3; index < subs.length; index++) {
+        let sub = subs[index];
+        if (/^[a-z]+$/i.test(sub)) {
+            regex += '/A';
+        } else if (/^[0-9]+$/i.test(sub)) {
+            regex += '/0';
+        } else {
+            regex += '/X';
+        }
+    }
+
+    return '$' + regex + '$'
+}
+
 function checkIfUrlMatch(urlToMatch, testingUrl) {
-    // c('urlToMatch:' + urlToMatch + 'testingUrl:' + testingUrl)
-    if (urlToMatch[0] === '/') {
+    c('urlToMatch:' + urlToMatch + 'testingUrl:' + testingUrl)
+    if (urlToMatch[0] === '$') {
         const regex = new RegExp(urlToMatch.substr(1, urlToMatch.length - 2));
         return regex.test(testingUrl);
     } else {

@@ -33,7 +33,7 @@ class Highlighter {
         var jQElement = element
         //get jQElement from path array
         if (Array.isArray(element)) {
-            jQElement = getjQElementFromPathAndNullCheck();
+            jQElement = Highlighter.nullCheckAndGetjQElementFromPath(element, removeLastHighlight, type, callback);
             if (!checkIfNeedToHighlight()) return;
         }
 
@@ -50,34 +50,7 @@ class Highlighter {
             !(Highlighter.#SCROLL_MASK & type) && Highlighter.highlighterViewControllerSpecificUIDelegate.useInstructionWindow && Highlighter.#updateHighlightInstructionWindow(jQElement);
         }
 
-        function getjQElementFromPathAndNullCheck() {
-            //TODO: regex path may highlight multiple elements, show all or what
-            const jQElementToHighlight = $(jqueryElementStringFromDomPath(element));
-            if (element !== null) {
-                if (!(isNotNull(jQElementToHighlight[0]) && jQElementToHighlight.css('display') !== 'none')) {
-                    //element not found
-                    Highlighter.highlighterViewControllerSpecificUIDelegate.useInstructionWindow && Highlighter.highlighterViewControllerSpecificUIDelegate.highlightInstructionWindow.hide();
 
-                    if (globalCache.reHighlightAttempt > 5) {
-                        //stop refinding element
-                        console.error("ELEMENT NOT FOUND");
-                        Highlighter.#reHighlightTimer = null;
-                        Highlighter.highlighterViewControllerSpecificUIDelegate.highlightedElementNotFoundHandler();
-                        return null;
-                    }
-                    globalCache.reHighlightAttempt++;
-                    Highlighter.#reHighlightTimer = setTimeout(() => {
-                        Highlighter.highlight(element, removeLastHighlight, type, callback);
-                    }, 200);
-                    return null;
-                }
-                globalCache.reHighlightAttempt = 0;
-                Highlighter.#clearRehighlightTimer();
-                return jQElementToHighlight;
-            } else {
-                return null
-            }
-        }
 
         function checkIfNeedToHighlight() {
             if (!isNotNull(jQElement)) return false;
@@ -92,6 +65,37 @@ class Highlighter {
             }
 
             return true
+        }
+    }
+
+    static checkIfElementPathIsHighlightable(element) {
+        const jQElementToHighlight = $(jqueryElementStringFromDomPath(element));
+        return (element !== null && isNotNull(jQElementToHighlight[0]) && !(jQElementToHighlight.css('display') == 'none') && jQElementToHighlight.is(":visible"));
+    }
+
+    static nullCheckAndGetjQElementFromPath(element, removeLastHighlight, type, callback) {
+        //TODO: regex path may highlight multiple elements, show all or what
+        if (Highlighter.checkIfElementPathIsHighlightable(element)) {
+            globalCache.reHighlightAttempt = 0;
+            Highlighter.#clearRehighlightTimer();
+            const jQElementToHighlight = $(jqueryElementStringFromDomPath(element));
+            return jQElementToHighlight;
+        } else {
+            //element not found
+            Highlighter.highlighterViewControllerSpecificUIDelegate.useInstructionWindow && Highlighter.highlighterViewControllerSpecificUIDelegate.highlightInstructionWindow.hide();
+
+            if (globalCache.reHighlightAttempt > 5) {
+                //stop refinding element
+                console.error("ELEMENT NOT FOUND");
+                Highlighter.#reHighlightTimer = null;
+                Highlighter.highlighterViewControllerSpecificUIDelegate.highlightedElementNotFoundHandler();
+                return null;
+            }
+            globalCache.reHighlightAttempt++;
+            Highlighter.#reHighlightTimer = setTimeout(() => {
+                Highlighter.highlight(element, removeLastHighlight, type, callback);
+            }, 200);
+            return null;
         }
     }
 

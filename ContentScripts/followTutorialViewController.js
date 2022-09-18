@@ -80,6 +80,31 @@ class FollowTutorialViewController {
     //Local Variables
     #sideInstructionAutoNextTimer = null;
     #isMainPopUpCollapsed = false;
+    #setIsMainPopUpCollapsed(newValue) {
+        if (newValue === this.#isMainPopUpCollapsed) return;
+        this.#isMainPopUpCollapsed = newValue;
+        if (!this.#isMainPopUpCollapsed) {
+            //open normal list view
+            this.mainPopUpContainer.removeClass('w-workflow-list-popup-collapsed');
+            this.mainPopUpContainer.addClass('w-workflow-list-popup-normal');
+            this.mainCloseButton.removeClass('w-close-button-collapsed');
+            this.mainCloseButton.addClass('w-close-button');
+            this.mainPopUpContainer.find('.w-should-reopen').show();
+            this.mainPopUpContainer.find('.w-should-reopen').removeClass('w-should-reopen');
+        } else {
+            //collapse popup
+            this.mainPopUpContainer.find(':visible').each((i, element) => {
+                $(element).addClass('w-should-reopen');
+            })
+            this.mainPopUpContainer.removeClass('w-workflow-list-popup-normal');
+            this.mainPopUpContainer.addClass('w-workflow-list-popup-collapsed');
+            this.mainPopUpContainer.children().hide();
+            this.mainCloseButton.removeClass('w-close-button');
+            this.mainCloseButton.addClass('w-close-button-collapsed');
+            this.mainCloseButton.show()
+            this.mainDraggableArea.show();
+        }
+    }
 
     //Delegates
     followTutorialViewControllerDelegate;
@@ -136,26 +161,9 @@ class FollowTutorialViewController {
 
     #onMainPopupCloseButtonClicked() {
         if (this.#isMainPopUpCollapsed) {
-            this.mainPopUpContainer.removeClass('w-workflow-list-popup-collapsed');
-            this.mainPopUpContainer.addClass('w-workflow-list-popup-normal');
-            this.mainCloseButton.removeClass('w-close-button-collapsed');
-            this.mainCloseButton.addClass('w-close-button');
-            this.mainPopUpContainer.find('.w-should-reopen').show();
-            this.mainPopUpContainer.find('.w-should-reopen').removeClass('w-should-reopen');
-
-            this.#isMainPopUpCollapsed = false;
+            this.#setIsMainPopUpCollapsed(false);
         } else {
-            this.mainPopUpContainer.find(':visible').each((i, element) => {
-                $(element).addClass('w-should-reopen');
-            })
-            this.mainPopUpContainer.removeClass('w-workflow-list-popup-normal');
-            this.mainPopUpContainer.addClass('w-workflow-list-popup-collapsed');
-            this.mainPopUpContainer.children().hide();
-            this.mainCloseButton.removeClass('w-close-button');
-            this.mainCloseButton.addClass('w-close-button-collapsed');
-            this.mainCloseButton.show()
-            this.mainDraggableArea.show();
-            this.#isMainPopUpCollapsed = true;
+            this.#setIsMainPopUpCollapsed(true);
         }
     }
 
@@ -230,31 +238,50 @@ class FollowTutorialViewController {
             mainPopupRect.top > instructionWindow.bottom)
         if (overlap) {
             if (isManualFollowingTutorial()) {
-                this.#onMainPopupCloseButtonClicked()
+                this.#setIsMainPopUpCollapsed(true);
             }
         }
     }
 
     highlightedElementNotFoundHandler() {
-        const firstStepOnPageIndex = TutorialsModel.getFirstStepIndexOnCurrentPage();
-        if (firstStepOnPageIndex > -1) {
-            this.#switchToAndShowStepAtIndex(firstStepOnPageIndex);
-            const possibleReasonsForElementNotFound = TutorialsModel.getCurrentStep().possibleReasonsForElementNotFound
-            var message = '1. You didn\'t click within the highlighted area\n2. The webpage has been updated. Please use the report button'
-            if (possibleReasonsForElementNotFound.length > 0) {
-                possibleReasonsForElementNotFound.forEach((reason, index) => {
-                    message += index + 2 + '. ' + reason + '\n'
-                })
+        c("highlightedElementNotFoundHandler()")
+        var indexOnCurrentPageOfStep = 0;
+        while (true) {
+            const stepIndexToTry = TutorialsModel.getNthStepIndexOnCurrentPage(indexOnCurrentPageOfStep);
+            if (stepIndexToTry < 0) {
+                this.#presentPossibleReasonsForElementNotFoundDialog();
+                break;
             }
-            DialogBox.present(message,
-                'Instruction for this step wasn\'t loaded properly. Here are some possible reasons.',
-                true,
-                'Report',
-                () => {
-                    this.#showReportView()
-                })
-
+            const pathFromStepToTry = Step.getPath(TutorialsModel.getStepOfCurrentTutorialAtIndex(stepIndexToTry));
+            const isStepHighlightable = Highlighter.checkIfElementPathIsHighlightable(pathFromStepToTry);
+            if (isStepHighlightable) {
+                if (!isManualFollowingTutorial() && !isAutoFollowingTutorial()) {
+                    Highlighter.highlight(pathFromStepToTry);
+                } else {
+                    this.#switchToAndShowStepAtIndex(stepIndexToTry);
+                }
+                break;
+            } else {
+                indexOnCurrentPageOfStep++;
+            }
         }
+    }
+
+    #presentPossibleReasonsForElementNotFoundDialog() {
+        const possibleReasonsForElementNotFound = TutorialsModel.getCurrentStep().possibleReasonsForElementNotFound;
+        var message = '1. You didn\'t click within the highlighted area\n2. The webpage has been updated. Please use the report button'
+        if (possibleReasonsForElementNotFound.length > 0) {
+            possibleReasonsForElementNotFound.forEach((reason, index) => {
+                message += index + 2 + '. ' + reason + '\n'
+            })
+        }
+        DialogBox.present(message,
+            'Instruction for this step wasn\'t loaded properly. Here are some possible reasons.',
+            true,
+            'Report',
+            () => {
+                this.#showReportView()
+            })
     }
 
     #showReportView() {
@@ -314,7 +341,7 @@ class FollowTutorialViewController {
     #switchToAndShowStepAtIndex(stepIndex) {
         //check if finished
         if (stepIndex >= TutorialsModel.getCurrentTutorial().steps.length) {
-            this.stopCurrentTutorial();
+            this.stopCurrentTutorial(true);
             return;
         }
         //update model and show current step
@@ -358,12 +385,12 @@ class FollowTutorialViewController {
         this.#switchToAndShowStepAtIndex(TutorialsModel.getCurrentTutorial().currentStepIndex + 1);
     }
 
-    stopCurrentTutorial() {
+    stopCurrentTutorial(whenFinishedTutorial = false) {
         //UI
-        Highlighter.removeLastHighlight()
+        Highlighter.removeLastHighlight();
         clearTimeout(this.#sideInstructionAutoNextTimer);
         this.#sideInstructionAutoNextTimer = null;
-        this.highlightInstructionWindow.hide()
+        this.highlightInstructionWindow.hide();
 
         const data = {};
         data[VALUES.STORAGE.REVISIT_PAGE_COUNT] = 0;
@@ -378,10 +405,13 @@ class FollowTutorialViewController {
             //stop from within page
             data[VALUES.TUTORIAL_STATUS.STATUS] = VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL;
             syncStorageSetBatch(data, () => {
-                //TutorialsModel.revertCurrentTutorialToInitialState();
-                UserEventListnerHandler.setTutorialStatusCache(VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL)
-                TutorialsModel.onTutorialFinished(this.#switchToMainWorkflowListView.bind(this))
-
+                UserEventListnerHandler.setTutorialStatusCache(VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL);
+                if (whenFinishedTutorial) {
+                    TutorialsModel.onTutorialFinished();
+                    this.#switchToRateTutorialView();
+                } else {
+                    TutorialsModel.onTutorialFinished(this.#switchToMainWorkflowListView.bind(this))
+                }
                 globalCache = new GlobalCache();
             });
         }
@@ -399,7 +429,8 @@ class FollowTutorialViewController {
      */
     setOrUpdateWorkflowsPopupFromModel() {
         this.mainPopUpContainer.show()
-        this.mainPopupFooter.hide()
+        this.mainPopupFooter.hide();
+        this.mainPopupFooter.removeClass('w-should-reopen');
         var areThereTutorials = false
         TutorialsModel.forEachTutorial((tutorial, index) => {
             areThereTutorials = true
@@ -413,7 +444,7 @@ class FollowTutorialViewController {
     //INCOMPLETE
     #onEnteredWrongPage(currentStep) {
         c('wrong page' + currentStep)
-        this.#onMainPopupCloseButtonClicked()
+        //this.#onMainPopupCloseButtonClicked()
         this.#switchToWrongPageView()
 
         // for (let i = 0; i < tutorialObj.steps.length; i++) {
@@ -767,11 +798,14 @@ class FollowTutorialViewController {
 
     //UI switching controls
     #switchToMainWorkflowListView() {
-        this.mainPopUpContainer.show()
-        this.mainPopupScrollArea.children('.w-workflow-popup-workflow-step').remove()
+        this.mainPopUpContainer.show();
+        this.#setIsMainPopUpCollapsed(false);
+        this.mainPopupScrollArea.children('.w-workflow-popup-workflow-step').remove();
+        document.getElementById('w-rating-stars-container-after-tutorial').remove();
         if (this.mainPopupScrollArea.children().length > 0) {
-            this.mainPopupFooter.hide()
-            this.mainPopupScrollArea.children().show()
+            this.mainPopupFooter.hide();
+            this.mainPopupScrollArea.children().show();
+
         } else {
             this.setOrUpdateWorkflowsPopupFromModel()
         }
@@ -832,9 +866,71 @@ class FollowTutorialViewController {
 
         const ongoingWorkflowURL = TutorialsModel.getCurrentStep().url
         this.mainPopupScrollArea.append(`
-        <div>
-            You have an ongoing workflow at <a href="${ongoingWorkflowURL}">${ongoingWorkflowURL}</a>
+        <div class="w-wrong-page-message-container">
+            You have an ongoing workflow at 
+            <a href="${ongoingWorkflowURL}">${ongoingWorkflowURL}</a>
         </div>
         `)
+    }
+
+    #switchToRateTutorialView() {
+        this.mainPopUpContainer.show();
+        this.#setIsMainPopUpCollapsed(false);
+        this.mainPopupScrollArea.children('.w-workflow-popup-workflow-step').remove();
+        this.mainPopupFooter.hide();
+        this.highlightInstructionWindow.hide();
+        this.mainPopupScrollArea.append(`
+        <div class="w-rating-stars-container" id="w-rating-stars-container-after-tutorial">
+            <div class="w-rating-star-container" id="w-rating-star-1">
+                <span class="fa fa-star unchecked"></span>
+                <span class="fa fa-star checked" style="display: none"></span>
+            </div>
+            <div class="w-rating-star-container" id="w-rating-star-2" >
+                <span class="fa fa-star unchecked"></span>
+                <span class="fa fa-star checked"style="display: none"></span>
+            </div>
+            <div class="w-rating-star-container" id="w-rating-star-3">
+                <span class="fa fa-star unchecked"></span>
+                <span class="fa fa-star checked" style="display: none"></span>
+            </div>
+            <div class="w-rating-star-container" id="w-rating-star-4" >
+                <span class="fa fa-star unchecked"></span>
+                <span class="fa fa-star checked"style="display: none"></span>
+            </div>
+            <div class="w-rating-star-container" id="w-rating-star-5">
+                <span class="fa fa-star unchecked"></span>
+                <span class="fa fa-star checked" style="display: none"></span>
+            </div>
+        </div>
+        `)
+
+        const allStars = document.querySelectorAll(".w-rating-star-container");
+
+        document.querySelectorAll(".w-rating-star-container").forEach(star => {
+            star.addEventListener("mouseover", (e) => {
+                const starId = star.id;
+                const starNumber = parseInt(starId.slice(-1));
+                var currentId = 0;
+                allStars.forEach(starToCheck => {
+                    const checkedStar = starToCheck.getElementsByTagName("span")[1];
+                    if (currentId < starNumber) {
+                        checkedStar.style.display = "block";
+                    } else {
+                        checkedStar.style.display = "none";
+                    }
+                    currentId++;
+                })
+            });
+
+            star.addEventListener("click", e => {
+                if (TutorialsModel.isLoadingFromCloud) {
+                    TutorialsModel.registerFunctionForOnTutorialFinishedLoading(() => {
+                        this.#switchToMainWorkflowListView();
+                    })
+                } else {
+                    this.#switchToMainWorkflowListView();
+                }
+            });
+        });
     }
 }

@@ -66,7 +66,9 @@ class TutorialsModel {
 
     static #getMatchedTutorialsQuery() {
         const domainName = "https://" + globalCache.currentURLObj.hostname + "/";
-        const url_matches = [globalCache.currentUrl];
+        const regexName = regexFromUrl(globalCache.currentUrl)
+        const url_matches = [globalCache.currentUrl, regexName];
+        console.log(url_matches)
         return query(collection(ExtensionController.SHARED_FIRESTORE_REF,
             VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL),
             where(
@@ -116,6 +118,8 @@ class TutorialsModel {
         })
     }
 
+    static isLoadingFromCloud = false;
+
     /**
      * Load new query from firestore and initialize model.
      * Should be used when forcing a new firestore query.
@@ -129,6 +133,7 @@ class TutorialsModel {
     }
 
     static async #loadFromQuerySnapshot(callback = () => { }) {
+        TutorialsModel.isLoadingFromCloud = true;
         await Promise.all(TutorialsModel.#tutorialsQuerySnapshot.docs.map(async (tutorial) => {
             const tutorialID = tutorial.id;
             const tutorialData = tutorial.data();
@@ -162,7 +167,10 @@ class TutorialsModel {
             const tutorialObj = new TutorialObject(tutorialData.name, '', [], steps, tutorialData.all_urls, tutorialID)
             TutorialsModel.#tutorials.push(tutorialObj);
         }));
-        TutorialsModel.saveToStorage(callback);
+        TutorialsModel.saveToStorage(() => {
+            callback()
+            TutorialsModel.#onTutorialFinishedLoading();
+        });
     }
 
     static async smartInit(callback) {
@@ -226,14 +234,22 @@ class TutorialsModel {
     }
 
     static getFirstStepIndexOnCurrentPage() {
-        var firstStepIndexOnCurrentPage = -1;
+        return TutorialsModel.getNthStepIndexOnCurrentPage(0)
+    }
+
+    static getNthStepIndexOnCurrentPage(n) {
+        var nthStepIndexOnCurrentPage = -1;
+        var currentMatchingStepIndexOnCurrentPage = -1;
         TutorialsModel.#tutorials[0].steps.some((step, index) => {
             if (checkIfUrlMatch(step.url, globalCache.currentUrl)) {
-                firstStepIndexOnCurrentPage = index;
-                return true;
+                currentMatchingStepIndexOnCurrentPage++;
+                if (currentMatchingStepIndexOnCurrentPage === n) {
+                    nthStepIndexOnCurrentPage = index;
+                    return true;
+                }
             }
         });
-        return firstStepIndexOnCurrentPage;
+        return nthStepIndexOnCurrentPage;
     }
 
     //------------------------------------------------------------------------------------------
@@ -328,15 +344,31 @@ class TutorialsModel {
         TutorialsModel.changeCurrentTutorialStepIndexTo(0)
     }
 
-    static onTutorialFinished(callback) {
+    static onTutorialFinished(callback = () => { }) {
         TutorialsModel.#checkIfReloadFromCloudIsNeeded(() => {
             c('reloading from cloud')
             TutorialsModel.#initializeFromFirestore(callback)
         }, () => {
-            c('reverting current tutorial to initial state')
+            c('reverting current tutorial to initial state!')
             TutorialsModel.revertCurrentTutorialToInitialState()
             callback()
         })
+    }
+
+    static registerFunctionForOnTutorialFinishedLoading(fn) {
+        TutorialsModel.#onTutorialFinishedLoadingFunctions.push(fn)
+    }
+
+    // static removeFunctionForOnTutorialFinishedLoading(fn) {
+    //     TutorialsModel.#onTutorialFinishedLoadingFunctions.filter(item => item !== fn);
+    // }
+
+    static #onTutorialFinishedLoadingFunctions = [];
+
+    static #onTutorialFinishedLoading() {
+        TutorialsModel.#onTutorialFinishedLoadingFunctions.forEach(fn => { fn() })
+        TutorialsModel.#onTutorialFinishedLoadingFunctions = [];
+        TutorialsModel.isLoadingFromCloud = false;
     }
 
 

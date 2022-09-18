@@ -71,14 +71,26 @@ class RecorderTutorialCompletionChecker {
     }
 
     static isInputActionComplete(inputAction) {
-
+        if (isStringEmpty(inputAction.path)) {
+            DialogBox.present(`Missing input element for step ${addOne(inputAction.index)}`)
+            return false
+        }
+        return true
     }
 
     static isSideInstructionActionComplete(sideInstructionAction) {
-
+        if (isStringEmpty(sideInstructionAction.path)) {
+            DialogBox.present(`Missing element to click for step ${addOne(sideInstructionAction.index)}`)
+            return false
+        }
+        return true
     }
 
     static isRedirectActionComplete(redirectAction) {
-
+        if (isStringEmpty(redirectAction.url)) {
+            DialogBox.present(`Missing redirect URL for step ${addOne(redirectAction.index)}`)
+            return false
+        }
+        return true
     }
 }
