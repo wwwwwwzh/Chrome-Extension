@@ -428,6 +428,7 @@ class RecordTutorialViewController {
     }
 
     #checkStatus(status) {
+        console.trace();
         switch (status) {
             case VALUES.TUTORIAL_STATUS.IS_CREATING_NEW_TUTORIAL:
                 this.#onCreateNewRecording()

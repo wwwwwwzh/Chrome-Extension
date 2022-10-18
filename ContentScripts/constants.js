@@ -320,6 +320,14 @@ function makeElementDraggable(elmnt, target = elmnt) {
     }
 }
 
+function isOutOfPage(y, x) {
+    isOut = false;
+    if (y > (window.innerHeight - 120) || y < 0 || x > (window.innerWidth - 120) || x < 0) {
+        isOut = true;
+    }
+    return isOut;
+}
+
 /**
  * Receives HTML element and returns HTML element
  */

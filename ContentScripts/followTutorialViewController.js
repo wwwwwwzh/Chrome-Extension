@@ -7,7 +7,7 @@ class FollowTutorialViewController {
             <div class="w-workflow-list-popup-header">
                 <label id="w-draggable-symbol-container">✥</label>
                 <div class="w-search-bar-container">
-                    <input class="w-search-bar" type="text" title="Search">
+                    <input class="w-search-bar" type="text" title="Search" id="w-search-bar-input">
                     <img class="w-search-icon" src="./assets/imgs/icons/search.svg" title="Search">
                 </div>
             </div>
@@ -65,6 +65,8 @@ class FollowTutorialViewController {
 
     searchIconURL = chrome.runtime.getURL('assets/imgs/icons/search.svg');
     questionMarkURL = chrome.runtime.getURL('assets/imgs/icons/question-mark.svg');
+    searchingInput;
+    dragSymbol;
 
     highlightInstructionWindow;
     popUpStepName;
@@ -124,9 +126,14 @@ class FollowTutorialViewController {
         this.mainDraggableArea = $('#w-main-draggable-area');
         makeElementDraggable(this.mainDraggableArea[0], this.mainPopUpContainer[0]);
         makeElementDraggable(document.getElementById('w-draggable-symbol-container'), this.mainPopUpContainer[0]);
+        this.dragSymbol = $('#w-draggable-symbol-container');
+        this.dragSymbol.on('mousemove', this.#isPopupOutOfPage.bind(this))
+        this.mainDraggableArea.on('mousemove', this.#isPopupOutOfPage.bind(this))
 
         document.getElementsByClassName('w-search-icon')[0].src = this.searchIconURL
         $('.w-more-info-icon').attr('src', this.questionMarkURL)
+        this.searchingInput = $('#w-search-bar-input'); 
+        this.searchingInput.on('keyup', this.#onSearchingInputChanged.bind(this))
 
         this.mainCloseButton = $('#w-workflow-list-popup-close-button');
         this.mainCloseButton.on("click", this.#onMainPopupCloseButtonClicked.bind(this))
@@ -165,6 +172,36 @@ class FollowTutorialViewController {
         } else {
             this.#setIsMainPopUpCollapsed(true);
         }
+    }
+
+    #isPopupOutOfPage() {
+        const position = this.mainPopUpContainer[0].getBoundingClientRect()
+        //c("top: " + position.top + " left: " + position.left)
+        if (isOutOfPage(position.top, position.left)) {
+            this.#setIsMainPopUpCollapsed(true);
+        }
+    }
+
+    #onSearchingInputChanged() {
+        let searchInputVal= this.searchingInput.val();
+        this.searchingInput.attr("value", searchInputVal);
+        
+        TutorialsModel.forEachTutorial((tutorial, index) => {
+            const inputRegex = new RegExp(searchInputVal, "i");
+            let matchedLetter = 0;
+            for (let i = 0; i < searchInputVal.length - 1; i++) {
+                let slicedString = searchInputVal.slice(i, i+1);
+                if (new RegExp(slicedString, "i").test(tutorial.name)) {
+                    matchedLetter = matchedLetter + 1;
+                }
+            }
+            if(inputRegex.test(tutorial.name) || matchedLetter >= 0.5*tutorial.name.length) {
+                $(`#${tutorial.id}`).show();
+            } else {
+                c(0);
+                $(`#${tutorial.id}`).hide();
+            }
+        })
     }
 
     #getAllContentHTML() {
@@ -798,6 +835,7 @@ class FollowTutorialViewController {
 
     //UI switching controls
     #switchToMainWorkflowListView() {
+        console.trace()
         this.mainPopUpContainer.show();
         this.#setIsMainPopUpCollapsed(false);
         this.mainPopupScrollArea.children('.w-workflow-popup-workflow-step').remove();
