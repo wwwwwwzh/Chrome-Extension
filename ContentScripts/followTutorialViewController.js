@@ -77,7 +77,7 @@ class FollowTutorialViewController {
     automationChoicesCancelButton;
     automationChoicesDoneButton;
 
-    wrongPageRedirectButton;
+    // wrongPageRedirectButton;
 
     //Local Variables
     #sideInstructionAutoNextTimer = null;
@@ -154,8 +154,6 @@ class FollowTutorialViewController {
         this.automationChoicesDoneButton = $('#w-automation-choices-done-button');
         this.automationChoicesDoneButton.on('click', this.#onAutomationChoicesDone.bind(this));
         this.mainPopupFooter.hide()
-
-        // this.wrongPageRedirectButton = $('#w-wrong-page-redirect-button');
 
         //Highlight instruction window
         this.highlightInstructionWindow = $('#w-highlight-instruction-window');
@@ -902,11 +900,17 @@ class FollowTutorialViewController {
         this.mainPopupScrollArea.children().hide()
         this.mainPopupFooter.hide()
 
-        const ongoingWorkflowURL = TutorialsModel.getCurrentStep().url
+        // const ongoingWorkflowURL = TutorialsModel.getCurrentStep().url
+        // this.mainPopupScrollArea.append(`
+        // <div class="w-wrong-page-message-container">
+        //     You have an ongoing workflow at 
+        //     <a href="${ongoingWorkflowURL}">${ongoingWorkflowURL}</a>
+        // </div>
+        // `)
         this.mainPopupScrollArea.append(`
-        <div class="w-wrong-page-message-container">
-            You have an ongoing workflow at 
-            <a href="${ongoingWorkflowURL}">${ongoingWorkflowURL}</a>
+        <div class="w-wrong-page-message-container" style="text-align: center !important">
+             You have an ongoing workflow!
+             <button onclick="history.back()" style="border: 1px outside black !important">CLICK HERE TO GO BACK</button>
         </div>
         `)
     }
