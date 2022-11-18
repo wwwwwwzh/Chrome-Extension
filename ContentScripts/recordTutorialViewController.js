@@ -1237,6 +1237,34 @@ class RecordTutorialViewController {
         await updateDoc(docRef, {
             all_urls: Array.from(allUrls),
         })
+
+        //Iterator:
+        const values = allUrls.values();
+        const obj = values.next(); 
+        let urlString = obj.value; //Get the url string of the tutorial.
+
+        const strArray = urlString.split("/");
+        urlString = strArray[2]; //Get the "absolute" address
+
+        const urlQuery = await getDocs(collection(ExtensionController.SHARED_FIRESTORE_REF, VALUES.FIRESTORE_CONSTANTS.URL));
+        //Find matched doc => put this tutorial into it
+        urlQuery.forEach((docUrl) => {
+            if (docUrl.id == urlString) {
+                const tutorialRef = doc(ExtensionController.SHARED_FIRESTORE_REF, VALUES.FIRESTORE_CONSTANTS.URL, docUrl.id, VALUES.FIRESTORE_CONSTANTS.URL_ALLURL, docId);
+                setDoc(tutorialRef, {
+                    regexUrl: numRegexUrl(allUrls)
+                }) //Add tut into an existing url document.
+                return;
+            }
+        })
+
+        //Did not find existed doc => create a new doc, put this tutorial into it
+        await setDoc(doc(ExtensionController.SHARED_FIRESTORE_REF, VALUES.FIRESTORE_CONSTANTS.URL, urlString), {
+            notes: ""
+        });
+        await setDoc(doc(ExtensionController.SHARED_FIRESTORE_REF, VALUES.FIRESTORE_CONSTANTS.URL, urlString, VALUES.FIRESTORE_CONSTANTS.URL_ALLURL, docId), {
+            regexUrl: numRegexUrl(allUrls)
+        })
     }
 
     dismiss() {

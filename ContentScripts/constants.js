@@ -63,6 +63,8 @@ const VALUES = {
         CURRENT_RECORDING_TUTORIAL_STEP_INDEX: "CURRENT_RECORDING_TUTORIAL_STEP_INDEX",
     },
     FIRESTORE_CONSTANTS: {
+        URL: "Url",
+        URL_ALLURL: "allUrl",
         SIMPLE_TUTORIAL: "Simple Tutorials",
         SIMPLE_TUTORIAL_STEPS: "Steps",
         SIMPLE_TUTORIAL_ALL_URLS: "all_urls",
@@ -345,6 +347,34 @@ function getNearestTableOrList(element) {
         return ol;
     }
     return null;
+}
+
+/**
+ * Transfer all urls into regex form. 
+ * Rule (may change in the future): Transfering all parts between "/" that contains numbers into reg expression.  
+ * @param {allUrls} a set contains all the urls.
+ * @returns a list that contains string elements which represents urls with Regex.
+ */
+function numRegexUrl (allUrls) {
+    const urlList = Array.from(allUrls);
+    var regexList = [];
+    var hasNumber = /\d/;   //Regex for a number
+
+    //For loop checking each section of every url
+    for (var i = 0; i < urlList.length; i++) {
+        var splitArray = urlList[i].split("/");
+        var tempString = splitArray[0] + "//" + splitArray[2];
+        for (var j = 3; j < splitArray.length; j++) {
+            if (hasNumber.test(splitArray[j])) {
+                tempString = tempString + "/.*";
+            } else {
+                tempString = tempString + "/" + splitArray[j];
+            }
+        }
+        tempString = "$" + tempString + "$";
+        regexList.push(tempString);
+    }
+    return regexList;
 }
 
 function regexFromUrl(url) {
