@@ -132,7 +132,7 @@ class FollowTutorialViewController {
 
         document.getElementsByClassName('w-search-icon')[0].src = this.searchIconURL
         $('.w-more-info-icon').attr('src', this.questionMarkURL)
-        this.searchingInput = $('#w-search-bar-input'); 
+        this.searchingInput = $('#w-search-bar-input');
         this.searchingInput.on('keyup', this.#onSearchingInputChanged.bind(this))
 
         this.mainCloseButton = $('#w-workflow-list-popup-close-button');
@@ -181,19 +181,19 @@ class FollowTutorialViewController {
     }
 
     #onSearchingInputChanged() {
-        let searchInputVal= this.searchingInput.val();
+        let searchInputVal = this.searchingInput.val();
         this.searchingInput.attr("value", searchInputVal);
-        
+
         TutorialsModel.forEachTutorial((tutorial, index) => {
             const inputRegex = new RegExp(searchInputVal, "i");
             let matchedLetter = 0;
             for (let i = 0; i < searchInputVal.length - 1; i++) {
-                let slicedString = searchInputVal.slice(i, i+1);
+                let slicedString = searchInputVal.slice(i, i + 1);
                 if (new RegExp(slicedString, "i").test(tutorial.name)) {
                     matchedLetter = matchedLetter + 1;
                 }
             }
-            if(inputRegex.test(tutorial.name) || matchedLetter >= 0.5*tutorial.name.length) {
+            if (inputRegex.test(tutorial.name) || matchedLetter >= 0.5 * tutorial.name.length) {
                 $(`#${tutorial.id}`).show();
             } else {
                 c(0);
@@ -280,6 +280,8 @@ class FollowTutorialViewController {
 
     highlightedElementNotFoundHandler() {
         c("highlightedElementNotFoundHandler()")
+        // TODO: inside tutorial change presentPossibleReasonsForElementNotFoundDialog to only once 2. outside tutorial
+        // if first step can't be highlighted, this function always tries to get step from first tutorial in tutorials list
         var indexOnCurrentPageOfStep = 0;
         while (true) {
             const stepIndexToTry = TutorialsModel.getNthStepIndexOnCurrentPage(indexOnCurrentPageOfStep);
@@ -303,6 +305,7 @@ class FollowTutorialViewController {
     }
 
     #presentPossibleReasonsForElementNotFoundDialog() {
+        this.stopCurrentTutorial(true);
         const possibleReasonsForElementNotFound = TutorialsModel.getCurrentStep().possibleReasonsForElementNotFound;
         var message = '1. You didn\'t click within the highlighted area\n2. The webpage has been updated. Please use the report button'
         if (possibleReasonsForElementNotFound.length > 0) {
@@ -478,7 +481,7 @@ class FollowTutorialViewController {
 
     //INCOMPLETE
     #onEnteredWrongPage(currentStep) {
-        c('wrong page' + currentStep)
+        c('wrong page' + JSON.stringify(currentStep))
         //this.#onMainPopupCloseButtonClicked()
         this.#switchToWrongPageView()
 

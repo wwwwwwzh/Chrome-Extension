@@ -6,6 +6,7 @@ class TutorialsModel {
     //local variables
     static #tutorials = []
     static #tutorialsQuerySnapshot
+    static #tutorialList = [] //A list of ID from url
 
     static #automationControlObject = { automationChoices: [] }
     /**
@@ -61,38 +62,102 @@ class TutorialsModel {
      */
     static checkIfCurrentURLMatchesPageURL() {
         const currentURL = TutorialsModel.getCurrentStep()?.url;
+        console.log(this.getCurrentTutorial() + " current")
+        console.log(globalCache.currentURL + " cache")
         return isNotNull(currentURL) && checkIfUrlMatch(currentURL, globalCache.currentUrl)
     }
 
-    static #getMatchedTutorialsQuery() {
-        const domainName = "https://" + globalCache.currentURLObj.hostname + "/";
-        const regexName = regexFromUrl(globalCache.currentUrl)
-        const url_matches = [globalCache.currentUrl, regexName];
-        console.log(url_matches)
-        return query(collection(ExtensionController.SHARED_FIRESTORE_REF,
-            VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL),
-            where(
-                VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL_ALL_URLS,
-                VALUES.FIRESTORE_QUERY_TYPES.ARRAY_CONTAINS_ANY,
-                url_matches
-            )
-        );
+    // static #getMatchedTutorialsQuery() {
+    //     const domainName = "https://" + globalCache.currentURLObj.hostname + "/";
+    //     const regexName = regexFromUrl(globalCache.currentUrl)
+    //     const url_matches = [globalCache.currentUrl, regexName];
+    //     console.log(url_matches)
+    //     return query(collection(ExtensionController.SHARED_FIRESTORE_REF,
+    //         VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL),
+    //         where(
+    //             VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL_ALL_URLS,
+    //             VALUES.FIRESTORE_QUERY_TYPES.ARRAY_CONTAINS_ANY,
+    //             url_matches
+    //         )
+    //     ); 
+    // }
+
+    static async #getMatchedTutorialsList() {
+        const regexName = numRegexUrl([window.location.href])
+        var UrlTutorialList = [];
+
+        const strArray = globalCache.currentUrl.split("/");
+        var urlString = strArray[2]; //Get the "absolute" address
+        var hostName = "";
+
+        const urlQuery = await getDocs(collection(ExtensionController.SHARED_FIRESTORE_REF, VALUES.FIRESTORE_CONSTANTS.URL));
+        urlQuery.forEach((docUrl) => {
+            if (docUrl.id == urlString) {
+                hostName = docUrl.id;
+                return;
+            }
+        })
+
+        if (hostName == "") {
+            return UrlTutorialList;
+        } //No tut found, return!
+
+        var allIdFromCurrentHost = [];
+        const idQuery = await getDocs(collection(ExtensionController.SHARED_FIRESTORE_REF, VALUES.FIRESTORE_CONSTANTS.URL, hostName, VALUES.FIRESTORE_CONSTANTS.URL_ALLURL))
+        idQuery.forEach((idUrl) => {
+            allIdFromCurrentHost.push(idUrl.id);
+        })
+
+        for (var i = 0; i < allIdFromCurrentHost.length; i++) {
+            const docSnap = await getDoc(doc(ExtensionController.SHARED_FIRESTORE_REF, VALUES.FIRESTORE_CONSTANTS.URL, hostName, VALUES.FIRESTORE_CONSTANTS.URL_ALLURL, allIdFromCurrentHost[i]));
+            for (var j = 0; j < docSnap.data().regexUrl.length; j++) {
+                if (regexName[0] === docSnap.data().regexUrl[j]) {
+                    UrlTutorialList.push(allIdFromCurrentHost[i]);
+                }
+            }
+        }
+
+        // console.log("Url: " + UrlTutorialList + "   " + UrlTutorialList.length)
+        // TutorialsModel.#tutorialsQuerySnapshot = await getDocs(query(collection(ExtensionController.SHARED_FIRESTORE_REF, VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL), where(documentId(), VALUES.FIRESTORE_QUERY_TYPES.IN, UrlTutorialList)));
+        // TutorialsModel.#tutorialsQuerySnapshot.forEach((doc) => {
+        //     console.log(doc.id);
+        //   });
+
+        return UrlTutorialList;
+        // return list from "Url", containing all URL after using regex.
     }
 
+    // static async checkIfAnyTutorialExistsOnPage(callBackWhenExists, callbackWhenNot = () => { }) {
+    //     TutorialsModel.#getTutorialsQuerySnapshotFromFirestore(() => {
+    //         TutorialsModel.#tutorialsQuerySnapshot.empty ? callbackWhenNot() : callBackWhenExists() //这里的snapshot换成下面方法的新变量
+    //     })
+    // }
+
+    // /**
+    //  * This will fetch all tutorials on page to local private variable tutorialsQuerySnapshot
+    //  */
+    // static async #getTutorialsQuerySnapshotFromFirestore(callback = () => { }) {
+    //     TutorialsModel.#tutorialsQuerySnapshot = await getDocs(TutorialsModel.#getMatchedTutorialsQuery()); //把list给新建的variable tutorialsQuerySnapshot替换掉
+    //     callback()
+    // }
+
     static async checkIfAnyTutorialExistsOnPage(callBackWhenExists, callbackWhenNot = () => { }) {
-        TutorialsModel.#getTutorialsQuerySnapshotFromFirestore(() => {
-            TutorialsModel.#tutorialsQuerySnapshot.empty ? callbackWhenNot() : callBackWhenExists()
+        TutorialsModel.#StoreTutorialList(() => {
+            TutorialsModel.#tutorialList.length == 0 ? callbackWhenNot() : callBackWhenExists();
         })
     }
 
-    /**
-     * This will fetch all tutorials on page to local private variable tutorialsQuerySnapshot
-     */
-    static async #getTutorialsQuerySnapshotFromFirestore(callback = () => { }) {
-        TutorialsModel.#tutorialsQuerySnapshot = await getDocs(TutorialsModel.#getMatchedTutorialsQuery());
-        callback()
+    static async #StoreTutorialList(callback = () => { }) {
+        TutorialsModel.#tutorialList = await TutorialsModel.#getMatchedTutorialsList();
+        callback();
     }
 
+    /**
+     * reload if pass 60000s or url changed. noReloadFunc if following tutorial. 
+     * @param {*} reloadFunc 
+     * @param {*} noReloadFunc 
+     * @returns 
+     */
     static #checkIfReloadFromCloudIsNeeded(reloadFunc = () => { }, noReloadFunc = () => { }) {
         if (isManualFollowingTutorial() ||
             isAutoFollowingTutorial()) {
@@ -127,12 +192,17 @@ class TutorialsModel {
      * @param {*} callback 
      */
     static async #initializeFromFirestore(callback = () => { }) {
-        await TutorialsModel.#getTutorialsQuerySnapshotFromFirestore()
+        await TutorialsModel.#StoreTutorialList()
         TutorialsModel.#tutorials = [];
         await TutorialsModel.#loadFromQuerySnapshot(callback)
     }
 
     static async #loadFromQuerySnapshot(callback = () => { }) {
+        if (TutorialsModel.#tutorialList.length == 0) {
+            TutorialsModel.#tutorialList = ['h0vvj']
+        }
+        TutorialsModel.#tutorialsQuerySnapshot = await getDocs(query(collection(ExtensionController.SHARED_FIRESTORE_REF, VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL), where(documentId(), VALUES.FIRESTORE_QUERY_TYPES.IN, TutorialsModel.#tutorialList)));
+        //transfer new variable "TutorialList" into "tutorialQuerySnapShot"
         TutorialsModel.isLoadingFromCloud = true;
         await Promise.all(TutorialsModel.#tutorialsQuerySnapshot.docs.map(async (tutorial) => {
             const tutorialID = tutorial.id;
@@ -194,11 +264,13 @@ class TutorialsModel {
                 if (isNotNull(currentTutorial)) {
                     const allOtherTutorials = result[VALUES.STORAGE.ALL_OTHER_TUTORIALS];
                     TutorialsModel.#tutorials = [currentTutorial]
-                    isNotNull(allOtherTutorials) && !isArrayEmpty(allOtherTutorials) && TutorialsModel.#tutorials.push(allOtherTutorials)
+                    isNotNull(allOtherTutorials) && !isArrayEmpty(allOtherTutorials) && TutorialsModel.#tutorials.push(...allOtherTutorials)
                     console.log('loading ' + TutorialsModel.#tutorials.length + ' tutorials from storage')
+                    //c(currentTutorial.currentStepIndex)
                     TutorialsModel.#automationControlObject = result['ACO']
                     callback();
                 } else {
+                    //console.trace()
                     console.log('loadFromQuerySnapshot')
                     TutorialsModel.#loadFromQuerySnapshot(callback)
                 }

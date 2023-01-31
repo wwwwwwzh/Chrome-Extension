@@ -395,13 +395,16 @@ function regexFromUrl(url) {
 }
 
 function checkIfUrlMatch(urlToMatch, testingUrl) {
-    c('urlToMatch:' + urlToMatch + 'testingUrl:' + testingUrl)
-    if (urlToMatch[0] === '$') {
-        const regex = new RegExp(urlToMatch.substr(1, urlToMatch.length - 2));
-        return regex.test(testingUrl);
-    } else {
-        return urlToMatch === testingUrl;
-    }
+    c('urlToMatch:' + urlToMatch + ' testingUrl:' + testingUrl)
+    // if (urlToMatch[0] === '$') {
+    //     const regex = new RegExp(urlToMatch.substr(1, urlToMatch.length - 2));
+    //     return regex.test(testingUrl);
+    // } else {
+    //     return urlToMatch === testingUrl;
+    // }
+    urlToMatch = numRegexUrl([urlToMatch]);
+    testingUrl = numRegexUrl([testingUrl]);
+    return urlToMatch.toString() === testingUrl.toString();
 }
 
 const LAYOUT_TYPE = {
