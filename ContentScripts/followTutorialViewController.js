@@ -305,7 +305,7 @@ class FollowTutorialViewController {
     }
 
     #presentPossibleReasonsForElementNotFoundDialog() {
-        this.stopCurrentTutorial(true);
+        this.stopCurrentTutorial(false);
         const possibleReasonsForElementNotFound = TutorialsModel.getCurrentStep().possibleReasonsForElementNotFound;
         var message = '1. You didn\'t click within the highlighted area\n2. The webpage has been updated. Please use the report button'
         if (possibleReasonsForElementNotFound.length > 0) {
