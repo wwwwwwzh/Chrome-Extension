@@ -138,11 +138,11 @@ class Highlighter {
 
         borderOut();
 
-        Highlighter.#alertElementInterval = setInterval(() => {
-            element.stop();
-            element.removeAttr('style');
-            borderOut();
-        }, 3500);
+        // Highlighter.#alertElementInterval = setInterval(() => {
+        //     element.stop();
+        //     element.removeAttr('style');
+        //     borderOut();
+        // }, 3500);
 
         function borderOut() {
             element.animate({
@@ -156,7 +156,7 @@ class Highlighter {
             element.animate({
                 boxShadow: '0px 0px 3px 6px rgba(255, 200, 42, 1)',
             }, 300).promise().then(() => {
-                if (perAnimationBorderLoopCount++ < 2) {
+                if (perAnimationBorderLoopCount++ < 1) {
                     borderOut();
                 } else {
                     element.stop();

@@ -382,19 +382,26 @@ class FollowTutorialViewController {
             this.stopCurrentTutorial(true);
             return;
         }
-        //update model and show current step
-        TutorialsModel.changeCurrentTutorialStepIndexTo(stepIndex, () => {
-            const type = UserEventListnerHandler.tutorialStatusCache;
-            if (type === VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL) {
-                this.#showTutorialStepManual();
-            }
-            if (type === VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL) {
-                this.#showTutorialStepAuto();
-            }
+        if (TutorialsModel.getStepOfCurrentTutorialAtIndex(stepIndex)?.url == TutorialsModel.getCurrentStep()?.url) {
+            //update model and show current step 
+            TutorialsModel.changeCurrentTutorialStepIndexTo(stepIndex, () => {
 
-            document.querySelectorAll('.w-workflow-list-cell-highlighted').forEach((element) => { element.classList.remove('w-workflow-list-cell-highlighted') })
-            document.getElementById('w-workflow-popup-workflow-step-' + stepIndex).classList.add('w-workflow-list-cell-highlighted')
-        })
+                c("no way still here!!!!!")
+                const type = UserEventListnerHandler.tutorialStatusCache;
+
+                if (type === VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL) {
+                    this.#showTutorialStepManual();
+                }
+                if (type === VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL) {
+                    this.#showTutorialStepAuto();
+                }
+                document.querySelectorAll('.w-workflow-list-cell-highlighted').forEach((element) => { element.classList.remove('w-workflow-list-cell-highlighted') })
+                document.getElementById('w-workflow-popup-workflow-step-' + stepIndex).classList.add('w-workflow-list-cell-highlighted')
+
+            })
+        } else {
+            TutorialsModel.changeCurrentTutorialStepIndexTo(stepIndex);
+        }
     }
 
     #startFollowingNewTutorial(tutorialID) {
@@ -823,10 +830,13 @@ class FollowTutorialViewController {
             } else {
                 $(item).children().show()
             }
+            //TODO: instruction window only load desciption of first tutorial
+            this.useInstructionWindow = false
             Highlighter.highlight(Step.getPath(TutorialsModel.getFirstStepOfTutorialAtIndex(index)))
         }
 
         function cellMouseLeave(event) {
+            this.useInstructionWindow = true
             $(event.target).children().last().hide()
             if (!$(event.target).is(':visible')) return
             this.highlightInstructionWindow.hide()
