@@ -15,7 +15,7 @@
     --border-radius-big: 8px;
     --border-radius-x-big: 10px;
 
-    --popup-width: 200px;
+    --popup-width: 350px;
     --popup-innerWidth: calc(var(--popup-width) - 2 * var(--padding-normal));
     --popup-header-height: 32px;
     --close-button-transition-duration-opacity: 0.2s;

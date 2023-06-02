@@ -448,7 +448,15 @@ class RecordTutorialViewController {
 
                 })
                 UserEventListnerHandler.setTutorialStatusCache(status)
+            case VALUES.TUTORIAL_STATUS.IS_UPDATING:
+                TutorialsModel.smartInit(() => {
+                    this.#createSnapshotForTutorialTitle(TutorialsModel.getCurrentTutorial(), this.stepsContainer)
+                    this.#createStepSnapshotsForCurrentTutorial()
+                    this.#switchToEditTutorialTitleSnapshot()
 
+                })
+                UserEventListnerHandler.setTutorialStatusCache(status)
+    
                 break;
             default:
                 break;
@@ -1065,6 +1073,7 @@ class RecordTutorialViewController {
     }
 
     #switchToEditStepAtIndex(index) {
+        //TODO: when updating tutorial, will jump to the url correspond to that step
         TutorialsModel.changeCurrentTutorialStepIndexTo(index)
         c('switchToEditStepAtIndex' + index)
         this.#isCreatingNewTutorial = false
@@ -1217,6 +1226,26 @@ class RecordTutorialViewController {
 
     async #postTutorialToFirebase() {
         const tutorial = TutorialsModel.getCurrentTutorial()
+        var updateId = "Id NOT FOUND"
+        const tutorialQuery = await getDocs(collection(ExtensionController.SHARED_FIRESTORE_REF, VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL));
+        tutorialQuery.forEach((docUrl) => {
+            if (docUrl.data().name == tutorial.name) {
+                updateId = docUrl.id;
+            }
+        })
+
+        if (updateId != "Id NOT FOUND") {
+            await updateDoc(doc(ExtensionController.SHARED_FIRESTORE_REF, VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL, updateId), {
+                name: tutorial.name,
+                description: tutorial.description
+            });
+
+            for (var i = 0; i < tutorial.steps.length; i++) {
+                await setDoc(doc(ExtensionController.SHARED_FIRESTORE_REF, VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL, updateId, "Steps", tutorial.steps[i].id), JSON.parse(JSON.stringify(tutorial.steps[i])))
+            }
+            return;
+        }
+
         const docRef = await addDoc(collection(ExtensionController.SHARED_FIRESTORE_REF, VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL), {
             name: tutorial.name,
             description: tutorial.description
@@ -1225,6 +1254,7 @@ class RecordTutorialViewController {
         var allUrls = new Set()
 
         const batch = writeBatch(ExtensionController.SHARED_FIRESTORE_REF);
+        //TODO: upload tutorial. json steps using this foreach method
         tutorial.steps.forEach((step, index) => {
             batch.set(doc(
                 ExtensionController.SHARED_FIRESTORE_REF,
@@ -1275,6 +1305,27 @@ class RecordTutorialViewController {
 
             obj = values.next();
         }
+    }
+
+    async isUpdating(name) {
+        const tutorialQuery = await getDocs(collection(ExtensionController.SHARED_FIRESTORE_REF, VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL));
+        tutorialQuery.forEach((docUrl) => {
+            if (docUrl.data().name == name) {
+                return true;
+            }
+        })
+        return false
+    }
+
+    // If updating, what is the id of the tutorial
+    async findUpdateTutorialId(name) {
+        const tutorialQuery = await getDocs(collection(ExtensionController.SHARED_FIRESTORE_REF, VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL));
+        tutorialQuery.forEach((docUrl) => {
+            if (docUrl.data().name == name) {
+                return docUrl.id;
+            }
+        })
+        return "Id NOT FOUND"
     }
 
     dismiss() {

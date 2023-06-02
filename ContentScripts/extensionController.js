@@ -103,10 +103,14 @@ class ExtensionController {
         this.#hideSuggestionPopup()
     }
 
+    showUpdatePanel(status) {
+        this.recordTutorialViewController = new RecordTutorialViewController(status)
+        this.#hideSuggestionPopup()
+    }
+
     #showFollowingPanel(status) {
         this.#hideRecordingPanel()
-        this.followTutorialViewController = new FollowTutorialViewController(status)
-        this.followTutorialViewController.followTutorialViewControllerDelegate = this
+        this.followTutorialViewController = new FollowTutorialViewController(status, this)
         this.#hideSuggestionPopup()
     }
 

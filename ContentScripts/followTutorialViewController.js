@@ -1,5 +1,6 @@
 class FollowTutorialViewController {
     //Constants
+    //TODO: upload json add read file button
     static #WORKFLOW_LIST_POPUP_HTML_SIMPLE() {
         return `
         <div class="w-workflow-list-popup w-workflow-list-popup-normal">
@@ -13,7 +14,8 @@ class FollowTutorialViewController {
             </div>
             <div class="w-close-button" id="w-workflow-list-popup-close-button"></div>
             
-            <div class="w-workflow-list-popup-scroll-area"></div>
+            <div class="w-workflow-list-popup-scroll-area">
+            </div>
 
             <div class="w-workflow-list-popup-footer">
                 <div id="w-popup-cancel-button" class="w-workflow-list-cell-type-button w-workflow-list-popup-footer-cell">
@@ -109,12 +111,15 @@ class FollowTutorialViewController {
     }
 
     //Delegates
-    followTutorialViewControllerDelegate;
+    extensionControllerDelegate;
 
-    constructor(status) {
+    constructor(status, extensionControllerDelegate = null) {
         TutorialsModel.tutorialsModelFollowingTutorialDelegate = this
         UserEventListnerHandler.userEventListnerHandlerDelegate = this
         Highlighter.highlighterViewControllerSpecificUIDelegate = this
+        
+        this.extensionControllerDelegate = extensionControllerDelegate
+
         this.#initializeUI()
         this.#checkStatus(status)
     }
@@ -328,6 +333,7 @@ class FollowTutorialViewController {
 
     //Controls
     #onFollowTutorialModeChosen(type, tutorialID) {
+        this.useInstructionWindow = true
         if (type === VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL) {
             Highlighter.removeLastHighlight()
             this.#switchToAutomationChoicesView()
@@ -338,9 +344,8 @@ class FollowTutorialViewController {
             }
         } else {
             //UI
-            this.#switchToManualFollowingTutorialView()
             UserEventListnerHandler.setTutorialStatusCache(type);
-            this.#startFollowingNewTutorial(tutorialID);
+            this.#startFollowingNewTutorial(tutorialID, this.#switchToManualFollowingTutorialView.bind(this));
         }
     }
 
@@ -385,8 +390,6 @@ class FollowTutorialViewController {
         if (TutorialsModel.getStepOfCurrentTutorialAtIndex(stepIndex)?.url == TutorialsModel.getCurrentStep()?.url) {
             //update model and show current step 
             TutorialsModel.changeCurrentTutorialStepIndexTo(stepIndex, () => {
-
-                c("no way still here!!!!!")
                 const type = UserEventListnerHandler.tutorialStatusCache;
 
                 if (type === VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL) {
@@ -404,9 +407,12 @@ class FollowTutorialViewController {
         }
     }
 
-    #startFollowingNewTutorial(tutorialID) {
-        TutorialsModel.changeActiveTutorialToChosen(tutorialID)
-        this.#switchToAndShowStepAtIndex(0)
+    #startFollowingNewTutorial(tutorialID, callback=()=>{}) {
+        TutorialsModel.changeActiveTutorialToChosen(tutorialID, ()=>{
+            callback()
+            this.#switchToAndShowStepAtIndex(0)
+        })
+        
     }
 
     /**
@@ -819,6 +825,14 @@ class FollowTutorialViewController {
                                 title="Walk me through the process">
                         </div>
                     </div>
+                    <div class="w-workflow-list-cell-type-button w-workflow-list-cell-type-button-update">
+                        <title class="w-workflow-list-cell-type-button-name">Update</title>
+                        <div class="w-more-info-icon-container">
+                            <img class="w-more-info-icon"
+                                src="${this.questionMarkURL}"
+                                title="Update the tutorial">
+                        </div>
+                    </div>
                 </div>
                 `)
                 item.getElementsByClassName('w-workflow-list-cell-type-button-auto')[0].addEventListener('click', e => {
@@ -827,6 +841,12 @@ class FollowTutorialViewController {
                 item.getElementsByClassName('w-workflow-list-cell-type-button-manual')[0].addEventListener('click', e => {
                     this.#onFollowTutorialModeChosen(VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL, tutorialID)
                 })
+                item.getElementsByClassName('w-workflow-list-cell-type-button-update')[0].addEventListener('click', e => {
+                    TutorialsModel.changeActiveTutorialToChosen(tutorialID)
+                    this.extensionControllerDelegate.showUpdatePanel(VALUES.TUTORIAL_STATUS.IS_UPDATING)
+                    this.dismiss()
+                })
+
             } else {
                 $(item).children().show()
             }
