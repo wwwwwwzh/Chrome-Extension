@@ -15,6 +15,8 @@ class FollowTutorialViewController {
             <div class="w-close-button" id="w-workflow-list-popup-close-button"></div>
             
             <div class="w-workflow-list-popup-scroll-area">
+            <input type="file" id="w-fileInput"/>
+            <button id="w-upload-button">upload</button>
             </div>
 
             <div class="w-workflow-list-popup-footer">
@@ -64,6 +66,8 @@ class FollowTutorialViewController {
     mainDraggableArea;
     mainCloseButton;
     mainPopupScrollArea;
+
+    uploadButton;
 
     searchIconURL = chrome.runtime.getURL('assets/imgs/icons/search.svg');
     questionMarkURL = chrome.runtime.getURL('assets/imgs/icons/question-mark.svg');
@@ -117,7 +121,7 @@ class FollowTutorialViewController {
         TutorialsModel.tutorialsModelFollowingTutorialDelegate = this
         UserEventListnerHandler.userEventListnerHandlerDelegate = this
         Highlighter.highlighterViewControllerSpecificUIDelegate = this
-        
+
         this.extensionControllerDelegate = extensionControllerDelegate
 
         this.#initializeUI()
@@ -134,6 +138,9 @@ class FollowTutorialViewController {
         this.dragSymbol = $('#w-draggable-symbol-container');
         this.dragSymbol.on('mousemove', this.#isPopupOutOfPage.bind(this))
         this.mainDraggableArea.on('mousemove', this.#isPopupOutOfPage.bind(this))
+
+        this.uploadButton = $('#w-upload-button');
+        this.uploadButton.on('click', this.#onUploadButtonClicked.bind(this))
 
         document.getElementsByClassName('w-search-icon')[0].src = this.searchIconURL
         $('.w-more-info-icon').attr('src', this.questionMarkURL)
@@ -167,6 +174,57 @@ class FollowTutorialViewController {
         this.popUpStepName.css({ 'overflow-wrap': 'break-word', });
         this.popUpStepDescription = $("#w-popup-step-description");
         this.popUpStepDescription.css({ 'overflow-wrap': 'break-word', });
+    }
+
+    #onUploadButtonClicked() {
+        const fileInput = document.getElementById("w-fileInput");
+
+        if (fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function (event) {
+                const fileContents = event.target.result;
+                try {
+                    const jsonData = JSON.parse(fileContents);
+                    //console.log("JSON data:", jsonData);
+                    const collectionRef = collection(ExtensionController.SHARED_FIRESTORE_REF, "Testing");
+                    const docRef = doc(collectionRef);
+                    const stepCollection = collection(ExtensionController.SHARED_FIRESTORE_REF, "Testing", docRef.id, "Steps");
+                    const stepArray = []; // Store all the step information
+
+                    for (const stepName in jsonData) {
+                        if (stepName !== 'all_urls' && stepName !== 'description' && stepName !== 'name') {
+                            const stepInfo = jsonData[stepName];
+                            const stepDocRef = doc(stepCollection, stepName);
+                            setDoc(stepDocRef, stepInfo);
+                            stepArray.push({ name: stepName, ...stepInfo });
+                        }
+                    }
+
+                    const tutorialData = {
+                        all_urls: jsonData.all_urls,
+                        description: jsonData.description,
+                        name: jsonData.name,
+                    };
+
+                    const batch = [];
+                    batch.push(setDoc(docRef, tutorialData));
+
+                    Promise.all(batch)
+                        .then(() => {
+                            console.log('Data successfully written to Firestore');
+                        })
+                        .catch((error) => {
+                            console.error('Error writing to Firestore:', error);
+                        });
+                } catch (error) {
+                    console.error("Error parsing JSON:", error);
+                }
+            };
+
+            reader.readAsText(file);
+        }
     }
 
     #onMainPopupCloseButtonClicked() {
@@ -332,7 +390,7 @@ class FollowTutorialViewController {
     }
 
     //Controls
-    #onFollowTutorialModeChosen(type, tutorialID) {
+    onFollowTutorialModeChosen(type, tutorialID) {
         this.useInstructionWindow = true
         if (type === VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL) {
             Highlighter.removeLastHighlight()
@@ -407,12 +465,12 @@ class FollowTutorialViewController {
         }
     }
 
-    #startFollowingNewTutorial(tutorialID, callback=()=>{}) {
-        TutorialsModel.changeActiveTutorialToChosen(tutorialID, ()=>{
+    #startFollowingNewTutorial(tutorialID, callback = () => { }) {
+        TutorialsModel.changeActiveTutorialToChosen(tutorialID, () => {
             callback()
             this.#switchToAndShowStepAtIndex(0)
         })
-        
+
     }
 
     /**
@@ -833,20 +891,30 @@ class FollowTutorialViewController {
                                 title="Update the tutorial">
                         </div>
                     </div>
+                    <div class="w-workflow-list-cell-type-button w-workflow-list-cell-type-button-download">
+                        <title class="w-workflow-list-cell-type-button-name">Download</title>
+                        <div class="w-more-info-icon-container">
+                            <img class="w-more-info-icon"
+                                src="${this.questionMarkURL}"
+                                title="Update the tutorial">
+                        </div>
+                    </div>
                 </div>
                 `)
                 item.getElementsByClassName('w-workflow-list-cell-type-button-auto')[0].addEventListener('click', e => {
-                    this.#onFollowTutorialModeChosen(VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL, tutorialID)
+                    this.onFollowTutorialModeChosen(VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL, tutorialID)
                 })
                 item.getElementsByClassName('w-workflow-list-cell-type-button-manual')[0].addEventListener('click', e => {
-                    this.#onFollowTutorialModeChosen(VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL, tutorialID)
+                    this.onFollowTutorialModeChosen(VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL, tutorialID)
                 })
                 item.getElementsByClassName('w-workflow-list-cell-type-button-update')[0].addEventListener('click', e => {
                     TutorialsModel.changeActiveTutorialToChosen(tutorialID)
                     this.extensionControllerDelegate.showUpdatePanel(VALUES.TUTORIAL_STATUS.IS_UPDATING)
                     this.dismiss()
                 })
-
+                item.getElementsByClassName('w-workflow-list-cell-type-button-download')[0].addEventListener('click', e => {
+                    this.downloadTutorialtoJson(tutorialID)
+                })
             } else {
                 $(item).children().show()
             }
@@ -862,6 +930,55 @@ class FollowTutorialViewController {
             this.highlightInstructionWindow.hide()
             Highlighter.removeLastHighlight()
         }
+    }
+
+    downloadTutorialtoJson(tutorialID) {
+        const docRef = doc(ExtensionController.SHARED_FIRESTORE_REF, VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL, tutorialID);
+
+        getDoc(docRef)
+            .then((doc) => {
+                if (doc.exists()) {
+                    // convert the document data to a JSON object
+                    const data = doc.data();
+
+                    // Add step info into the json 
+                    const collectionRef = collection(ExtensionController.SHARED_FIRESTORE_REF, VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL, tutorialID, VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL_STEPS);
+
+                    // get the documents in the collection 
+                    getDocs(collectionRef)
+                        .then((querySnapshot) => {
+                            // loop through each document and add its data to the object
+                            querySnapshot.forEach((doc) => {
+                                data[doc.id] = doc.data();
+                            });
+
+                            // create a blob from the JSON object
+                            const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+
+                            console.log(data)
+                            // create a download link
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = url;
+                            a.download = `${tutorialID}.json`;
+
+                            // simulate a click on the download link to trigger the download
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                        })
+                        .catch((error) => {
+                            console.log("Error getting collection:", error);
+                        });
+
+                } else {
+                    console.log("No such document!");
+                }
+            })
+            .catch((error) => {
+                console.log("Error getting document:", error);
+            });
     }
 
     //UI switching controls
