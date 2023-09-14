@@ -210,7 +210,6 @@ class RecordTutorialViewController {
     #currentStepOptionsIndex = 0
 
     constructor(status) {
-        c(status)
         TutorialsModel.tutorialsModelFollowingTutorialDelegate = this
         UserEventListnerHandler.userEventListnerHandlerDelegate = this
         Highlighter.highlighterViewControllerSpecificUIDelegate = this
@@ -429,8 +428,7 @@ class RecordTutorialViewController {
     }
 
     #checkStatus(status) {
-        console.trace();
-        c(status)
+        c("checkStatus(), status is " + status)
         switch (status) {
             case VALUES.TUTORIAL_STATUS.IS_CREATING_NEW_TUTORIAL:
                 this.#onCreateNewRecording()
@@ -448,6 +446,7 @@ class RecordTutorialViewController {
 
                 })
                 UserEventListnerHandler.setTutorialStatusCache(status)
+                break;
             case VALUES.TUTORIAL_STATUS.IS_UPDATING:
                 TutorialsModel.smartInit(() => {
                     this.#createSnapshotForTutorialTitle(TutorialsModel.getCurrentTutorial(), this.stepsContainer)

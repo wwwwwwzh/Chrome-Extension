@@ -1,0 +1,553 @@
+[
+          {
+                    "currentStepIndex": 2,
+                    "description": "",
+                    "id": "r1WprNCJ0TtehE2aHUpc",
+                    "name": "Dummy Tutorial111",
+                    "snapshot": [],
+                    "steps": [
+                              {
+                                        "actionObject": {
+                                                  "clicks": [
+                                                            {
+                                                                      "description": "",
+                                                                      "isRedirect": false,
+                                                                      "name": "",
+                                                                      "optionIndex": 0,
+                                                                      "path": [
+                                                                                "#account-show",
+                                                                                "div:nth-child(2)",
+                                                                                "div:nth-child(4)",
+                                                                                "a:nth-child(2)"
+                                                                      ],
+                                                                      "stepIndex": 0,
+                                                                      "table": [],
+                                                                      "url": null,
+                                                                      "useAnythingInTable": false
+                                                            }
+                                                  ]
+                                        },
+                                        "actionType": 1,
+                                        "automationInterrupt": false,
+                                        "description": "Select the highlighted box",
+                                        "id": "4030",
+                                        "index": 0,
+                                        "name": "1",
+                                        "possibleReasonsForElementNotFound": [],
+                                        "type": 3,
+                                        "url": "https://www.gradescope.com/"
+                              },
+                              {
+                                        "actionObject": {
+                                                  "path": [
+                                                            "#main-content",
+                                                            "div:nth-child(2)",
+                                                            "div:nth-child(1)",
+                                                            "header:nth-child(1)",
+                                                            "div:nth-child(1)",
+                                                            "h1:nth-child(1)"
+                                                  ]
+                                        },
+                                        "actionType": 5,
+                                        "automationInterrupt": false,
+                                        "description": "11111",
+                                        "id": "c488",
+                                        "index": 1,
+                                        "name": "2",
+                                        "possibleReasonsForElementNotFound": [],
+                                        "url": "https://www.gradescope.com/courses/478380"
+                              },
+                              {
+                                        "actionObject": {
+                                                  "clicks": [
+                                                            {
+                                                                      "description": "",
+                                                                      "isRedirect": false,
+                                                                      "name": "",
+                                                                      "optionIndex": 0,
+                                                                      "path": [
+                                                                                "body:nth-child(2)",
+                                                                                "nav:nth-child(4)",
+                                                                                "div:nth-child(1)",
+                                                                                "h2:nth-child(3)",
+                                                                                "div:nth-child(1)",
+                                                                                "a:nth-child(1)"
+                                                                      ],
+                                                                      "stepIndex": 2,
+                                                                      "table": [],
+                                                                      "url": null,
+                                                                      "useAnythingInTable": false
+                                                            }
+                                                  ]
+                                        },
+                                        "actionType": 1,
+                                        "automationInterrupt": false,
+                                        "description": "",
+                                        "id": "e3e6",
+                                        "index": 2,
+                                        "name": "3",
+                                        "possibleReasonsForElementNotFound": [],
+                                        "url": "https://www.gradescope.com/courses/478380"
+                              }
+                    ],
+                    "urls": [
+                              "https://www.gradescope.com/",
+                              "https://www.gradescope.com/courses/478380"
+                    ]
+          },
+          {
+                    "currentStepIndex": 0,
+                    "description": "",
+                    "id": "hXhVhmr090SEhbZX4ADw",
+                    "name": "test1",
+                    "snapshot": [],
+                    "steps": [
+                              {
+                                        "actionObject": {
+                                                  "clicks": [
+                                                            {
+                                                                      "description": "",
+                                                                      "isRedirect": false,
+                                                                      "name": "",
+                                                                      "optionIndex": 0,
+                                                                      "path": [
+                                                                                "#account-show",
+                                                                                "div:nth-child(5)",
+                                                                                "div:nth-child(2)",
+                                                                                "a:nth-child(2)"
+                                                                      ],
+                                                                      "stepIndex": 2,
+                                                                      "table": [],
+                                                                      "url": null,
+                                                                      "useAnythingInTable": false
+                                                            }
+                                                  ]
+                                        },
+                                        "actionType": 1,
+                                        "automationInterrupt": false,
+                                        "description": "",
+                                        "id": "e644",
+                                        "index": 2,
+                                        "name": "3",
+                                        "possibleReasonsForElementNotFound": [],
+                                        "url": "https://www.gradescope.com/"
+                              }
+                    ],
+                    "urls": [
+                              "https://sakai.unc.edu/portal/site/b6a4e68b-46ce-4e8f-895c-49f23d019fe6/tool/3395b4b2-fab0-4e82-8bb5-d7c2d4b04211",
+                              "https://www.gradescope.com/courses/579857",
+                              "https://www.gradescope.com/"
+                    ]
+          },
+          {
+                    "currentStepIndex": 0,
+                    "description": "",
+                    "id": "bikR4obXjUddG8bjMcse",
+                    "name": "Create Assignment",
+                    "snapshot": [],
+                    "steps": [
+                              {
+                                        "actionObject": {
+                                                  "clicks": [
+                                                            {
+                                                                      "description": "",
+                                                                      "isRedirect": false,
+                                                                      "name": "",
+                                                                      "optionIndex": 0,
+                                                                      "path": [
+                                                                                "#account-show",
+                                                                                "div:nth-child(2)",
+                                                                                "div:nth-child(4)",
+                                                                                "a:nth-child(1)"
+                                                                      ],
+                                                                      "stepIndex": 0,
+                                                                      "table": [],
+                                                                      "url": null,
+                                                                      "useAnythingInTable": false
+                                                            }
+                                                  ]
+                                        },
+                                        "actionType": 1,
+                                        "automationInterrupt": false,
+                                        "description": "",
+                                        "id": "4632",
+                                        "index": 0,
+                                        "name": "1",
+                                        "possibleReasonsForElementNotFound": [],
+                                        "type": 3,
+                                        "url": "https://www.gradescope.com/"
+                              },
+                              {
+                                        "actionObject": {
+                                                  "clicks": [
+                                                            {
+                                                                      "description": "",
+                                                                      "isRedirect": false,
+                                                                      "name": "",
+                                                                      "optionIndex": 0,
+                                                                      "path": [
+                                                                                "body:nth-child(2)",
+                                                                                "nav:nth-child(4)",
+                                                                                "div:nth-child(1)",
+                                                                                "ul:nth-child(4)",
+                                                                                "li:nth-child(2)",
+                                                                                "a:nth-child(1)",
+                                                                                "div:nth-child(2)"
+                                                                      ],
+                                                                      "stepIndex": 1,
+                                                                      "table": [
+                                                                                "body:nth-child(2)",
+                                                                                "nav:nth-child(4)",
+                                                                                "div:nth-child(1)",
+                                                                                "ul:nth-child(4)"
+                                                                      ],
+                                                                      "url": null,
+                                                                      "useAnythingInTable": false
+                                                            }
+                                                  ]
+                                        },
+                                        "actionType": 1,
+                                        "automationInterrupt": false,
+                                        "description": "",
+                                        "id": "c389",
+                                        "index": 1,
+                                        "name": "2",
+                                        "possibleReasonsForElementNotFound": [],
+                                        "type": 3,
+                                        "url": "https://www.gradescope.com/courses/446060"
+                              },
+                              {
+                                        "actionObject": {
+                                                  "clicks": [
+                                                            {
+                                                                      "description": "",
+                                                                      "isRedirect": false,
+                                                                      "name": "",
+                                                                      "optionIndex": 0,
+                                                                      "path": [
+                                                                                "#main-content",
+                                                                                "section:nth-child(3)",
+                                                                                "ul:nth-child(1)",
+                                                                                "li:nth-child(5)",
+                                                                                "button:nth-child(1)"
+                                                                      ],
+                                                                      "stepIndex": 2,
+                                                                      "table": [
+                                                                                "#main-content",
+                                                                                "section:nth-child(3)",
+                                                                                "ul:nth-child(1)"
+                                                                      ],
+                                                                      "url": null,
+                                                                      "useAnythingInTable": false
+                                                            }
+                                                  ]
+                                        },
+                                        "actionType": 1,
+                                        "automationInterrupt": false,
+                                        "description": "",
+                                        "id": "6d87",
+                                        "index": 2,
+                                        "name": "3",
+                                        "possibleReasonsForElementNotFound": [],
+                                        "type": 3,
+                                        "url": "https://www.gradescope.com/courses/446060/assignments"
+                              },
+                              {
+                                        "actionObject": {
+                                                  "clicks": [
+                                                            {
+                                                                      "description": "",
+                                                                      "isRedirect": false,
+                                                                      "name": "",
+                                                                      "optionIndex": 0,
+                                                                      "path": [
+                                                                                "#online-tab",
+                                                                                "div:nth-child(1)",
+                                                                                "span:nth-child(1)",
+                                                                                "span:nth-child(2)"
+                                                                      ],
+                                                                      "stepIndex": 3,
+                                                                      "table": [],
+                                                                      "url": null,
+                                                                      "useAnythingInTable": false
+                                                            }
+                                                  ]
+                                        },
+                                        "actionType": 1,
+                                        "automationInterrupt": false,
+                                        "description": "",
+                                        "id": "95f3",
+                                        "index": 3,
+                                        "name": "4",
+                                        "possibleReasonsForElementNotFound": [],
+                                        "url": "https://www.gradescope.com/courses/446060/assignments"
+                              },
+                              {
+                                        "actionObject": {
+                                                  "clicks": [
+                                                            {
+                                                                      "description": "",
+                                                                      "isRedirect": false,
+                                                                      "name": "",
+                                                                      "optionIndex": 0,
+                                                                      "path": [
+                                                                                "#actionBar",
+                                                                                "ul:nth-child(2)",
+                                                                                "li:nth-child(2)",
+                                                                                "button:nth-child(1)"
+                                                                      ],
+                                                                      "stepIndex": 4,
+                                                                      "table": [
+                                                                                "#actionBar",
+                                                                                "ul:nth-child(2)"
+                                                                      ],
+                                                                      "url": null,
+                                                                      "useAnythingInTable": false
+                                                            }
+                                                  ]
+                                        },
+                                        "actionType": 1,
+                                        "automationInterrupt": false,
+                                        "description": "",
+                                        "id": "1998",
+                                        "index": 4,
+                                        "name": "5",
+                                        "possibleReasonsForElementNotFound": [],
+                                        "url": "https://www.gradescope.com/courses/446060/assignments"
+                              },
+                              {
+                                        "actionObject": {
+                                                  "inputTexts": [
+                                                            "Name"
+                                                  ],
+                                                  "inputType": "INPUT_TYPES_TEXT",
+                                                  "path": [
+                                                            "#new_assignment_title"
+                                                  ],
+                                                  "regexRule": null
+                                        },
+                                        "actionType": 4,
+                                        "automationInterrupt": false,
+                                        "description": "123",
+                                        "id": "e952",
+                                        "index": 5,
+                                        "name": "6",
+                                        "possibleReasonsForElementNotFound": [],
+                                        "url": "https://www.gradescope.com/courses/446060/assignments"
+                              },
+                              {
+                                        "actionObject": {
+                                                  "clicks": [
+                                                            {
+                                                                      "description": "",
+                                                                      "isRedirect": false,
+                                                                      "name": "",
+                                                                      "optionIndex": 0,
+                                                                      "path": [
+                                                                                "#assignment_release_date_string"
+                                                                      ],
+                                                                      "stepIndex": 6,
+                                                                      "table": [],
+                                                                      "url": null,
+                                                                      "useAnythingInTable": false
+                                                            }
+                                                  ]
+                                        },
+                                        "actionType": 1,
+                                        "automationInterrupt": false,
+                                        "description": "",
+                                        "id": "fd1e",
+                                        "index": 6,
+                                        "name": "7",
+                                        "possibleReasonsForElementNotFound": [],
+                                        "url": "https://www.gradescope.com/courses/446060/assignments"
+                              },
+                              {
+                                        "actionObject": {
+                                                  "clicks": [
+                                                            {
+                                                                      "description": "",
+                                                                      "isRedirect": false,
+                                                                      "name": "",
+                                                                      "optionIndex": 0,
+                                                                      "path": [
+                                                                                "#assignment_due_date_string"
+                                                                      ],
+                                                                      "stepIndex": 7,
+                                                                      "table": [],
+                                                                      "url": null,
+                                                                      "useAnythingInTable": false
+                                                            }
+                                                  ]
+                                        },
+                                        "actionType": 1,
+                                        "automationInterrupt": false,
+                                        "description": "",
+                                        "id": "6fef",
+                                        "index": 7,
+                                        "name": "8",
+                                        "possibleReasonsForElementNotFound": [],
+                                        "url": "https://www.gradescope.com/courses/446060/assignments"
+                              },
+                              {
+                                        "actionObject": {
+                                                  "clicks": [
+                                                            {
+                                                                      "description": "",
+                                                                      "isRedirect": false,
+                                                                      "name": "",
+                                                                      "optionIndex": 0,
+                                                                      "path": [
+                                                                                "#actionBar",
+                                                                                "ul:nth-child(2)",
+                                                                                "li:nth-child(2)",
+                                                                                "button:nth-child(1)"
+                                                                      ],
+                                                                      "stepIndex": 8,
+                                                                      "table": [
+                                                                                "#actionBar",
+                                                                                "ul:nth-child(2)"
+                                                                      ],
+                                                                      "url": null,
+                                                                      "useAnythingInTable": false
+                                                            }
+                                                  ]
+                                        },
+                                        "actionType": 1,
+                                        "automationInterrupt": false,
+                                        "description": "",
+                                        "id": "4a10",
+                                        "index": 8,
+                                        "name": "9",
+                                        "possibleReasonsForElementNotFound": [],
+                                        "url": "https://www.gradescope.com/courses/446060/assignments"
+                              },
+                              {
+                                        "actionObject": {
+                                                  "clicks": [
+                                                            {
+                                                                      "description": "",
+                                                                      "isRedirect": false,
+                                                                      "name": "",
+                                                                      "optionIndex": 0,
+                                                                      "path": [
+                                                                                "#question_-5_editor",
+                                                                                "div:nth-child(3)",
+                                                                                "div:nth-child(1)",
+                                                                                "div:nth-child(2)",
+                                                                                "span:nth-child(2)",
+                                                                                "span:nth-child(1)",
+                                                                                "button:nth-child(1)",
+                                                                                "span:nth-child(1)",
+                                                                                "span:nth-child(2)"
+                                                                      ],
+                                                                      "stepIndex": 9,
+                                                                      "table": [],
+                                                                      "url": null,
+                                                                      "useAnythingInTable": false
+                                                            }
+                                                  ]
+                                        },
+                                        "actionType": 1,
+                                        "automationInterrupt": false,
+                                        "description": "",
+                                        "id": "9eed",
+                                        "index": 9,
+                                        "name": "10",
+                                        "possibleReasonsForElementNotFound": [],
+                                        "type": 3,
+                                        "url": "https://www.gradescope.com/courses/446060/assignments/3326752/outline/edit"
+                              },
+                              {
+                                        "actionObject": {
+                                                  "clicks": [
+                                                            {
+                                                                      "description": "",
+                                                                      "isRedirect": false,
+                                                                      "name": "",
+                                                                      "optionIndex": 0,
+                                                                      "path": [
+                                                                                "#jBox1",
+                                                                                "div:nth-child(1)",
+                                                                                "div:nth-child(1)",
+                                                                                "div:nth-child(1)",
+                                                                                "ul:nth-child(1)",
+                                                                                "li:nth-child(3)",
+                                                                                "button:nth-child(1)",
+                                                                                "span:nth-child(1)",
+                                                                                "span:nth-child(2)"
+                                                                      ],
+                                                                      "stepIndex": 10,
+                                                                      "table": [
+                                                                                "#jBox1",
+                                                                                "div:nth-child(1)",
+                                                                                "div:nth-child(1)",
+                                                                                "div:nth-child(1)",
+                                                                                "ul:nth-child(1)"
+                                                                      ],
+                                                                      "url": null,
+                                                                      "useAnythingInTable": false
+                                                            }
+                                                  ]
+                                        },
+                                        "actionType": 1,
+                                        "automationInterrupt": false,
+                                        "description": "",
+                                        "id": "ea32",
+                                        "index": 10,
+                                        "name": "11",
+                                        "possibleReasonsForElementNotFound": [],
+                                        "url": "https://www.gradescope.com/courses/446060/assignments/3326752/outline/edit"
+                              },
+                              {
+                                        "actionObject": {
+                                                  "path": [
+                                                            "#question_-5_text"
+                                                  ]
+                                        },
+                                        "actionType": 5,
+                                        "automationInterrupt": false,
+                                        "description": "put your question",
+                                        "id": "2ec1",
+                                        "index": 11,
+                                        "name": "12",
+                                        "possibleReasonsForElementNotFound": [],
+                                        "url": "https://www.gradescope.com/courses/446060/assignments/3326752/outline/edit"
+                              },
+                              {
+                                        "actionObject": {
+                                                  "clicks": [
+                                                            {
+                                                                      "description": "",
+                                                                      "isRedirect": false,
+                                                                      "name": "",
+                                                                      "optionIndex": 0,
+                                                                      "path": [
+                                                                                "#online-tab",
+                                                                                "div:nth-child(1)"
+                                                                      ],
+                                                                      "stepIndex": 12,
+                                                                      "table": [],
+                                                                      "url": null,
+                                                                      "useAnythingInTable": false
+                                                            }
+                                                  ]
+                                        },
+                                        "actionType": 1,
+                                        "automationInterrupt": false,
+                                        "description": "",
+                                        "id": "c8e2",
+                                        "index": 12,
+                                        "name": "13",
+                                        "possibleReasonsForElementNotFound": [],
+                                        "url": "https://www.gradescope.com/courses/446060/assignments/3326752/outline/edit"
+                              }
+                    ],
+                    "urls": [
+                              "https://www.gradescope.com/",
+                              "https://www.gradescope.com/courses/446060",
+                              "https://www.gradescope.com/courses/446060/assignments",
+                              "https://www.gradescope.com/courses/446060/assignments/3326752/outline/edit"
+                    ]
+          }
+]
