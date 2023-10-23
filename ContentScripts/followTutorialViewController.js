@@ -11,12 +11,13 @@ class FollowTutorialViewController {
                     <input class="w-search-bar" type="text" title="Search" id="w-search-bar-input">
                     <img class="w-search-icon" src="./assets/imgs/icons/search.svg" title="Search">
                 </div>
+                <input type="file" id="w-fileInput"/>
+                <button id="w-upload-button">upload</button>
             </div>
             <div class="w-close-button" id="w-workflow-list-popup-close-button"></div>
             
             <div class="w-workflow-list-popup-scroll-area">
-            <input type="file" id="w-fileInput"/>
-            <button id="w-upload-button">upload</button>
+            
             </div>
 
             <div class="w-workflow-list-popup-footer">
@@ -390,6 +391,7 @@ class FollowTutorialViewController {
     }
 
     //Controls
+    //TODO: Cannot change to private
     onFollowTutorialModeChosen(type, tutorialID) {
         this.useInstructionWindow = true
         if (type === VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL) {
@@ -541,13 +543,17 @@ class FollowTutorialViewController {
         this.mainPopupFooter.hide();
         this.mainPopupFooter.removeClass('w-should-reopen');
         var areThereTutorials = false
-        TutorialsModel.forEachTutorial((tutorial, index) => {
-            areThereTutorials = true
-            this.#addTutorialSnapshotButton(tutorial, index)
+        //TODO: maybe tutorial model not updated to this page
+        TutorialsModel.smartInit(()=>{
+            TutorialsModel.forEachTutorial((tutorial, index) => {
+                areThereTutorials = true
+                this.#addTutorialSnapshotButton(tutorial, index)
+            })
+            if (!areThereTutorials) {
+                this.dismiss()
+            }
         })
-        if (!areThereTutorials) {
-            this.dismiss()
-        }
+        
     }
 
     //INCOMPLETE
@@ -983,15 +989,15 @@ class FollowTutorialViewController {
 
     //UI switching controls
     #switchToMainWorkflowListView() {
-        console.trace()
         this.mainPopUpContainer.show();
         this.#setIsMainPopUpCollapsed(false);
         this.mainPopupScrollArea.children('.w-workflow-popup-workflow-step').remove();
         document.getElementById('w-rating-stars-container-after-tutorial').remove();
+        //TODO: check after rating if length is right
+        c('asd'+this.mainPopupScrollArea.children().length)
         if (this.mainPopupScrollArea.children().length > 0) {
             this.mainPopupFooter.hide();
             this.mainPopupScrollArea.children().show();
-
         } else {
             this.setOrUpdateWorkflowsPopupFromModel()
         }

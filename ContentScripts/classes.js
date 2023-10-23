@@ -274,6 +274,7 @@ class GlobalCache {
         this.currentElement = null
         this.reHighlightAttempt = 0
         this.currentUrl = $(location).attr('href');
+        //c(this.currentUrl)
         this.currentURLObj = new URL(this.currentUrl);
     }
 

@@ -386,7 +386,8 @@ class TutorialsModel {
     //------------------------------------------------------------------------------------------
     //following tutorial functions
     //------------------------------------------------------------------------------------------
-    static changeActiveTutorialToChosen(tutorialID, callback=()=>{}) {
+    static changeActiveTutorialToChosen(tutorialID, callback = () => { }) {
+        //c(JSON.stringify(TutorialsModel.#tutorials))
         if (TutorialsModel.#tutorials.length > 1) {
             var tutorialToFollowIndex;
             TutorialsModel.#tutorials.forEach((tutorial, index) => {
@@ -400,6 +401,8 @@ class TutorialsModel {
             TutorialsModel.saveToStorage(() => {
                 callback()
             });
+        } else {
+            callback()
         }
     }
 
