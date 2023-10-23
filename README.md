@@ -5,6 +5,12 @@ Anyone can record a tutorial and anyone can follow these tutorials. Tutorials ar
 
 Recording of such tutorial is easy and intuitive. Following tutorials can be either manual or automatic, both easy to use.
 
+# Motivation
+
+Nowadays, while websites are becoming more and more feature-rich, they are also becoming progressively more difficult to use. Then it becomes important to skillfully master some important functions in the website. Some websites have no tutorials at all. Some websites provide tutorials when you first enter the site, but the tutorials on most websites are usually a video that does not meet the needs of the user, and in many cases have the disadvantages of weak interactivity and poor teaching effects.
+
+We tried to solve this problem by using a browser plug-in for chrome. After applying our plug-in to the browser, users can create a website tutorial on any website, and other users using the plug-in can access and use these tutorials when logging into the corresponding website (Ex: if there is a tutorial on www.gradescope.com, then use will see this tutorial when they entered www.gradescope.com). Remember, we are not limited to a particular website, our goal is to make using any website functionality less difficult.
+
 # Examples
 ## Following Tutorials
 ### Manual
