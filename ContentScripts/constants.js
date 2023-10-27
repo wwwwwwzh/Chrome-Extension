@@ -107,7 +107,128 @@ const VALUES = {
     }
 }
 
+// function syncStore(key, objectToStore, callback) {
+//     var jsonstr = JSON.stringify(objectToStore);
+//     var i = 0;
+//     var storageObj = {};
+
+//     // split jsonstr into chunks and store them in an object indexed by `key_i`
+//     while(jsonstr.length > 0) {
+//         var index = key + "_" + i++;
+
+//         // since the key uses up some per-item quota, see how much is left for the value
+//         // also trim off 2 for quotes added by storage-time `stringify`
+//         var valueLength = chrome.storage.sync.QUOTA_BYTES_PER_ITEM - index.length - 2;
+
+//         // trim down segment so it will be small enough even when run through `JSON.stringify` again at storage time
+//         var segment = jsonstr.substr(0, valueLength);           
+//         while(JSON.stringify(segment).length > valueLength)
+//             segment = jsonstr.substr(0, --valueLength);
+
+//         storageObj[index] = segment;
+//         jsonstr = jsonstr.substr(valueLength);
+//     }
+
+//     // store all the chunks
+//     chrome.storage.sync.set(storageObj, callback);
+// }
+
 //MARK: Utility functions
+//https://github.com/kdzwinel/Context/blob/master/js/classes/HugeStorageSync.class.js
+function getCacheKey(key, i) {
+    return (i === 0) ? key : key + "_" + i;
+}
+
+/**
+ * Allows to save strings longer than QUOTA_BYTES_PER_ITEM in chrome.storage.sync by splitting them into smaller parts.
+ * Please note that you still can't save more than QUOTA_BYTES.
+ *
+ * @param {string} key
+ * @param {string} value
+ * @param {function(): void=} callback
+ */
+function hugeStorageSync(key, value, callback) {
+    var i = 0,
+        cache = {},
+        segment,
+        cacheKey;
+
+    c("130", value)
+    // split value into chunks and store them in an object indexed by `key_i`
+    while (value.length > 0) {
+        cacheKey = getCacheKey(key, i);
+        //if you are wondering about -2 at the end see: https://code.google.com/p/chromium/issues/detail?id=261572
+        c("---------")
+        c(value)
+        c("---------")
+        segment = value.substr(0, chrome.storage.sync.QUOTA_BYTES_PER_ITEM - cacheKey.length - 2);
+        cache[cacheKey] = segment;
+        value = value.substr(chrome.storage.sync.QUOTA_BYTES_PER_ITEM - cacheKey.length - 2);
+        cache[cacheKey] = value
+        i++;
+        c(cache)
+    }
+
+    // store all the chunks
+    chrome.storage.sync.set(cache, callback);
+
+    //we need to make sure that after the last chunk we have an empty chunk. Why this is so important?
+    // Saving v1 of our object. Chrome sync status: [chunk1v1] [chunk2v1] [chunk3v1]
+    // Saving v2 of our object (a bit smaller). Chrome sync status: [chunk1v2] [chunk2v2] [chunk3v1]
+    // When reading this configuration back we will end up with chunk3v1 being appended to the chunk1v2+chunk2v2
+    chrome.storage.sync.remove(getCacheKey(key, i));
+};
+
+
+/**
+ * Retrieves chunks of value stored in chrome.storage.sync and combines them.
+ *
+ * @param {string} key
+ * @param {function(string):void=} callback
+ */
+function hugeStorageGet(key, callback) {
+    //get everything from storage
+    chrome.storage.sync.get(null, function (items) {
+        var i, value = "";
+
+        for (i = 0; i < chrome.storage.sync.MAX_ITEMS; i++) {
+            if (items[getCacheKey(key, i)] === undefined) {
+                break;
+            }
+            value += items[getCacheKey(key, i)];
+        }
+
+        callback(value);
+    });
+};
+
+/**
+ * Retrieves chunks of value stored in chrome.storage.sync and combines them.
+ *
+ * @param {string} key
+ * @param {function(string):void=} callback
+ */
+function hugeStorageGetMultiple(keys, callback) {
+    //get everything from storage
+    chrome.storage.sync.get(null, function (items) {
+        var values;
+        keys.forEach(key=>{
+            var i, value = "";
+
+            for (i = 0; i < chrome.storage.sync.MAX_ITEMS; i++) {
+                if (items[getCacheKey(key, i)] === undefined) {
+                    break;
+                }
+                value += items[getCacheKey(key, i)];
+            }
+            values[key]=value;
+        })
+        
+        callback(values);
+    });
+};
+
+
 function syncStorageSet(key, value, callback = () => { }) {
     const data = {};
     data[key] = value
@@ -116,7 +237,12 @@ function syncStorageSet(key, value, callback = () => { }) {
 }
 
 function syncStorageSetBatch(data, callback = () => { }) {
-    chrome.storage.sync.set(data, callback);
+    // chrome.storage.sync.set(data, callback);
+    Object.keys(data).forEach(key => {
+        stringifiedData = JSON.stringify(data[key])
+        c(stringifiedData)
+        hugeStorageSync(key, stringifiedData, callback)
+    })
     //console.log('syncStorageSetBatch' + JSON.stringify(data));
 }
 
@@ -356,7 +482,7 @@ function getNearestTableOrList(element) {
  * @param {allUrls} a set contains all the urls.
  * @returns a list that contains string elements which represents urls with Regex.
  */
-function numRegexUrl (allUrls) {
+function numRegexUrl(allUrls) {
     const urlList = Array.from(allUrls);
     var regexList = [];
     var hasNumber = /\d/;   //Regex for a number

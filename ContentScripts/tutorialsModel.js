@@ -250,6 +250,7 @@ class TutorialsModel {
                 UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_CREATING_NEW_TUTORIAL) {
                 chrome.storage.sync.get([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL], async (result) => {
                     const currentTutorial = result[VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL];
+                    
                     TutorialsModel.#initializeFromFirestore(() => {
                         TutorialsModel.#tutorials.unshift(currentTutorial)
                         TutorialsModel.saveToStorage(callback);
@@ -261,6 +262,7 @@ class TutorialsModel {
         }, () => {
             chrome.storage.sync.get([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL, VALUES.STORAGE.ALL_OTHER_TUTORIALS, "ACO"], async (result) => {
                 const currentTutorial = result[VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL];
+                c(currentTutorial)
                 if (isNotNull(currentTutorial)) {
                     const allOtherTutorials = result[VALUES.STORAGE.ALL_OTHER_TUTORIALS];
                     TutorialsModel.#tutorials = [currentTutorial]
@@ -270,7 +272,7 @@ class TutorialsModel {
                     TutorialsModel.#automationControlObject = result['ACO']
                     callback();
                 } else {
-                    //console.trace()
+                    console.trace()
                     console.log('loadFromQuerySnapshot')
                     TutorialsModel.#loadFromQuerySnapshot(callback)
                 }
@@ -290,11 +292,20 @@ class TutorialsModel {
      * Save all tutorials to chrome.storage.sync
      */
     static saveToStorage(callback = () => { }) {
-        console.log('saving ' + TutorialsModel.#tutorials.length + ' tutorials to storage')
+        
         syncStorageSetBatch({
             [VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL]: TutorialsModel.#tutorials[0],
             [VALUES.STORAGE.ALL_OTHER_TUTORIALS]: TutorialsModel.#tutorials.slice(1),
-        }, callback);
+        }, ()=>{
+            console.log('saved ' + TutorialsModel.#tutorials.length + ' tutorials to storage')
+            callback()
+            chrome.storage.sync.get([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL, VALUES.STORAGE.ALL_OTHER_TUTORIALS, "ACO"], async (result) => {
+                const currentTutorial = result[VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL];
+                const allOther = result[VALUES.STORAGE.ALL_OTHER_TUTORIALS];
+                c(currentTutorial)
+                c(allOther)
+                })
+        });
     }
 
     /**
