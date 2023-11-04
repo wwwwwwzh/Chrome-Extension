@@ -36,6 +36,6 @@ chrome.runtime.onMessage.addListener(
 );
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
-    console.log(JSON.stringify(changes))
+    // console.log(JSON.stringify(changes))
 })
 

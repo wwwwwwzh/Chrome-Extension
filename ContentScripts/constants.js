@@ -153,22 +153,19 @@ function hugeStorageSync(key, value, callback) {
         segment,
         cacheKey;
 
-    c("130", value)
     // split value into chunks and store them in an object indexed by `key_i`
     while (value.length > 0) {
         cacheKey = getCacheKey(key, i);
         //if you are wondering about -2 at the end see: https://code.google.com/p/chromium/issues/detail?id=261572
-        c("---------")
-        c(value)
-        c("---------")
-        segment = value.substr(0, chrome.storage.sync.QUOTA_BYTES_PER_ITEM - cacheKey.length - 2);
+        segment = value.substr(0, chrome.storage.sync.QUOTA_BYTES_PER_ITEM - cacheKey.length - 2000);
+        c(segment.length)
         cache[cacheKey] = segment;
-        value = value.substr(chrome.storage.sync.QUOTA_BYTES_PER_ITEM - cacheKey.length - 2);
-        cache[cacheKey] = value
+        value = value.substr(chrome.storage.sync.QUOTA_BYTES_PER_ITEM - cacheKey.length - 2000);
         i++;
-        c(cache)
+
     }
 
+    // c('cache: ' + JSON.stringify(cache[getCacheKey(key, 0)]))
     // store all the chunks
     chrome.storage.sync.set(cache, callback);
 
@@ -210,39 +207,89 @@ function hugeStorageGet(key, callback) {
  */
 function hugeStorageGetMultiple(keys, callback) {
     //get everything from storage
+    if (!Array.isArray(keys)) {
+        keys = [keys]
+    }
     chrome.storage.sync.get(null, function (items) {
-        var values;
-        keys.forEach(key=>{
+        var values = {};
+        keys.forEach(key => {
+
             var i, value = "";
+            var valueType = "";
 
             for (i = 0; i < chrome.storage.sync.MAX_ITEMS; i++) {
                 if (items[getCacheKey(key, i)] === undefined) {
                     break;
                 }
+                c('iteratiing cache keys:' + getCacheKey(key, i))
                 value += items[getCacheKey(key, i)];
+                c('value:' + value)
+                valueType = typeof items[getCacheKey(key, i)]
+                c("type:" + valueType)
             }
-            values[key]=value;
+
+            if (valueType === 'string' && (value.startsWith("[{\"") || value.startsWith("{\""))) {
+                values[key] = JSON.parse(value);
+            } else {
+                values[key] = items[getCacheKey(key, 0)];
+            }
         })
-        
+        c('values:' + values)
         callback(values);
     });
 };
 
 
 function syncStorageSet(key, value, callback = () => { }) {
-    const data = {};
-    data[key] = value
-    chrome.storage.sync.set(data, callback);
     //console.log('syncStorageSet' + JSON.stringify(data));
+    if ((typeof value === "object" || typeof value === 'function') && (value !== null)) {
+        stringifiedData = JSON.stringify(value)
+        hugeStorageSync(key, stringifiedData, callback)
+    } else {
+        const data = {};
+        data[key] = value
+        chrome.storage.sync.set(data, callback);
+    }
 }
 
 function syncStorageSetBatch(data, callback = () => { }) {
     // chrome.storage.sync.set(data, callback);
-    Object.keys(data).forEach(key => {
-        stringifiedData = JSON.stringify(data[key])
-        c(stringifiedData)
-        hugeStorageSync(key, stringifiedData, callback)
-    })
+    keys = Object.keys(data)
+    if (keys.length == 0) {
+        callback()
+    } else {
+        key = keys[0]
+        datum = data[key]
+        if ((typeof datum === "object" || typeof datum === 'function') && (datum !== null)) {
+            stringifiedData = JSON.stringify(datum)
+            delete data[key]
+            hugeStorageSync(key, stringifiedData, () => {
+                syncStorageSetBatch(data, callback)
+            })
+        } else {
+            tempData = {}
+            tempData[key] = datum
+            delete data[key]
+            chrome.storage.sync.set(tempData, () => {
+                syncStorageSetBatch(data, callback)
+            });
+        }
+    }
+
+    // Object.keys(data).forEach(key => {
+    //     datum = data[key]
+    //     if ((typeof datum === "object" || typeof datum === 'function') && (datum !== null)) {
+    //         stringifiedData = JSON.stringify(data[key])
+    //         c(stringifiedData + 'dffd')
+    //         hugeStorageSync(key, stringifiedData, callback)
+    //     } else {
+    //         tempData = {}
+    //         tempData[key] = datum
+    //         c(tempData)
+    //         chrome.storage.sync.set(tempData, callback);
+    //     }
+
+    // })
     //console.log('syncStorageSetBatch' + JSON.stringify(data));
 }
 

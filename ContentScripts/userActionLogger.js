@@ -78,7 +78,7 @@ class UserActionLogger {
     }
 
     static getMacId(callback) {
-        chrome.storage.sync.get('macid', result => {
+        hugeStorageGetMultiple('macid', result => {
             var id = result['macid'];
             if (!id) {
                 const newId = Math.random().toString(36).slice(2);

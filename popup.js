@@ -124,7 +124,7 @@ $(() => {
     var currentStepObj = null;
 
     if (false)
-        chrome.storage.sync.get([VALUES.RECORDING_STATUS.STATUS, VALUES.STORAGE.IS_RECORDING, VALUES.STORAGE.CURRENT_STEP_OBJ, VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, VALUES.STORAGE.CURRENT_URL], (result) => {
+        hugeStorageGetMultiple([VALUES.RECORDING_STATUS.STATUS, VALUES.STORAGE.IS_RECORDING, VALUES.STORAGE.CURRENT_STEP_OBJ, VALUES.STORAGE.CURRENT_SELECTED_ELEMENT, VALUES.STORAGE.CURRENT_URL], (result) => {
             switch (result[VALUES.RECORDING_STATUS.STATUS]) {
                 case VALUES.RECORDING_STATUS.RECORDING: case VALUES.RECORDING_STATUS.BEGAN_RECORDING:
                     recordTutorialSwitch.prop('checked', result[VALUES.STORAGE.IS_RECORDING]);
@@ -181,7 +181,7 @@ $(() => {
         //check if step exists
         if (!isNotNull(currentStepObj)) {
             const indexKey = VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX;
-            chrome.storage.sync.get([indexKey], result => {
+            hugeStorageGetMultiple([indexKey], result => {
                 currentStepObj = new Step(result[indexKey], VALUES.STEP_ACTION_TYPE.STEP_ACTION_TYPE_NULL, new ClickAction(), "", "");
                 callback();
             })
@@ -300,7 +300,7 @@ $(() => {
         $('.click-action-container').show();
         addAlternativeActionButton.html('Add Alternative Click');
 
-        chrome.storage.sync.get(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, result => {
+        hugeStorageGetMultiple(VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE, result => {
             const table = result[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT_PARENT_TABLE];
             if (!isNotNull(table)) {
             } else {
@@ -418,7 +418,7 @@ $(() => {
             if (isNotNull(currentStepObj.url)) {
                 customStepUrlInput.val(currentStepObj.url);
             } else {
-                chrome.storage.sync.get(VALUES.STORAGE.CURRENT_URL, result => {
+                hugeStorageGetMultiple(VALUES.STORAGE.CURRENT_URL, result => {
                     const currentUrl = result[VALUES.STORAGE.CURRENT_URL];
                     if (isNotNull(currentUrl)) {
                         customStepUrlInput.val(currentUrl);
@@ -481,7 +481,7 @@ $(() => {
     })
 
     async function onNextButtonClicked() {
-        chrome.storage.sync.get([VALUES.STORAGE.CURRENT_SELECTED_ELEMENT], result => {
+        hugeStorageGetMultiple([VALUES.STORAGE.CURRENT_SELECTED_ELEMENT], result => {
             const path = result[VALUES.STORAGE.CURRENT_SELECTED_ELEMENT];
             if (!isNotNull(path) || isStringEmpty(path)) {
                 alert("Please complete required fields first");
@@ -571,7 +571,7 @@ $(() => {
     //MARK: Firebase actions------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------
     async function deleteDocIfExists() {
-        chrome.storage.sync.get(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID, async (result) => {
+        hugeStorageGetMultiple(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID, async (result) => {
             const docId = result[VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID];
             if (isNotNull(docId)) {
                 const tutorialRef = doc(firestoreRef, VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL, docId);
@@ -581,7 +581,7 @@ $(() => {
     }
 
     async function addStepToFirebase(stepObj) {
-        chrome.storage.sync.get(VALUES.RECORDING_STATUS.STATUS, async (result) => {
+        hugeStorageGetMultiple(VALUES.RECORDING_STATUS.STATUS, async (result) => {
             switch (result[VALUES.RECORDING_STATUS.STATUS]) {
                 case VALUES.RECORDING_STATUS.BEGAN_RECORDING:
                     await postDocToFirebase(
@@ -611,7 +611,7 @@ $(() => {
         try {
             switch (status) {
                 case VALUES.RECORDING_STATUS.BEGAN_RECORDING:
-                    chrome.storage.sync.get([VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME, VALUES.STORAGE.CURRENT_URL], async result => {
+                    hugeStorageGetMultiple([VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME, VALUES.STORAGE.CURRENT_URL], async result => {
                         const docRef = await addDoc(collection(firestoreRef, type), {
                             name: result[VALUES.STORAGE.CURRENT_RECORDING_TUTORIAL_NAME],
                         });
@@ -622,7 +622,7 @@ $(() => {
 
                     break;
                 case VALUES.RECORDING_STATUS.RECORDING:
-                    chrome.storage.sync.get([VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID, VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX, VALUES.STORAGE.CURRENT_URL], async (result) => {
+                    hugeStorageGetMultiple([VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID, VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX, VALUES.STORAGE.CURRENT_URL], async (result) => {
                         stepIndex = result[VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_STEP_INDEX] + 1;
                         docId = result[VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID];
                         await addTutorialStep(docId, result[VALUES.STORAGE.CURRENT_URL]);

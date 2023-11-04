@@ -39,7 +39,7 @@ class ExtensionController {
     }
 
     checkStatus() {
-        chrome.storage.sync.get(VALUES.TUTORIAL_STATUS.STATUS, (result) => {
+        hugeStorageGetMultiple(VALUES.TUTORIAL_STATUS.STATUS, (result) => {
             const savedStatus = result[VALUES.TUTORIAL_STATUS.STATUS];
             const cacheStatus = UserEventListnerHandler.tutorialStatusCache;
             console.log('status cache: ' + cacheStatus + '| saved status: ' + savedStatus)

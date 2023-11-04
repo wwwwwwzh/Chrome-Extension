@@ -272,7 +272,10 @@ class FollowTutorialViewController {
 
     #checkStatus(status) {
         UserEventListnerHandler.setTutorialStatusCache(status)
+    //    c(status)
+    //    c(0)
         switch (status) {
+            
             case VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL:
                 TutorialsModel.smartInit(() => {
                     this.#showCurrentStep(status)
@@ -291,6 +294,7 @@ class FollowTutorialViewController {
                 })
                 break;
             default:
+
                 break;
         }
     }
@@ -568,7 +572,7 @@ class FollowTutorialViewController {
         //         //show the matched step
         //         tutorialObj.currentStep = i;
         //         const RPCKey = VALUES.STORAGE.REVISIT_PAGE_COUNT;
-        //         chrome.storage.sync.get([RPCKey], result => {
+        //         hugeStorageGetMultiple([RPCKey], result => {
         //             if (result[RPCKey] > VALUES.STORAGE.MAX_REVISIT_PAGE_COUNT) {
         //                 alert('no matching page');
         //                 this.stopCurrentTutorial();

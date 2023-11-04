@@ -1214,7 +1214,7 @@ class RecordTutorialViewController {
     //MARK: Firebase actions------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------
     async #deleteDocIfExists() {
-        chrome.storage.sync.get(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID, async (result) => {
+        hugeStorageGetMultiple(VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID, async (result) => {
             const docId = result[VALUES.RECORDING_ID.CURRENT_RECORDING_TUTORIAL_ID];
             if (isNotNull(docId)) {
                 const tutorialRef = doc(ExtensionController.FIRESTORE_REF, VALUES.FIRESTORE_CONSTANTS.SIMPLE_TUTORIAL, docId);

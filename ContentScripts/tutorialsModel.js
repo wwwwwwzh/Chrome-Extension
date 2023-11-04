@@ -165,7 +165,7 @@ class TutorialsModel {
             return
         }
 
-        chrome.storage.sync.get([TutorialsModel.LAST_SAVED_TIMESTAMP_KEY, TutorialsModel.URL_ASSOCIATED_WITH_CURRENT_TUTORIAL_QUERY_SNAPSHOT_KEY], (result) => {
+        hugeStorageGetMultiple([TutorialsModel.LAST_SAVED_TIMESTAMP_KEY, TutorialsModel.URL_ASSOCIATED_WITH_CURRENT_TUTORIAL_QUERY_SNAPSHOT_KEY], (result) => {
             const lastSavedTimestamp = result[TutorialsModel.LAST_SAVED_TIMESTAMP_KEY]
             const urlAssociatedWithCurrentTutorialsQuerySnapshot = result[TutorialsModel.URL_ASSOCIATED_WITH_CURRENT_TUTORIAL_QUERY_SNAPSHOT_KEY]
             const isPassedReloadTime = (((Date.now() / 60000 | 0) - (lastSavedTimestamp / 60000 | 0)) > 1)
@@ -248,7 +248,7 @@ class TutorialsModel {
             c('reloading from cloud')
             if (UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_RECORDING ||
                 UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_CREATING_NEW_TUTORIAL) {
-                chrome.storage.sync.get([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL], async (result) => {
+                hugeStorageGetMultiple([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL], async (result) => {
                     const currentTutorial = result[VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL];
                     
                     TutorialsModel.#initializeFromFirestore(() => {
@@ -260,9 +260,8 @@ class TutorialsModel {
                 TutorialsModel.#initializeFromFirestore(callback)
             }
         }, () => {
-            chrome.storage.sync.get([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL, VALUES.STORAGE.ALL_OTHER_TUTORIALS, "ACO"], async (result) => {
+            hugeStorageGetMultiple([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL, VALUES.STORAGE.ALL_OTHER_TUTORIALS, "ACO"], async (result) => {
                 const currentTutorial = result[VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL];
-                c(currentTutorial)
                 if (isNotNull(currentTutorial)) {
                     const allOtherTutorials = result[VALUES.STORAGE.ALL_OTHER_TUTORIALS];
                     TutorialsModel.#tutorials = [currentTutorial]
@@ -299,11 +298,11 @@ class TutorialsModel {
         }, ()=>{
             console.log('saved ' + TutorialsModel.#tutorials.length + ' tutorials to storage')
             callback()
-            chrome.storage.sync.get([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL, VALUES.STORAGE.ALL_OTHER_TUTORIALS, "ACO"], async (result) => {
+            hugeStorageGetMultiple([VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL, VALUES.STORAGE.ALL_OTHER_TUTORIALS, "ACO"], async (result) => {
                 const currentTutorial = result[VALUES.STORAGE.CURRENT_ACTIVE_TUTORIAL];
                 const allOther = result[VALUES.STORAGE.ALL_OTHER_TUTORIALS];
-                c(currentTutorial)
-                c(allOther)
+                c('saved currentTutorial: '+currentTutorial)
+                c('saved all other: '+allOther)
                 })
         });
     }
