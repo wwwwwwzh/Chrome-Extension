@@ -286,6 +286,9 @@ class FollowTutorialViewController {
                     this.#showCurrentStep(status)
                 })
                 break;
+            case VALUES.TUTORIAL_STATUS.IS_FOLLOWING_OTHER_TUTORIAL:
+                this.#switchToFollowOtherTutorialViewCommon()
+                break;
             case VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL:
                 TutorialsModel.smartInit(() => {
                     TutorialsModel.forEachTutorial((tutorial, index) => {
@@ -500,7 +503,22 @@ class FollowTutorialViewController {
         this.#switchToAndShowStepAtIndex(TutorialsModel.getCurrentTutorial().currentStepIndex + 1);
     }
 
+    followingOtherTutorial() {
+        // Used in user study
+        this.mainPopupScrollArea.children().hide();
+        this.mainPopupFooter.hide();
+
+        UserEventListnerHandler.setTutorialStatusCache(VALUES.TUTORIAL_STATUS.IS_FOLLOWING_OTHER_TUTORIAL)
+
+        // TutorialsModel.onTutorialFinished();
+        // this.#switchToRateTutorialView();
+    }
+
     stopCurrentTutorial(whenFinishedTutorial = false) {
+        if (UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_FOLLOWING_OTHER_TUTORIAL) {
+            this.mainPopUpContainer.hide();
+            UserEventListnerHandler.setTutorialStatusCache(VALUES.TUTORIAL_STATUS.BEFORE_INIT_NULL)
+        }
         //UI
         Highlighter.removeLastHighlight();
         clearTimeout(this.#sideInstructionAutoNextTimer);
@@ -607,6 +625,7 @@ class FollowTutorialViewController {
         );
 
     }
+
 
     //------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------
@@ -909,6 +928,14 @@ class FollowTutorialViewController {
                                 title="Update the tutorial">
                         </div>
                     </div>
+                    <div class="w-workflow-list-cell-type-button w-workflow-list-cell-type-button-tryout">
+                        <title class="w-workflow-list-cell-type-button-name">Don't Show</title>
+                        <div class="w-more-info-icon-container">
+                            <img class="w-more-info-icon"
+                                src="${this.questionMarkURL}"
+                                title="Update the tutorial">
+                        </div>
+                    </div>
                 </div>
                 `)
                 item.getElementsByClassName('w-workflow-list-cell-type-button-auto')[0].addEventListener('click', e => {
@@ -924,6 +951,9 @@ class FollowTutorialViewController {
                 })
                 item.getElementsByClassName('w-workflow-list-cell-type-button-download')[0].addEventListener('click', e => {
                     this.downloadTutorialtoJson(tutorialID)
+                })
+                item.getElementsByClassName('w-workflow-list-cell-type-button-tryout')[0].addEventListener('click', e => {
+                    this.followingOtherTutorial();
                 })
             } else {
                 $(item).children().show()
@@ -1019,6 +1049,17 @@ class FollowTutorialViewController {
         TutorialsModel.getCurrentTutorial().steps.forEach((step, index) => {
             this.#addStepSnapshotButton(step, index)
         })
+    }
+
+    #switchToFollowOtherTutorialViewCommon() {
+        this.mainPopupScrollArea.children().hide()
+        this.mainPopupFooter.show()
+        this.popUpCancelButton.show()
+        this.automationChoicesCancelButton.hide()
+        this.automationChoicesDoneButton.hide()
+        this.popUpStepName.html('');
+        this.popUpStepDescription.html('');
+        
     }
 
     #addStepSnapshotButton(step, index) {

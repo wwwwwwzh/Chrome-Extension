@@ -24,6 +24,12 @@ class TutorialsModel {
         return currentTutorial?.steps[currentTutorial.currentStepIndex];
     }
 
+    static getLastStep() {
+        const currentTutorial = TutorialsModel.getCurrentTutorial();
+        return currentTutorial?.steps[currentTutorial.currentStepIndex-1];
+    }
+
+
     static getCurrentStepIndex() {
         return TutorialsModel.getCurrentTutorial()?.currentStepIndex;
     }

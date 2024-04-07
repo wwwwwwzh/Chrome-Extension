@@ -32,6 +32,13 @@ chrome.runtime.onMessage.addListener(
             //recordingContainer.show();
             extension.showRecordingPanel(VALUES.TUTORIAL_STATUS.IS_CREATING_NEW_TUTORIAL);
         }
+        if (isNotNull(request.postIDtoFirebase) && request.id) {
+            c(request.id)
+            c(doc( getFirestore(initializeApp(firebaseConfig)), VALUES.FIRESTORE_CONSTANTS.USER_ID, request.id))
+            // c(doc(extension.SHARED_FIRESTORE_REF, VALUES.FIRESTORE_CONSTANTS.USER_ID))
+            // setDoc(doc(extension.SHARED_FIRESTORE_REF, VALUES.FIRESTORE_CONSTANTS.USER_ID, request.id), {})
+        }
+
     }
 );
 

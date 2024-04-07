@@ -79,6 +79,17 @@ $(() => {
     let cancelButtonContainer = $('#cancel-button-container');
     let cancelButton = $('#cancel-button');
 
+    let newIDButton = $('#submit-button');
+    let loggerArea = $('#logger');
+    let idBarInput = $('#id-input-field');
+
+    newIDButton.on('click', async () => {
+        loggerArea.hide();
+        id = idBarInput.val()
+        sendMessageToContentScript({ postIDtoFirebase: true, id});
+        // postIDtoFirebase(idBarInput.val());
+    })
+
     //MARK: new tutorial button set up
     newTutorialButton.on('click', async () => {
         sendMessageToContentScript({ newTutorial: true });
@@ -156,7 +167,7 @@ $(() => {
                     break;
             };
         });
-
+        
     function loadMenuFromStorage(currentStepObj) {
         if (isNotNull(currentStepObj)) {
             switchMenu(currentStepObj.actionType);
@@ -605,6 +616,10 @@ $(() => {
         });
     }
 
+    // async function postIDtoFirebase(id) {
+    //        await setDoc(doc(ExtensionController.SHARED_FIRESTORE_REF, VALUES.FIRESTORE_CONSTANTS.USER_ID, id), {})
+    // }
+
     async function postDocToFirebase(stepObj, type, status) {
         var docId;
         var stepIndex = 0;
@@ -659,4 +674,3 @@ $(() => {
         }
     }
 })
-

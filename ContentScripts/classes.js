@@ -180,7 +180,7 @@ class UserEventListnerHandler {
             }
         }
 
-        if (UserEventListnerHandler.isOnRightPage && (UserEventListnerHandler.isAutomationInterrupt || isManualFollowingTutorial())) {
+        if (UserEventListnerHandler.isOnRightPage && (UserEventListnerHandler.isAutomationInterrupt || isManualFollowingTutorial() || isFollowingOtherTutorial())) {
             if (!UserEventListnerHandler.isLisenting) {
                 UserEventListnerHandler.#addGlobalEventListeners();
                 UserEventListnerHandler.isLisenting = true;
@@ -193,7 +193,7 @@ class UserEventListnerHandler {
         }
 
         if (DEBUG_OPTION & VALUES.DEBUG_MASKS.DEBUG_LOGGING) {
-            if (isRecordingTutorial() || isAutoFollowingTutorial() || isManualFollowingTutorial()) {
+            if (isRecordingTutorial() || isAutoFollowingTutorial() || isManualFollowingTutorial() || isFollowingOtherTutorial()) {
                 if (!UserEventListnerHandler.isLisenting) {
                     UserEventListnerHandler.#addGlobalEventListeners();
                     UserEventListnerHandler.isLisenting = true;
@@ -241,6 +241,12 @@ class UserEventListnerHandler {
                 break;
             case VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL:
                 //UserActionLogger.log(UserActionLogger.ACTION_TYPE.RECORDING.HIGHLIGHT, { element: getShortDomPathStack(event.target), isHighlighting: UserEventListnerHandler.recordingIsHighlighting })
+                break;
+            case VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
+                UserActionLogger.log(UserActionLogger.ACTION_TYPE.FOLLOWING.CLICK, { element: getShortDomPathStack(target) })
+                break;
+            case VALUES.TUTORIAL_STATUS.IS_FOLLOWING_OTHER_TUTORIAL:
+                UserActionLogger.log(UserActionLogger.ACTION_TYPE.FOLLOWING.CLICK, { element: getShortDomPathStack(target) })
                 break;
             default:
                 break;

@@ -70,7 +70,10 @@ const VALUES = {
         SIMPLE_TUTORIAL_ALL_URLS: "all_urls",
         STEP_INDEX: "index",
         USER_LOG: "User Log",
-        ALL_LOGS: "All log"
+        USER_LOG_ALL_SESSIONS: "AllSessions",
+        USER_LOG_DETAILS: "Details",
+        USER_LOG_EFFICIENCY: "Efficiency Data",
+        USER_ID: "User ID"
     },
     FIRESTORE_QUERY_TYPES: {
         ARRAY_CONTAINS: "array-contains",
@@ -93,7 +96,7 @@ const VALUES = {
         IS_MANUALLY_FOLLOWING_TUTORIAL: 3,
         IS_INTERRUPTED_FROM_AUTOMATION: 9,
         IS_AUTO_FOLLOWING_TUTORIAL: 4,
-
+        IS_FOLLOWING_OTHER_TUTORIAL: 8,
         BEFORE_INIT_NULL: 0,
     },
     STEP_ACTION_TYPE: {
@@ -223,7 +226,7 @@ function hugeStorageGetMultiple(keys, callback) {
                 }
                 c('iteratiing cache keys:' + getCacheKey(key, i))
                 value += items[getCacheKey(key, i)];
-                c('value:' + value)
+                //c('value:' + value)
                 valueType = typeof items[getCacheKey(key, i)]
                 c("type:" + valueType)
             }
@@ -680,6 +683,10 @@ function isManualFollowingTutorial() {
     return UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL
 }
 
+function isFollowingOtherTutorial() {
+    return UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_FOLLOWING_OTHER_TUTORIAL
+}
+
 function isAutoFollowingTutorial() {
     return UserEventListnerHandler.tutorialStatusCache === VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL
 }
@@ -800,4 +807,12 @@ function addOne(num) {
 
 function safeString(string, safe) {
     return isStringEmpty(string) ? safe : string
+}
+
+function generateRandomNumber() {
+    return (Math.floor(Math.random() * (99999 - 10000 + 1)) + 10000).toString();
+}
+
+function booleanInverse(b) {
+    return !b;
 }

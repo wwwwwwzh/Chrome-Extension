@@ -51,6 +51,7 @@ class ExtensionController {
                         this.showRecordingPanel(savedStatus)
                         break;
                     case VALUES.TUTORIAL_STATUS.IS_MANUALLY_FOLLOWING_TUTORIAL:
+                    case VALUES.TUTORIAL_STATUS.IS_FOLLOWING_OTHER_TUTORIAL:
                     case VALUES.TUTORIAL_STATUS.IS_AUTO_FOLLOWING_TUTORIAL:
                         this.#showFollowingPanel(savedStatus)
                         break;
