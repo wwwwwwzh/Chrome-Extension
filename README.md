@@ -1,6 +1,6 @@
 # UPDATE
 A new AI Agent version is coming soon! See our trailer:
-https://github.com/user-attachments/assets/8e3e45a7-3be7-4f15-9cdd-e6697b8dc3ce
+https://github.com/user-attachments/assets/8e3e45a7-3be7-4f15-9cdd-e6697b8dc3ce.mp4
 
 # Summury
 This is a Chrome Extension that helps users learn how to use certain functionalities of websites. 
